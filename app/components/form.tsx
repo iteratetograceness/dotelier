@@ -38,10 +38,15 @@ export function PixelGenerator() {
   }
 
   return (
-    <div className='flex gap-8'>
+    <div className='flex gap-8 items-start'>
       <WindowCard className='flex-1' title='INPUT'>
-        <form onSubmit={handleSubmit}>
-          <textarea id='prompt' name='prompt' />
+        <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
+          <textarea
+            className='bg-background '
+            id='prompt'
+            name='prompt'
+            placeholder='A cockapoo and bichpoo leaning against each other'
+          />
           <button disabled={isPending} type='submit'>
             {isPending ? 'Generating...' : 'Generate'}
           </button>
