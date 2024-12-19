@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/app/db/client'
+import { after, NextRequest, NextResponse } from 'next/server'
 
 const STYLE_ID = process.env.STYLE_ID
 const API_KEY = process.env.API_KEY
@@ -31,6 +32,11 @@ export async function POST(
     )
   }
 
+  const encodedColors = formData.get('colors')
+
+  const colors =
+    typeof encodedColors === 'string' ? decodeColors(encodedColors) : []
+
   const response = await fetch(API_URL, {
     headers: {
       'Content-Type': 'application/json',
@@ -38,13 +44,18 @@ export async function POST(
     },
     method: 'POST',
     body: JSON.stringify({
-      prompt,
+      prompt: `${prompt}`,
       style_id: STYLE_ID,
       model: 'recraft20b',
+      controls: {
+        colors,
+      },
     }),
   })
 
   if (!response.ok) {
+    const data = await response.json()
+    console.error(data)
     return NextResponse.json(
       { error: 'Failed to generate icon. Please try again.' },
       { status: 500 }
@@ -62,5 +73,28 @@ export async function POST(
 
   const images = data.data
 
+  after(async () => {
+    await Promise.all(
+      images.map((image: { url: string }) =>
+        db.execute(
+          `INSERT Pixel {
+          prompt := "${prompt}",
+          url := "${image.url}",
+          created_at := datetime_current(),
+        }`
+        )
+      )
+    )
+  })
+
   return NextResponse.json({ images })
+}
+
+function decodeRgb(rgb: string) {
+  const rgbArray = rgb.split('/').map(Number)
+  return { rgb: rgbArray }
+}
+
+function decodeColors(colors: string) {
+  return colors.split(',').map((c) => decodeRgb(c))
 }

@@ -1,3 +1,8 @@
+'use client'
+
+import { useDraggable } from '@dnd-kit/core'
+import { useState, useEffect } from 'react'
+
 const VARIANTS = {
   default: {
     background: 'bg-background',
@@ -19,29 +24,77 @@ interface WindowProps {
   variant?: keyof typeof VARIANTS
   title?: string
   children: React.ReactNode
-  button?: string
-  onClick?: () => void
   className?: string
+  id: string
+  position: { x: number; y: number }
+  draggable: boolean
+  closeable?: boolean
 }
 
 export function WindowCard({
   variant = 'default',
   title,
+  id,
   children,
   className,
+  position,
+  draggable,
+  closeable = true,
 }: WindowProps) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id,
+  })
+  const [isOpen, setIsOpen] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
   const { background, border, accent, accentText, text } = VARIANTS[variant]
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isOpen) return null
+  if (!isMounted) return null
+
+  const style = {
+    ...(transform
+      ? {
+          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        }
+      : {}),
+    ...(draggable && position
+      ? {
+          position: 'absolute' as const,
+          top: position.y,
+          left: position.x,
+        }
+      : {}),
+  }
 
   return (
     <div
-      className={`border-[3px] p-1 pt-0 ${border} ${accent} ${accentText} ${className}`}
+      ref={setNodeRef}
+      style={style}
+      className={`flex flex-col border-[3px] p-1 pt-0 ${border} ${accent} ${accentText} ${className}`}
+      id={`draggable-${id}`}
     >
-      <div className='flex items-center justify-between w-full h-7 px-1 pt-1'>
-        <span className='text-xl font-normal'>{title}</span>
-        <X />
+      <div
+        className='flex items-center justify-between w-full h-7 px-1 pt-1'
+        {...listeners}
+        {...attributes}
+      >
+        <span className='text-xl font-normal flex-1'>{title}</span>
+        {closeable && (
+          <button
+            onClick={() => setIsOpen(false)}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <X />
+          </button>
+        )}
       </div>
-
-      <div className={`p-4 ${text} ${background}`}>{children}</div>
+      <div className={`p-4 flex-1 ${text} ${background}`}>{children}</div>
     </div>
   )
 }

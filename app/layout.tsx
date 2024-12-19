@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Toaster } from 'sonner'
 import { Tiny5 } from 'next/font/google'
 import './globals.css'
 import { Header } from './header'
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body>
         <Header />
         {children}
+        <Toaster />
       </body>
     </html>
   )
