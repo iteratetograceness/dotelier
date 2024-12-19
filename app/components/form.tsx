@@ -80,21 +80,23 @@ export function PixelGenerator({
               className='w-full border border-shadow bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80 uppercase'
               id='prompt'
               name='prompt'
-              placeholder='A cockapoo and bichpoo leaning against each other'
+              placeholder='A carrot sonny angel'
             />
-            <button
-              className='text-xs text-muted-foreground text-left uppercase'
-              onClick={() => setColorPicker(true)}
-              type='button'
-            >
-              Recommended: Click here to choose color(s) for your icon
-            </button>
-            <div className='flex gap-2 justify-end'>
-              <Button disabled={isPending} type='submit'>
-                {isPending ? 'Generating' : 'Generate'}
+
+            <div className='flex flex-col w-full gap-2 justify-end'>
+              <Button
+                disabled={isPending}
+                type='button'
+                onClick={() => setColorPicker(true)}
+                className='w-full'
+              >
+                CHOOSE COLOR SCHEME
               </Button>
-              <Button type='reset' variant='secondary'>
-                Clear
+              <Button disabled={isPending} type='submit' className='w-full'>
+                {isPending ? 'GENERATING' : 'GENERATE'}
+              </Button>
+              <Button type='reset' className='w-full'>
+                CLEAR
               </Button>
             </div>
           </form>
@@ -116,15 +118,14 @@ export function PixelGenerator({
                 color={activeColor}
                 onChange={(color, e) => {
                   e?.preventDefault()
-                  startTransition(() => {
-                    setColors((prev) => {
-                      if (prev.some((c) => c.hex === color.hex)) {
-                        return prev.filter((c) => c.hex !== color.hex)
-                      }
-                      return [...prev, color]
-                    })
-                    setActiveColor(color.hex)
+                  e?.stopPropagation()
+                  setColors((prev) => {
+                    if (prev.some((c) => c.hex === color.hex)) {
+                      return prev.filter((c) => c.hex !== color.hex)
+                    }
+                    return [...prev, color]
                   })
+                  setActiveColor(color.hex)
                 }}
               />
               <div className='flex flex-col gap-2'>
