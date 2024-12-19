@@ -50,7 +50,7 @@ export default function DDContainer() {
   return (
     <DndWrapper onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       <div
-        className={`size-full ${
+        className={`size-screen pb-12 ${
           dragActive ? '' : 'flex flex-col items-center gap-8'
         }`}
         ref={setNodeRef}

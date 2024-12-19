@@ -5,6 +5,8 @@ import Compact from '@uiw/react-color-compact'
 import { WindowCard } from './window'
 import { Button } from './button'
 import { toast } from 'sonner'
+import RetroLoader from './loader'
+import SadFace from '../icons/sad-face'
 
 interface ColorResult {
   rgb: {
@@ -24,18 +26,23 @@ export function PixelGenerator({
 }) {
   const [isPending, startTransition] = useTransition()
   const [url, setUrl] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>('Error bad')
   const [colorPicker, setColorPicker] = useState<boolean>(false)
   const [activeColor, setActiveColor] = useState<string>()
   const [colors, setColors] = useState<ColorResult[]>([])
+  const [freeze, setFreeze] = useState<boolean>(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    e.stopPropagation()
+    setError(null)
+    setUrl(null)
 
     startTransition(async () => {
       const formData = new FormData(e.currentTarget)
       if (!formData.get('prompt')) {
         setError('Missing input')
+        setFreeze(false)
         return
       }
 
@@ -49,6 +56,7 @@ export function PixelGenerator({
 
       if ('error' in data) {
         setError(data.error)
+        setFreeze(false)
         return
       }
 
@@ -58,10 +66,12 @@ export function PixelGenerator({
         data.images.length > 0
       ) {
         setUrl(data.images[0].url)
+        setFreeze(false)
         return
       }
 
       setError('Failed to generate icon. Please try again.')
+      setFreeze(false)
     })
   }
 
@@ -74,6 +84,7 @@ export function PixelGenerator({
           id='input'
           draggable={draggable && !isPending}
           position={positions.input}
+          freeze={freeze}
         >
           <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
             <textarea
@@ -109,6 +120,7 @@ export function PixelGenerator({
             draggable={draggable && !isPending}
             position={positions.colors}
             closeable={false}
+            freeze={freeze}
           >
             <div className='flex flex-col gap-4'>
               <Compact
@@ -173,7 +185,6 @@ export function PixelGenerator({
           </WindowCard>
         ) : null}
       </div>
-
       <WindowCard
         className='size-[300px] sm:size-[400px]'
         title='OUTPUT'
@@ -181,8 +192,13 @@ export function PixelGenerator({
         draggable={draggable && !isPending}
         position={positions.output}
         closeable={false}
+        freeze={freeze}
       >
-        {url ? <PixelImage src={url} /> : <EmptyState error={error} />}
+        {url ? (
+          <PixelImage src={url} />
+        ) : (
+          <EmptyState error={error} pending={isPending} />
+        )}
       </WindowCard>
     </div>
   )
@@ -241,15 +257,33 @@ function PixelImage({ src }: { src: string }) {
   )
 }
 
-// TODO: Generating animation
-function EmptyState({ error }: { error: string | null }) {
+// TODO: Empty state:
+function EmptyState({
+  error,
+  pending,
+}: {
+  error: string | null
+  pending: boolean
+}) {
   return (
-    <div className='flex items-center flex-1 justify-center h-full'>
-      {error ? (
-        <span className='text-red-300'>{error}</span>
-      ) : (
-        '[ ICON WILL APPEAR HERE ]'
-      )}
+    <div className='flex items-center flex-1 justify-center h-full uppercase'>
+      {pending ? <RetroLoader /> : null}
+      {error ? <ErrorState error={error} /> : null}
+      {!pending && !error ? <p>Empty</p> : null}
+    </div>
+  )
+}
+
+function ErrorState({ error }: { error: string }) {
+  return (
+    <div className='flex flex-col items-center gap-7'>
+      <div className='text-foreground'>
+        <SadFace />
+      </div>
+      <div className='flex items-center flex-col gap-2'>
+        <p className='text-xl font-bold'>something went wrong</p>
+        <p className='text-sm text-amber-600 dark:text-amber-400'>{error}</p>
+      </div>
     </div>
   )
 }

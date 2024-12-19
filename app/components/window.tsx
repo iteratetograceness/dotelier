@@ -1,7 +1,7 @@
 'use client'
 
 import { useDraggable } from '@dnd-kit/core'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, CSSProperties } from 'react'
 
 const VARIANTS = {
   default: {
@@ -29,6 +29,7 @@ interface WindowProps {
   position: { x: number; y: number }
   draggable: boolean
   closeable?: boolean
+  freeze?: boolean
 }
 
 export function WindowCard({
@@ -40,9 +41,11 @@ export function WindowCard({
   position,
   draggable,
   closeable = true,
+  freeze,
 }: WindowProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id,
+    disabled: freeze,
   })
   const [isOpen, setIsOpen] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
@@ -55,20 +58,26 @@ export function WindowCard({
   if (!isOpen) return null
   if (!isMounted) return null
 
-  const style = {
-    ...(transform
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        }
-      : {}),
-    ...(draggable && position
-      ? {
-          position: 'absolute' as const,
-          top: position.y,
-          left: position.x,
-        }
-      : {}),
-  }
+  const style: CSSProperties = freeze
+    ? {
+        position: 'absolute',
+        top: position.y,
+        left: position.x,
+      }
+    : {
+        ...(transform
+          ? {
+              transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+            }
+          : {}),
+        ...(draggable && position
+          ? {
+              position: 'absolute' as const,
+              top: position.y,
+              left: position.x,
+            }
+          : {}),
+      }
 
   return (
     <div
