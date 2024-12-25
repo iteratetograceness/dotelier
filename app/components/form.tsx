@@ -295,16 +295,3 @@ function encodeRgb(rgb: { r: number; g: number; b: number }) {
 function encodeColors(colors: ColorResult[]) {
   return colors.map((c) => encodeRgb(c.rgb)).join(',')
 }
-
-await Promise.all(projects.map(p => {
-  if (p.name.startsWith('v0') {
-      return fetch(`https://api.vercel.com/v9/projects/${p.id}?slug=jueun-grace-yun`, {
-"headers": {
-  "Authorization": "Bearer BUF6wnzMq2oR4LxK1wxW6JmB"
-},
-"method": "delete"
-})
-  }
-
-  return null
-})
