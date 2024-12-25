@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from '@vercel/analytics/react'
 import { Toaster } from 'sonner'
 import { Tiny5 } from 'next/font/google'
 import './globals.css'
@@ -25,6 +26,7 @@ export default function RootLayout({
         <Header />
         {children}
         <Toaster />
+        <Analytics />
       </body>
     </html>
   )
