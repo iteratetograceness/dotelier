@@ -1,6 +1,8 @@
 const variants = {
-  primary: 'bg-background text-foreground hover:bg-[#E6E6E6]',
-  secondary: 'bg-foreground text-background hover:bg-[#1D1D1D]',
+  primary:
+    'bg-background text-foreground hover:bg-[#E6E6E6] dark:hover:bg-[#1D1D1D]',
+  secondary:
+    'bg-foreground text-background hover:bg-[#1D1D1D] dark:hover:bg-[#E6E6E6]',
 } as const
 
 const animation = `

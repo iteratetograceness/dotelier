@@ -1,207 +1,106 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { Dispatch, SetStateAction, useActionState, useState } from 'react'
+import * as Popover from '@radix-ui/react-popover'
 import Compact from '@uiw/react-color-compact'
-import { WindowCard } from './window'
 import { Button } from './button'
 import { toast } from 'sonner'
 import RetroLoader from './loader'
 import SadFace from '../icons/sad-face'
+import { BaseWindow } from './window/base'
+import Plus from '../icons/plus'
+import X from '../icons/x'
 
-interface ColorResult {
-  rgb: {
-    r: number
-    g: number
-    b: number
-  }
-  hex: string
+interface FormState {
+  url?: string
+  error?: string
 }
 
-export function PixelGenerator({
-  draggable,
-  positions,
-}: {
-  draggable: boolean
-  positions: Record<string, { x: number; y: number }>
-}) {
-  const [isPending, startTransition] = useTransition()
-  const [url, setUrl] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>('Error bad')
-  const [colorPicker, setColorPicker] = useState<boolean>(false)
-  const [activeColor, setActiveColor] = useState<string>()
+export function PixelGenerator() {
+  const [state, dispatch, isPending] = useActionState<FormState, FormData>(
+    generate,
+    {
+      url: undefined,
+      error: undefined,
+    }
+  )
   const [colors, setColors] = useState<ColorResult[]>([])
-  const [freeze, setFreeze] = useState<boolean>(false)
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setError(null)
-    setUrl(null)
-
-    startTransition(async () => {
-      const formData = new FormData(e.currentTarget)
-      if (!formData.get('prompt')) {
-        setError('Missing input')
-        setFreeze(false)
-        return
-      }
-
-      formData.set('colors', encodeColors(colors))
-
-      const response = await fetch('/api/pixelate', {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await response.json()
-
-      if ('error' in data) {
-        setError(data.error)
-        setFreeze(false)
-        return
-      }
-
-      if (
-        'images' in data &&
-        Array.isArray(data.images) &&
-        data.images.length > 0
-      ) {
-        setUrl(data.images[0].url)
-        setFreeze(false)
-        return
-      }
-
-      setError('Failed to generate icon. Please try again.')
-      setFreeze(false)
-    })
-  }
 
   return (
-    <div className='flex flex-col lg:flex-row gap-8 items-center lg:items-start'>
-      <div className='flex flex-col md:flex-row gap-8'>
-        <WindowCard
-          className='w-[300px]'
-          title='INPUT'
-          id='input'
-          draggable={draggable && !isPending}
-          position={positions.input}
-          freeze={freeze}
-        >
-          <form className='flex flex-col gap-4' onSubmit={handleSubmit}>
-            <textarea
-              className='w-full border border-shadow bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80 uppercase'
-              id='prompt'
-              name='prompt'
-              placeholder='A carrot sonny angel'
-            />
+    <main className='min-w-screen flex flex-col md:flex-row gap-8 items-center justify-center p-10 pointer-events-auto'>
+      <BaseWindow className='w-full md:w-[500px]' title='input'>
+        <form className='flex flex-col gap-4'>
+          <textarea
+            className='w-full border border-shadow bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80 uppercase'
+            id='prompt'
+            name='prompt'
+            placeholder='A carrot sonny angel'
+          />
+          <input type='hidden' name='colors' value={encodeColors(colors)} />
+          <Colors colors={colors} setColors={setColors} />
+          <div className='flex w-full gap-2'>
+            <Button type='reset'>CLEAR</Button>
+            <Button
+              className='w-full'
+              variant='secondary'
+              disabled={isPending}
+              formAction={dispatch}
+            >
+              {isPending ? 'GENERATING' : 'GENERATE'}
+            </Button>
+          </div>
+        </form>
+      </BaseWindow>
 
-            <div className='flex flex-col w-full gap-2 justify-end'>
-              <Button
-                disabled={isPending}
-                type='button'
-                onClick={() => setColorPicker(true)}
-                className='w-full'
-              >
-                CHOOSE COLOR SCHEME
-              </Button>
-              <Button disabled={isPending} type='submit' className='w-full'>
-                {isPending ? 'GENERATING' : 'GENERATE'}
-              </Button>
-              <Button type='reset' className='w-full'>
-                CLEAR
-              </Button>
-            </div>
-          </form>
-        </WindowCard>
-        {colorPicker ? (
-          <WindowCard
-            className='w-[231px] h-fit min-h-[200px]'
-            title='COLORS'
-            id='colors'
-            draggable={draggable && !isPending}
-            position={positions.colors}
-            closeable={false}
-            freeze={freeze}
-          >
-            <div className='flex flex-col gap-4'>
-              <Compact
-                style={{
-                  width: '100%',
-                }}
-                color={activeColor}
-                onChange={(color, e) => {
-                  e?.preventDefault()
-                  e?.stopPropagation()
-                  setColors((prev) => {
-                    if (prev.some((c) => c.hex === color.hex)) {
-                      return prev.filter((c) => c.hex !== color.hex)
-                    }
-                    return [...prev, color]
-                  })
-                  setActiveColor(color.hex)
-                }}
-              />
-              <div className='flex flex-col gap-2'>
-                <span className='text-xs text-muted-foreground'>SELECTED:</span>
-                <div className='flex flex-wrap gap-[5px]'>
-                  {colors.map((color) => (
-                    <button
-                      key={color.hex}
-                      type='button'
-                      onClick={() => {
-                        setColors(colors.filter((c) => c.hex !== color.hex))
-                      }}
-                    >
-                      <div
-                        className='size-[15px] rounded-[2px]'
-                        style={{ backgroundColor: color.hex }}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className='flex gap-2 justify-end'>
-                <Button
-                  type='button'
-                  variant='secondary'
-                  onClick={() => {
-                    setColors([])
-                    setActiveColor(undefined)
-                  }}
-                >
-                  Reset
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() => {
-                    setColors([])
-                    setActiveColor(undefined)
-                    setColorPicker(false)
-                  }}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </WindowCard>
-        ) : null}
-      </div>
-      <WindowCard
-        className='size-[300px] sm:size-[400px]'
-        title='OUTPUT'
-        id='output'
-        draggable={draggable && !isPending}
-        position={positions.output}
-        closeable={false}
-        freeze={freeze}
-      >
-        {url ? (
-          <PixelImage src={url} />
+      <BaseWindow className='w-full aspect-square md:w-[500px]' title='output'>
+        {state.url ? (
+          <PixelImage src={state.url} />
         ) : (
-          <EmptyState error={error} pending={isPending} />
+          <EmptyState error={state.error} pending={isPending} />
         )}
-      </WindowCard>
-    </div>
+      </BaseWindow>
+    </main>
   )
+}
+
+async function generate(previousState: FormState, formData: FormData) {
+  if (!formData.get('prompt')) {
+    return {
+      error: 'Input is required',
+    }
+  }
+
+  const colors = formData.get('colors')
+  if (colors) {
+    // formData.set('colors', encodeColors(colors))
+  }
+
+  const response = await fetch('/api/pixelate', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const data = await response.json()
+
+  if ('error' in data) {
+    return {
+      error: data.error,
+    }
+  }
+
+  if (
+    'images' in data &&
+    Array.isArray(data.images) &&
+    data.images.length > 0
+  ) {
+    return {
+      url: data.images[0].url,
+    }
+  }
+
+  return {
+    error: 'Failed to generate icon. Please try again.',
+  }
 }
 
 function PixelImage({ src }: { src: string }) {
@@ -258,13 +157,7 @@ function PixelImage({ src }: { src: string }) {
 }
 
 // TODO: Empty state:
-function EmptyState({
-  error,
-  pending,
-}: {
-  error: string | null
-  pending: boolean
-}) {
+function EmptyState({ error, pending }: { error?: string; pending: boolean }) {
   return (
     <div className='flex items-center flex-1 justify-center h-full uppercase'>
       {pending ? <RetroLoader /> : null}
@@ -288,10 +181,183 @@ function ErrorState({ error }: { error: string }) {
   )
 }
 
+function AddColorButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      className='flex items-center justify-center border-shadow border-2 p-2 size-10 shrink-0 text-shadow'
+      aria-label='Add color'
+      type='button'
+      onClick={onClick}
+    >
+      <Plus />
+    </button>
+  )
+}
+
+interface ColorResult {
+  rgb: {
+    r: number
+    g: number
+    b: number
+  }
+  hex: string
+}
+
+function Colors({
+  colors,
+  setColors,
+}: {
+  colors: ColorResult[]
+  setColors: Dispatch<SetStateAction<ColorResult[]>>
+}) {
+  return (
+    <div className='flex flex-col gap-2 px-1 pb-3'>
+      <p className='uppercase'>Colors</p>
+      <div className='flex flex-wrap gap-2 items-center'>
+        {colors.map((color, i) => (
+          <ColorPicker
+            key={`${color.hex}-${i}`}
+            color={color}
+            removeColor={() => {
+              setColors((prev) => prev.filter((_, index) => index !== i))
+            }}
+            setColor={(color) => {
+              setColors((prev) => {
+                const newColors = [...prev]
+                newColors[i] = color
+                return newColors
+              })
+            }}
+          />
+        ))}
+
+        <AddColorButton
+          onClick={() =>
+            setColors((prev) => [
+              ...prev,
+              { rgb: { r: 0, g: 0, b: 0 }, hex: '#000000' },
+            ])
+          }
+        />
+      </div>
+    </div>
+  )
+}
+
+function ColorPicker({
+  color,
+  setColor,
+  removeColor,
+}: {
+  color: ColorResult
+  setColor: (color: ColorResult) => void
+  removeColor: () => void
+}) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <div className='relative group'>
+          <button
+            className='size-10 border-2 p-2 border-shadow shrink-0'
+            style={{ backgroundColor: color.hex }}
+            type='button'
+            aria-label={`Current color is #${color.hex}. Click to change.`}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              removeColor()
+            }}
+            className='absolute -top-1 -right-1 size-4 bg-background border-2 border-shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'
+            aria-label='Remove color'
+            type='button'
+          >
+            <X />
+          </button>
+        </div>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          className='bg-background p-4 border-2 border-shadow'
+          sideOffset={5}
+          align='start'
+        >
+          <Compact
+            style={{
+              backgroundColor: 'inherit',
+              color: 'inherit',
+              padding: 0,
+              marginLeft: 5,
+              marginTop: 5,
+            }}
+            color={color.hex}
+            onChange={(result) => setColor(result)}
+          />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  )
+}
+
 function encodeRgb(rgb: { r: number; g: number; b: number }) {
   return `${rgb.r}/${rgb.g}/${rgb.b}`
 }
 
 function encodeColors(colors: ColorResult[]) {
   return colors.map((c) => encodeRgb(c.rgb)).join(',')
+}
+
+{
+  /* {colorPicker ? (
+          <BaseWindow
+            className='w-[231px] h-fit min-h-[200px]'
+            title='COLORS'
+            id='colors'
+          >
+            <div className='flex flex-col gap-4'>
+              
+              <div className='flex flex-col gap-2'>
+                <span className='text-xs text-muted-foreground'>SELECTED:</span>
+                <div className='flex flex-wrap gap-[5px]'>
+                  {colors.map((color) => (
+                    <button
+                      key={color.hex}
+                      type='button'
+                      onClick={() => {
+                        setColors(colors.filter((c) => c.hex !== color.hex))
+                      }}
+                    >
+                      <div
+                        className='size-[15px] rounded-[2px]'
+                        style={{ backgroundColor: color.hex }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className='flex gap-2 justify-end'>
+                <Button
+                  type='button'
+                  variant='secondary'
+                  onClick={() => {
+                    setColors([])
+                    setActiveColor(undefined)
+                  }}
+                >
+                  Reset
+                </Button>
+                <Button
+                  type='button'
+                  onClick={() => {
+                    setColors([])
+                    setActiveColor(undefined)
+                    setColorPicker(false)
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </BaseWindow>
+        ) : null} */
 }

@@ -3,7 +3,7 @@
 import { useDraggable } from '@dnd-kit/core'
 import { useState, useEffect, CSSProperties } from 'react'
 
-const VARIANTS = {
+const variants = {
   default: {
     background: 'bg-background',
     border: 'border-background',
@@ -20,8 +20,8 @@ const VARIANTS = {
   },
 }
 
-interface WindowProps {
-  variant?: keyof typeof VARIANTS
+export interface WindowProps {
+  variant?: keyof typeof variants
   title?: string
   children: React.ReactNode
   className?: string
@@ -49,7 +49,7 @@ export function WindowCard({
   })
   const [isOpen, setIsOpen] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
-  const { background, border, accent, accentText, text } = VARIANTS[variant]
+  const { background, border, accent, accentText, text } = variants[variant]
 
   useEffect(() => {
     setIsMounted(true)
@@ -91,7 +91,7 @@ export function WindowCard({
         {...listeners}
         {...attributes}
       >
-        <span className='text-xl font-normal flex-1'>{title}</span>
+        <span className='text-xl font-normal flex-1 uppercase'>{title}</span>
         {closeable && (
           <button
             onClick={() => setIsOpen(false)}

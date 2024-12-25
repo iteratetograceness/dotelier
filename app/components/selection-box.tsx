@@ -4,7 +4,7 @@ interface SelectionBoxProps {
 
 export const SelectionBox: React.FC<SelectionBoxProps> = ({ children }) => (
   <div className='relative inline-block w-fit border-[3px] border-foreground'>
-    <span className='relative z-10 pl-2 pr-1'>{children}</span>
+    <span className='relative z-10 pl-2 pr-1 select-none'>{children}</span>
     {/* Top Left */}
     <div className='absolute -left-[5.5px] -top-[5.5px] size-2 bg-foreground' />
     {/* Top Right */}

@@ -1,9 +1,11 @@
-import DDContainer from './draggable/container'
+import { PixelGenerator } from './components/form'
+import { DragAndDrop } from './draggable'
 
 export default function Home() {
   return (
-    <div>
-      <DDContainer />
-    </div>
+    <>
+      <DragAndDrop />
+      <PixelGenerator />
+    </>
   )
 }
