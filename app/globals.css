@@ -7,6 +7,7 @@
   --foreground: #111111;
   --shadow: #2C2C2C;
   --highlight: #D0D0D0;
+  --text-transform: uppercase;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,4 +22,24 @@
 body {
   color: var(--foreground);
   background: var(--background);
+}
+
+h1, h2, h3, h4, h5, h6, p, span, a, button, input, textarea {
+  text-transform: var(--text-transform);
+}
+
+.w-color-compact {
+  gap: 4px;
+}
+
+.w-color-editable-input,
+.w-color-editable-input-rgba,
+.w-color-editable-input input,
+.w-color-editable-input-rgba input {
+  font-size: 14px !important;
+}
+
+.w-color-editable-input > span > div {
+  width: 13px !important;
+  height: 13px !important;
 }

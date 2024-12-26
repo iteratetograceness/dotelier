@@ -1,6 +1,6 @@
 'use client'
 
-import { Dispatch, SetStateAction, useActionState, useState } from 'react'
+import { useActionState, useCallback, useState } from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import Compact from '@uiw/react-color-compact'
 import { Button } from './button'
@@ -10,11 +10,14 @@ import SadFace from '../icons/sad-face'
 import { BaseWindow } from './window/base'
 import Plus from '../icons/plus'
 import X from '../icons/x'
+import { Tangerine } from '../icons/tangerine'
 
 interface FormState {
   url?: string
   error?: string
 }
+
+type ColorMap = Map<number, ColorResult>
 
 export function PixelGenerator() {
   const [state, dispatch, isPending] = useActionState<FormState, FormData>(
@@ -24,22 +27,61 @@ export function PixelGenerator() {
       error: undefined,
     }
   )
-  const [colors, setColors] = useState<ColorResult[]>([])
+
+  const [colors, setColors] = useState<ColorMap>(new Map())
+
+  const addNewColor = useCallback(() => {
+    setColors((prev) => {
+      const newMap = new Map(prev)
+      newMap.set(newMap.size, {
+        hex: '#000000',
+        rgb: { r: 0, g: 0, b: 0 },
+      })
+      return newMap
+    })
+  }, [])
+
+  const updateColor = useCallback((index: number, color: ColorResult) => {
+    setColors((prev) => {
+      const newMap = new Map(prev)
+      newMap.set(index, color)
+      return newMap
+    })
+  }, [])
+
+  const removeColor = useCallback((index: number) => {
+    setColors((prev) => {
+      const newMap = new Map(prev)
+      newMap.delete(index)
+      return newMap
+    })
+  }, [])
+
+  const resetColors = useCallback(() => {
+    setColors(new Map())
+  }, [])
 
   return (
     <main className='min-w-screen flex flex-col md:flex-row gap-8 items-center justify-center p-10 pointer-events-auto'>
       <BaseWindow className='w-full md:w-[500px]' title='input'>
         <form className='flex flex-col gap-4'>
           <textarea
-            className='w-full border border-shadow bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80 uppercase'
+            className='w-full border border-shadow bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80'
             id='prompt'
             name='prompt'
             placeholder='A carrot sonny angel'
           />
           <input type='hidden' name='colors' value={encodeColors(colors)} />
-          <Colors colors={colors} setColors={setColors} />
+          <Colors
+            colors={colors}
+            addNewColor={addNewColor}
+            updateColor={updateColor}
+            removeColor={removeColor}
+          />
           <div className='flex w-full gap-2'>
-            <Button type='reset'>CLEAR</Button>
+            <Button type='reset' onClick={resetColors}>
+              clear
+            </Button>
             <Button
               className='w-full'
               variant='secondary'
@@ -53,11 +95,7 @@ export function PixelGenerator() {
       </BaseWindow>
 
       <BaseWindow className='w-full aspect-square md:w-[500px]' title='output'>
-        {state.url ? (
-          <PixelImage src={state.url} />
-        ) : (
-          <EmptyState error={state.error} pending={isPending} />
-        )}
+        <Output url={state.url} error={state.error} pending={isPending} />
       </BaseWindow>
     </main>
   )
@@ -103,6 +141,21 @@ async function generate(previousState: FormState, formData: FormData) {
   }
 }
 
+function Output({
+  url,
+  error,
+  pending,
+}: {
+  url?: string
+  error?: string
+  pending: boolean
+}) {
+  if (pending) return <Pending />
+  if (url) return <PixelImage src={url} />
+  if (error) return <ErrorState error={error} />
+  return <EmptyState />
+}
+
 function PixelImage({ src }: { src: string }) {
   const onDownload = async (src: string) => {
     try {
@@ -134,7 +187,7 @@ function PixelImage({ src }: { src: string }) {
   }
 
   return (
-    <div className='flex flex-col items-center flex-1  h-full'>
+    <div className='flex flex-col items-center flex-1 h-full'>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className='flex-1'
@@ -156,13 +209,25 @@ function PixelImage({ src }: { src: string }) {
   )
 }
 
-// TODO: Empty state:
-function EmptyState({ error, pending }: { error?: string; pending: boolean }) {
+function Pending() {
   return (
-    <div className='flex items-center flex-1 justify-center h-full uppercase'>
-      {pending ? <RetroLoader /> : null}
-      {error ? <ErrorState error={error} /> : null}
-      {!pending && !error ? <p>Empty</p> : null}
+    <div className='flex items-center flex-1 justify-center h-full'>
+      <RetroLoader />
+    </div>
+  )
+}
+
+function EmptyState() {
+  return (
+    <div className='flex flex-col items-center flex-1 justify-center h-full gap-4'>
+      <div className='size-[100px] flex items-center justify-center'>
+        <Tangerine />
+      </div>
+      <p className='text-center'>
+        Nothing to see here.
+        <br />
+        Try entering a prompt.
+      </p>
     </div>
   )
 }
@@ -205,56 +270,53 @@ interface ColorResult {
 
 function Colors({
   colors,
-  setColors,
+  addNewColor,
+  updateColor,
+  removeColor,
 }: {
-  colors: ColorResult[]
-  setColors: Dispatch<SetStateAction<ColorResult[]>>
+  colors: ColorMap
+  addNewColor: () => void
+  updateColor: (index: number, color: ColorResult) => void
+  removeColor: (index: number) => void
 }) {
   return (
     <div className='flex flex-col gap-2 px-1 pb-3'>
-      <p className='uppercase'>Colors</p>
+      <p>Colors</p>
       <div className='flex flex-wrap gap-2 items-center'>
-        {colors.map((color, i) => (
+        {Array.from(colors.entries()).map(([index, color]) => (
           <ColorPicker
-            key={`${color.hex}-${i}`}
-            color={color}
-            removeColor={() => {
-              setColors((prev) => prev.filter((_, index) => index !== i))
-            }}
-            setColor={(color) => {
-              setColors((prev) => {
-                const newColors = [...prev]
-                newColors[i] = color
-                return newColors
-              })
-            }}
+            key={`${color.hex}-${index}`}
+            initialColor={color}
+            removeColor={() => removeColor(index)}
+            updateColor={(color) => updateColor(index, color)}
           />
         ))}
-
-        <AddColorButton
-          onClick={() =>
-            setColors((prev) => [
-              ...prev,
-              { rgb: { r: 0, g: 0, b: 0 }, hex: '#000000' },
-            ])
-          }
-        />
+        <AddColorButton onClick={addNewColor} />
       </div>
     </div>
   )
 }
 
 function ColorPicker({
-  color,
-  setColor,
+  initialColor,
+  updateColor,
   removeColor,
 }: {
-  color: ColorResult
-  setColor: (color: ColorResult) => void
+  initialColor: ColorResult
+  updateColor: (color: ColorResult) => void
   removeColor: () => void
 }) {
+  const [color, setColor] = useState<ColorResult>(initialColor)
+
+  const finalizeColorChange = useCallback(
+    (open: boolean) => {
+      if (!open) updateColor(color)
+    },
+    [color, updateColor]
+  )
+
   return (
-    <Popover.Root>
+    <Popover.Root onOpenChange={finalizeColorChange}>
       <Popover.Trigger asChild>
         <div className='relative group'>
           <button
@@ -264,10 +326,7 @@ function ColorPicker({
             aria-label={`Current color is #${color.hex}. Click to change.`}
           />
           <button
-            onClick={(e) => {
-              e.stopPropagation()
-              removeColor()
-            }}
+            onClick={removeColor}
             className='absolute -top-1 -right-1 size-4 bg-background border-2 border-shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'
             aria-label='Remove color'
             type='button'
@@ -278,7 +337,7 @@ function ColorPicker({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
-          className='bg-background p-4 border-2 border-shadow'
+          className='bg-background border-2 border-shadow p-[13px] pr-0 pb-2'
           sideOffset={5}
           align='start'
         >
@@ -287,11 +346,16 @@ function ColorPicker({
               backgroundColor: 'inherit',
               color: 'inherit',
               padding: 0,
-              marginLeft: 5,
-              marginTop: 5,
             }}
             color={color.hex}
             onChange={(result) => setColor(result)}
+            rectRender={(props) => (
+              <div
+                {...props}
+                className='size-6 mr-[5px] mb-[5px] cursor-pointer relative outline-none flex items-center justify-center'
+                style={{ backgroundColor: props.color }}
+              />
+            )}
           />
         </Popover.Content>
       </Popover.Portal>
@@ -303,61 +367,8 @@ function encodeRgb(rgb: { r: number; g: number; b: number }) {
   return `${rgb.r}/${rgb.g}/${rgb.b}`
 }
 
-function encodeColors(colors: ColorResult[]) {
-  return colors.map((c) => encodeRgb(c.rgb)).join(',')
-}
-
-{
-  /* {colorPicker ? (
-          <BaseWindow
-            className='w-[231px] h-fit min-h-[200px]'
-            title='COLORS'
-            id='colors'
-          >
-            <div className='flex flex-col gap-4'>
-              
-              <div className='flex flex-col gap-2'>
-                <span className='text-xs text-muted-foreground'>SELECTED:</span>
-                <div className='flex flex-wrap gap-[5px]'>
-                  {colors.map((color) => (
-                    <button
-                      key={color.hex}
-                      type='button'
-                      onClick={() => {
-                        setColors(colors.filter((c) => c.hex !== color.hex))
-                      }}
-                    >
-                      <div
-                        className='size-[15px] rounded-[2px]'
-                        style={{ backgroundColor: color.hex }}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className='flex gap-2 justify-end'>
-                <Button
-                  type='button'
-                  variant='secondary'
-                  onClick={() => {
-                    setColors([])
-                    setActiveColor(undefined)
-                  }}
-                >
-                  Reset
-                </Button>
-                <Button
-                  type='button'
-                  onClick={() => {
-                    setColors([])
-                    setActiveColor(undefined)
-                    setColorPicker(false)
-                  }}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </BaseWindow>
-        ) : null} */
+function encodeColors(colors: ColorMap) {
+  return Array.from(colors.values())
+    .map((color) => `${encodeRgb(color.rgb)}`)
+    .join(',')
 }

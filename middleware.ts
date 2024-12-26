@@ -3,8 +3,6 @@ import type { NextRequest } from 'next/server'
 import { verifyToken } from './lib/auth'
 
 export async function middleware(request: NextRequest) {
-  console.log('hit middleware!')
-
   const token = request.cookies.get('token')?.value
 
   if (!token) {

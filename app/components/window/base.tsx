@@ -45,7 +45,7 @@ export function BaseWindow({
   return (
     <div
       className={cn(
-        'flex flex-col border-[3px] p-1 pt-0 uppercase',
+        'flex flex-col border-[3px] p-1 pt-0',
         border,
         accent,
         accentText,

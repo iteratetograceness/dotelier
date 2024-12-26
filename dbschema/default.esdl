@@ -9,5 +9,6 @@ module default {
         required url: str;
         created_at: datetime;
         category: Category;
+        style_id: str;
     }
 }

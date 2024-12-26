@@ -26,7 +26,6 @@ export function DragAndDrop() {
     handleResize()
 
     const debouncedResize = () => {
-      console.log('debouncedResize')
       if (timeout.current) clearTimeout(timeout.current)
       timeout.current = setTimeout(handleResize, 100)
     }

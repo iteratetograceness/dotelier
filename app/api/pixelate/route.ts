@@ -1,13 +1,8 @@
 import { db } from '@/app/db/client'
 import { after, NextRequest, NextResponse } from 'next/server'
-
-const STYLE_ID = process.env.STYLE_ID
-const API_KEY = process.env.API_KEY
-const API_URL = 'https://external.api.recraft.ai/v1/images/generations'
-
-if (!STYLE_ID || !API_KEY) {
-  throw new Error('Missing STYLE_ID and API_KEY must be set')
-}
+import { getRandomStyleId } from './style-id'
+import { apiKey } from '@/lib/provider'
+import { apiUrlGenerate } from '@/lib/provider'
 
 interface PixelateResponse {
   images: {
@@ -33,20 +28,20 @@ export async function POST(
   }
 
   const encodedColors = formData.get('colors')
+  const colors = decodeColors(encodedColors)
+  const styleId = await getRandomStyleId()
 
-  const colors =
-    typeof encodedColors === 'string' ? decodeColors(encodedColors) : []
-
-  const response = await fetch(API_URL, {
+  const response = await fetch(apiUrlGenerate, {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     method: 'POST',
     body: JSON.stringify({
-      prompt: `${prompt}`,
-      style_id: STYLE_ID,
+      prompt,
+      style_id: styleId,
       model: 'recraft20b',
+      artistic_level: 5,
       controls: {
         colors,
       },
@@ -57,16 +52,19 @@ export async function POST(
     const data = await response.json()
     console.error(data)
     return NextResponse.json(
-      { error: 'Failed to generate icon. Please try again.' },
+      { error: 'Failed to generate icon.' },
       { status: 500 }
     )
   }
 
   const data = await response.json()
 
-  if (!data || typeof data !== 'object' || !Array.isArray(data.data)) {
+  const isValidData = invariantCheck(data)
+
+  if (!isValidData) {
+    console.error('Failed invariant check: ', data)
     return NextResponse.json(
-      { error: 'Unexpected error while generating icon. Please try again.' },
+      { error: 'Failed to generate icon.' },
       { status: 500 }
     )
   }
@@ -95,6 +93,20 @@ function decodeRgb(rgb: string) {
   return { rgb: rgbArray }
 }
 
-function decodeColors(colors: string) {
+function decodeColors(colors: unknown) {
+  if (typeof colors !== 'string' || colors.length === 0) return []
   return colors.split(',').map((c) => decodeRgb(c))
+}
+
+function invariantCheck(data: unknown): data is { data: { url: string }[] } {
+  if (
+    !data ||
+    typeof data !== 'object' ||
+    !('data' in data) ||
+    !Array.isArray(data.data)
+  ) {
+    return false
+  }
+
+  return true
 }
