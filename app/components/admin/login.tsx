@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '../button'
 import { BaseWindow } from '../window/base'
 import { adminLogin } from './action'
 
@@ -9,19 +10,16 @@ export function AdminLogin() {
       className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50'
       title='login'
     >
-      <form action={adminLogin} className='bg-white p-8 w-96'>
+      <form action={adminLogin} className='p-2 w-96'>
         <input
           type='password'
           name='password'
           placeholder='Enter admin password'
-          className='w-full p-2 border mb-4'
+          className='w-full p-2 border mb-4 outline-none'
         />
-        <button
-          type='submit'
-          className='w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600'
-        >
+        <Button type='submit' className='w-full'>
           Login
-        </button>
+        </Button>
       </form>
     </BaseWindow>
   )
