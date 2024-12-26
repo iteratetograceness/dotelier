@@ -1,4 +1,4 @@
-import { WindowProps } from '../components/window'
+import { BaseWindowProps } from '../components/window/base'
 import { WindowData } from './portals'
 
 export const initialWindows: Record<string, WindowData> = {
@@ -11,7 +11,7 @@ export const initialWindows: Record<string, WindowData> = {
 }
 
 type WindowMetadata = Pick<
-  WindowProps,
+  BaseWindowProps,
   'variant' | 'title' | 'children' | 'className'
 >
 
