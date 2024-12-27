@@ -45,11 +45,17 @@ export function InteractiveWindow({
         left: `${window.position?.x ?? 0}px`,
       }
 
+
+  if (!window.position) return null
+
   return (
     <BaseWindow
       variant={windowMetadata[id].variant}
       title={windowMetadata[id].title}
-      className={cn(windowMetadata[id].className, 'relative')}
+      className={cn(
+        windowMetadata[id].className,
+        'relative pointer-events-auto'
+      )}
       headerProps={{
         ...listeners,
         ...attributes,

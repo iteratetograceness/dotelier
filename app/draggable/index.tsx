@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { PortalProvider } from './portals'
+import { PortalProvider, ResetPortalButton } from './portals'
 import DDContainer from './container'
 
-const breakpoint = 768
+const breakpoint = 1200
 
 export function DragAndDrop() {
   const [show, setShow] = useState(false)
@@ -38,6 +38,7 @@ export function DragAndDrop() {
 
   return (
     <PortalProvider>
+      <ResetPortalButton className='absolute top-4 right-4' />
       <DDContainer />
     </PortalProvider>
   )

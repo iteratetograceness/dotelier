@@ -19,6 +19,12 @@ interface FormState {
 
 type ColorMap = Map<number, ColorResult>
 
+/**
+ * TODO:
+ * - Add a control for artistic level (1-5)
+ * - Disable for logged out users (unless admin)
+ */
+
 export function PixelGenerator() {
   const [state, dispatch, isPending] = useActionState<FormState, FormData>(
     generate,
@@ -63,7 +69,7 @@ export function PixelGenerator() {
 
   return (
     <main className='min-w-screen flex flex-col md:flex-row gap-8 items-center justify-center p-10 pointer-events-auto'>
-      <BaseWindow className='w-full md:w-[500px]' title='input'>
+      <BaseWindow className='w-full md:w-[500px]' title='input' id='input'>
         <form className='flex flex-col gap-4'>
           <textarea
             className='w-full border border-shadow bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80'
@@ -94,7 +100,11 @@ export function PixelGenerator() {
         </form>
       </BaseWindow>
 
-      <BaseWindow className='w-full aspect-square md:w-[500px]' title='output'>
+      <BaseWindow
+        className='w-full aspect-square md:w-[400px]'
+        title='output'
+        id='output'
+      >
         <Output url={state.url} error={state.error} pending={isPending} />
       </BaseWindow>
     </main>

@@ -23,7 +23,7 @@ export function Button({
   variant = 'primary',
   ...props
 }: {
-  children: React.ReactNode
+  children?: React.ReactNode
   variant?: keyof typeof variants
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (

@@ -30,6 +30,7 @@ export async function POST(
   const encodedColors = formData.get('colors')
   const colors = decodeColors(encodedColors)
   const styleId = await getRandomStyleId()
+  const artisticLevel = formData.get('artistic_level') || 4
 
   const response = await fetch(apiUrlGenerate, {
     headers: {
@@ -41,7 +42,7 @@ export async function POST(
       prompt,
       style_id: styleId,
       model: 'recraft20b',
-      artistic_level: 5,
+      artistic_level: artisticLevel,
       controls: {
         colors,
       },

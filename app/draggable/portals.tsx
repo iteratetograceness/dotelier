@@ -1,14 +1,22 @@
 'use client'
 
-import { createContext, useContext, useState, useCallback } from 'react'
-import { initialWindows } from './control'
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from 'react'
+import { initialWindows, positionalData } from './control'
 import { UniqueIdentifier } from '@dnd-kit/core'
 import { InteractiveWindow } from '../components/window/interactive'
 import { createPortal } from 'react-dom'
+import { track } from '@vercel/analytics'
+import { Button } from '../components/button'
 
 export interface WindowData {
   id: UniqueIdentifier
-  position: { x: number; y: number }
+  position?: { x: number; y: number }
   zIndex: number
   isVisible: boolean
 }
@@ -21,6 +29,8 @@ type PortalContextType = {
     position: { x: number; y: number }
   ) => void
   bringToFront: (id: UniqueIdentifier) => void
+  resetPortals: () => void
+  setInitialPositions: () => void
 }
 
 const PortalContext = createContext<PortalContextType | null>(null)
@@ -96,6 +106,29 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
     [topWindow]
   )
 
+  const setInitialPositions = useCallback(() => {
+    positionalData.forEach((data) => {
+      const anchorElement = document.getElementById(data.anchorElementId)
+
+      if (!anchorElement) {
+        track('PortalPositionError', {
+          windowId: data.windowId,
+        })
+        return
+      }
+
+      updatePosition(data.windowId, {
+        x: anchorElement.offsetLeft + data.deltaX,
+        y: anchorElement.offsetTop + data.deltaY,
+      })
+    })
+  }, [updatePosition])
+
+  const resetPortals = useCallback(() => {
+    setWindows(initialWindows)
+    setInitialPositions()
+  }, [setInitialPositions])
+
   return (
     <PortalContext.Provider
       value={{
@@ -103,6 +136,8 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
         toggleWindow,
         updatePosition,
         bringToFront,
+        resetPortals,
+        setInitialPositions,
       }}
     >
       {children}
@@ -111,19 +146,41 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function Portals() {
-  const { windows } = usePortalManager()
+  const { windows, setInitialPositions } = usePortalManager()
+
+  // Render these portals AFTER mount so that we can dynamically set positions based on the viewport width
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+    setInitialPositions()
+  }, [mounted, setInitialPositions])
+
+  if (!mounted) return null
 
   return createPortal(
     <div className='fixed inset-0 pointer-events-none'>
-      <div className='pointer-events-auto'>
-        {Object.entries(windows).map(
-          ([id, window]) =>
-            window.isVisible && (
-              <InteractiveWindow key={id} id={id} position={window.position} />
-            )
-        )}
-      </div>
+      {Object.entries(windows).map(
+        ([id, window]) =>
+          window.isVisible && (
+            <InteractiveWindow key={id} id={id} position={window.position} />
+          )
+      )}
     </div>,
     document.body
+  )
+}
+
+export function ResetPortalButton({ className }: { className?: string }) {
+  const { resetPortals } = usePortalManager()
+
+  return (
+    <Button className={className} onClick={resetPortals}>
+      Reset
+    </Button>
   )
 }
