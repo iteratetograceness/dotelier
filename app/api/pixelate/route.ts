@@ -1,8 +1,10 @@
-import { db } from '@/app/db/client'
+import { auth, db } from '@/app/db/client'
 import { after, NextRequest, NextResponse } from 'next/server'
 import { getRandomStyleId } from './style-id'
 import { apiKey } from '@/lib/provider'
 import { apiUrlGenerate } from '@/lib/provider'
+import { getUserId } from '@/app/db'
+import { credits } from '@/app/utils/credits'
 
 interface PixelateResponse {
   images: {
@@ -17,7 +19,35 @@ interface ErrorResponse {
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<PixelateResponse | ErrorResponse>> {
-  const formData = await request.formData()
+  const session = auth.getSession()
+  const isSignedIn = await session.isSignedIn()
+
+  if (!isSignedIn) {
+    return NextResponse.json(
+      { error: 'You must be signed in to generate an icon.' },
+      { status: 401 }
+    )
+  }
+
+  const userId = await getUserId(session.client)
+
+  if (!userId) {
+    return NextResponse.json({ error: 'User not found.' }, { status: 401 })
+  }
+
+  const [hasCredits, formData, styleId] = await Promise.all([
+    credits.decrement(userId),
+    request.formData(),
+    getRandomStyleId(),
+  ])
+
+  if (!hasCredits) {
+    return NextResponse.json(
+      { error: 'You have reached your daily limit.' },
+      { status: 400 }
+    )
+  }
+
   const prompt = formData.get('prompt')
 
   if (typeof prompt !== 'string') {
@@ -29,7 +59,6 @@ export async function POST(
 
   const encodedColors = formData.get('colors')
   const colors = decodeColors(encodedColors)
-  const styleId = await getRandomStyleId()
   const artisticLevel = formData.get('artistic_level') || 4
 
   const response = await fetch(apiUrlGenerate, {

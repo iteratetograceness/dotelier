@@ -14,6 +14,7 @@
     "@edgedb/auth-nextjs": "^0.3.2",
     "@radix-ui/react-popover": "^1.1.4",
     "@uiw/react-color-compact": "^2.3.4",
+    "@upstash/redis": "^1.34.3",
     "@vercel/analytics": "^1.4.1",
     "@vercel/edge-config": "^1.4.0",
     "classnames": "^2.5.1",

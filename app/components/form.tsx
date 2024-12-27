@@ -11,18 +11,12 @@ import { BaseWindow } from './window/base'
 import Plus from '../icons/plus'
 import X from '../icons/x'
 import { Tangerine } from '../icons/tangerine'
-
-interface FormState {
-  url?: string
-  error?: string
-}
-
-type ColorMap = Map<number, ColorResult>
+import { generate, FormState } from './form-action'
+import { ColorMap, ColorResult, encodeColors } from '../utils/colors'
 
 /**
- * TODO:
- * - Add a control for artistic level (1-5)
- * - Disable for logged out users (unless admin)
+ * Need to add:
+ * - Input for artistic level (1-5)
  */
 
 export function PixelGenerator() {
@@ -109,46 +103,6 @@ export function PixelGenerator() {
       </BaseWindow>
     </main>
   )
-}
-
-async function generate(previousState: FormState, formData: FormData) {
-  if (!formData.get('prompt')) {
-    return {
-      error: 'Input is required',
-    }
-  }
-
-  const colors = formData.get('colors')
-  if (colors) {
-    // formData.set('colors', encodeColors(colors))
-  }
-
-  const response = await fetch('/api/pixelate', {
-    method: 'POST',
-    body: formData,
-  })
-
-  const data = await response.json()
-
-  if ('error' in data) {
-    return {
-      error: data.error,
-    }
-  }
-
-  if (
-    'images' in data &&
-    Array.isArray(data.images) &&
-    data.images.length > 0
-  ) {
-    return {
-      url: data.images[0].url,
-    }
-  }
-
-  return {
-    error: 'Failed to generate icon. Please try again.',
-  }
 }
 
 function Output({
@@ -244,7 +198,7 @@ function EmptyState() {
 
 function ErrorState({ error }: { error: string }) {
   return (
-    <div className='flex flex-col items-center gap-7'>
+    <div className='flex flex-col items-center gap-7 justify-center h-full'>
       <div className='text-foreground'>
         <SadFace />
       </div>
@@ -267,15 +221,6 @@ function AddColorButton({ onClick }: { onClick: () => void }) {
       <Plus />
     </button>
   )
-}
-
-interface ColorResult {
-  rgb: {
-    r: number
-    g: number
-    b: number
-  }
-  hex: string
 }
 
 function Colors({
@@ -373,12 +318,3 @@ function ColorPicker({
   )
 }
 
-function encodeRgb(rgb: { r: number; g: number; b: number }) {
-  return `${rgb.r}/${rgb.g}/${rgb.b}`
-}
-
-function encodeColors(colors: ColorMap) {
-  return Array.from(colors.values())
-    .map((color) => `${encodeRgb(color.rgb)}`)
-    .join(',')
-}

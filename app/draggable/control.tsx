@@ -11,6 +11,11 @@ interface PositionalData {
   deltaY: number
 }
 
+/**
+ * Need to add:
+ * - Window for showing daily credit usage
+ */
+
 export const initialWindows: Record<string, WindowData> = {
   subtitle: {
     id: 'subtitle',
