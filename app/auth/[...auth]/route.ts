@@ -43,16 +43,26 @@ const handlers = auth.createAuthRouteHandlers({
 
 export const GET = async (
   request: NextRequest,
-  context: { params: { auth: string[] } }
+  context: {
+    params: Promise<{
+      auth: string[]
+    }>
+  }
 ) => {
-  return handlers.GET(request, context)
+  const params = await context.params
+  return handlers.GET(request, { params })
 }
 
 export const POST = async (
   request: NextRequest,
-  context: { params: { auth: string[] } }
+  context: {
+    params: Promise<{
+      auth: string[]
+    }>
+  }
 ) => {
-  return handlers.POST(request, context)
+  const params = await context.params
+  return handlers.POST(request, { params })
 }
 
 async function getUserDetails(providerToken: string | null) {
