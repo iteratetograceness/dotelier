@@ -10,6 +10,7 @@ import { cn } from '../utils/classnames'
  * - Pagination
  * - On double click: parallel route modal w/ more details
  * - Swap flex for grid
+ * - Render in a "computer" screen
  */
 
 export function IconGrid({ icons }: { icons: PublicIcon[] }) {
