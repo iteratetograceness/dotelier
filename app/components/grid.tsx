@@ -9,6 +9,7 @@ import { cn } from '../utils/classnames'
  * - Skeleton
  * - Pagination
  * - On double click: parallel route modal w/ more details
+ * - Swap flex for grid
  */
 
 export function IconGrid({ icons }: { icons: PublicIcon[] }) {
