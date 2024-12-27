@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 import { auth, db } from '@/app/db/client'
 import { revalidatePath } from 'next/cache'
+import { NextRequest } from 'next/server'
 
-const { GET, POST } = auth.createAuthRouteHandlers({
+const handlers = auth.createAuthRouteHandlers({
   async onOAuthCallback({ error, tokenData, isSignUp }) {
     if (error) {
       console.log('Error returned from onOAuthCallback', error)
@@ -40,7 +41,19 @@ const { GET, POST } = auth.createAuthRouteHandlers({
   },
 })
 
-export { GET, POST }
+export const GET = async (
+  request: NextRequest,
+  context: { params: { auth: string[] } }
+) => {
+  return handlers.GET(request, context)
+}
+
+export const POST = async (
+  request: NextRequest,
+  context: { params: { auth: string[] } }
+) => {
+  return handlers.POST(request, context)
+}
 
 async function getUserDetails(providerToken: string | null) {
   if (!providerToken) return { email: '', name: '' }
