@@ -34,8 +34,8 @@ export default function DDContainer() {
   function onDragEnd({ delta, active }: DragEndEvent) {
     setActiveId(undefined)
     updatePosition(active.id, {
-      x: windows[active.id].position.x + delta.x,
-      y: windows[active.id].position.y + delta.y,
+      x: (windows[active.id]?.position?.x ?? 0) + delta.x,
+      y: (windows[active.id]?.position?.y ?? 0) + delta.y,
     })
   }
 
