@@ -13,6 +13,7 @@ export default {
         foreground: 'var(--foreground)',
         shadow: 'var(--shadow)',
         highlight: 'var(--highlight)',
+        white: '#f4f4f4',
       },
       borderWidth: {
         DEFAULT: '3px',

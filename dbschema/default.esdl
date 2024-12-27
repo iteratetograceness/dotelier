@@ -22,5 +22,6 @@ module default {
         category: Category;
         style_id: str;
         owner: User;
+        index on ((.owner, .created_at));
     }
 }
