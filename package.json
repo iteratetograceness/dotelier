@@ -22,7 +22,6 @@
     "next": "15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "snapdrag": "^0.7.20",
     "sonner": "^1.7.1"
   },
   "devDependencies": {
