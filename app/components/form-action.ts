@@ -5,10 +5,11 @@ export interface FormState {
   error?: string
 }
 
+import { cookies } from 'next/headers'
 import { auth } from '../db/client'
 
 export async function generate(previousState: FormState, formData: FormData) {
-  const session = auth.getSession()
+  const session = await auth.getSession()
   const isSignedIn = await session.isSignedIn()
 
   if (!isSignedIn) {
@@ -24,10 +25,12 @@ export async function generate(previousState: FormState, formData: FormData) {
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
-
   const response = await fetch(`${baseUrl}/api/pixelate`, {
     method: 'POST',
     body: formData,
+    headers: {
+      cookie: (await cookies()).toString(),
+    },
   })
 
   const data = await response.json()

@@ -19,7 +19,7 @@ interface ErrorResponse {
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<PixelateResponse | ErrorResponse>> {
-  const session = auth.getSession()
+  const session = await auth.getSession()
   const isSignedIn = await session.isSignedIn()
 
   if (!isSignedIn) {
@@ -68,7 +68,7 @@ export async function POST(
     },
     method: 'POST',
     body: JSON.stringify({
-      prompt,
+      prompt: generatePrompt(prompt),
       style_id: styleId,
       model: 'recraft20b',
       artistic_level: artisticLevel,
@@ -139,4 +139,8 @@ function invariantCheck(data: unknown): data is { data: { url: string }[] } {
   }
 
   return true
+}
+
+function generatePrompt(prompt: string) {
+  return `Create a pixelated icon of: ${prompt}. Do NOT add a white background; the background should be transparent.`
 }

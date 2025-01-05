@@ -61,7 +61,6 @@ export function PortalProvider({ children }: { children: React.ReactNode }) {
 
   const updatePosition = useCallback(
     (id: UniqueIdentifier, position: { x: number; y: number }) => {
-      console.log('updatePosition', id, position)
       setWindows((prev) => ({
         ...prev,
         [id]: {

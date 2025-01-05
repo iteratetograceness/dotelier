@@ -4,7 +4,7 @@ import { getUserName } from '../db'
 // TODO: Funky enter animation
 
 export async function Welcome() {
-  const session = auth.getSession()
+  const session = await auth.getSession()
 
   if (!session.authToken) {
     return <p>Welcome!</p>

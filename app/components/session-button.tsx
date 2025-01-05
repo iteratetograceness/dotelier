@@ -4,7 +4,7 @@ import { auth } from '../db/client'
 import Image from 'next/image'
 
 export async function SessionButton() {
-  const session = auth.getSession()
+  const session = await auth.getSession()
 
   if (session.authToken) {
     return (

@@ -1,21 +1,20 @@
 'use client'
 
-import { PublicIcon } from '../explore/page'
+import { PublicIcon } from '@/app/explore/page'
+import { cn } from '@/app/utils/classnames'
 import { useEffect, useState } from 'react'
-import { cn } from '../utils/classnames'
 
 /**
  * Need to add:
  * - Skeleton
  * - Pagination
  * - On double click: parallel route modal w/ more details
- * - Swap flex for grid
  * - Render in a "computer" screen
  */
 
 export function IconGrid({ icons }: { icons: PublicIcon[] }) {
   return (
-    <div className='flex flex-wrap gap-4'>
+    <div className='grid grid-cols-[repeat(auto-fill,minmax(144px,1fr))] py-4 px-5'>
       {icons.map((icon) => (
         <Icon key={icon.id} icon={icon} />
       ))}
@@ -87,10 +86,7 @@ function Icon({ icon }: { icon: PublicIcon }) {
   return (
     <button
       data-icon-id={icon.id}
-      className={cn(
-        'flex flex-col items-center justify-center size-36 p-2 gap-2 cursor-pointer mx-auto focus:outline-none group focus:text-white',
-        isSelected && 'text-white'
-      )}
+      className='text-white flex flex-col items-center justify-center size-36 p-2 gap-2 cursor-pointer mx-auto focus:outline-none group'
       aria-label={icon.prompt}
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
@@ -106,7 +102,7 @@ function Icon({ icon }: { icon: PublicIcon }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          className='select-none bg-white'
+          className='select-none bg-transparent'
           src={icon.url}
           alt={icon.prompt}
           width={50}
@@ -115,10 +111,9 @@ function Icon({ icon }: { icon: PublicIcon }) {
       </div>
       <p
         className={cn(
-          'select-none text-sm w-fit max-w-full truncate text-center border-[1px] border-background',
-          'group-focus:bg-blue-900/50 group-focus:border-dotted group-focus:border-foreground group-focus:text-white',
-          isSelected &&
-            'bg-blue-900/50 border-dotted border-foreground text-white'
+          'select-none text-sm w-fit max-w-full truncate text-center',
+          'group-focus:bg-blue-900/50 group-focus:border-dotted group-focus:border-foreground border-[1px] border-transparent',
+          isSelected && 'bg-blue-900/50 border-dotted border-foreground '
         )}
       >
         {icon.prompt}
