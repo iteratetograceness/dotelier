@@ -1,8 +1,8 @@
 'use client'
 
-import { PublicIcon } from '@/app/explore/page'
-import { cn } from '@/app/utils/classnames'
-import { useEffect, useState } from 'react'
+import { Icon, PublicIcon } from '@/app/components/explore/icon'
+import { useState } from 'react'
+import Taskbar from './taskbar'
 
 /**
  * Need to add:
@@ -13,111 +13,21 @@ import { useEffect, useState } from 'react'
  */
 
 export function IconGrid({ icons }: { icons: PublicIcon[] }) {
-  return (
-    <div className='grid grid-cols-[repeat(auto-fill,minmax(144px,1fr))] py-4 px-5'>
-      {icons.map((icon) => (
-        <Icon key={icon.id} icon={icon} />
-      ))}
-    </div>
-  )
-}
-
-function Icon({ icon }: { icon: PublicIcon }) {
-  const [isSelected, setIsSelected] = useState(false)
-  const [lastTap, setLastTap] = useState(0)
-
-  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
-    // Prevent double click from triggering single click
-    if (e.detail === 1) {
-      // Use setTimeout to avoid immediate trigger with double click
-      setTimeout(() => {
-        setIsSelected(true)
-      }, 100)
-    }
-  }
-
-  const handleDoubleClick = () => {
-    console.log('Parallel route trigger')
-  }
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const now = Date.now()
-    const DOUBLE_TAP_DELAY = 300
-
-    if (lastTap && now - lastTap < DOUBLE_TAP_DELAY) {
-      handleDoubleClick()
-    } else {
-      handleClick(e)
-    }
-
-    setLastTap(now)
-  }
-
-  useEffect(() => {
-    const handleGlobalClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (!target.closest(`[data-icon-id="${icon.id}"]`)) {
-        setIsSelected(false)
-      }
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        handleDoubleClick()
-      }
-
-      if (e.key === 'Escape') {
-        setIsSelected(false)
-      }
-
-      if (e.key === 'Tab') {
-        setIsSelected(false)
-      }
-    }
-
-    document.addEventListener('click', handleGlobalClick)
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('click', handleGlobalClick)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [icon.id])
+  const [active, setActive] = useState<string>()
 
   return (
-    <button
-      data-icon-id={icon.id}
-      className='text-white flex flex-col items-center justify-center size-36 p-2 gap-2 cursor-pointer mx-auto focus:outline-none group'
-      aria-label={icon.prompt}
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
-      onTouchStart={handleTouchStart}
-    >
-      <div
-        className={cn(
-          'relative',
-          'group-focus:after:content-[" "] group-focus:after:absolute group-focus:after:inset-0 group-focus:after:bg-blue-900/50 group-focus:after:size-[50px] group-focus:after:border-[1px] group-focus:after:border-dotted group-focus:after:border-foreground',
-          isSelected &&
-            'after:content-[" "] after:absolute after:inset-0 after:bg-blue-900/50 after:size-[50px] after:border-[1px] after:border-dotted after:border-foreground'
-        )}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className='select-none bg-transparent'
-          src={icon.url}
-          alt={icon.prompt}
-          width={50}
-          height={50}
-        />
+    <div className='relative border border-foreground w-[90vw] h-[100vh] custom:h-auto custom:aspect-video m-10 flex flex-col justify-between'>
+      <div className='grid grid-flow-col auto-cols-[70px] grid-rows-[repeat(auto-fill,96px)] size-full pt-6 px-4 overflow-y-auto'>
+        {icons.map((icon) => (
+          <Icon
+            key={icon.id}
+            icon={icon}
+            active={active === icon.id}
+            setActive={setActive}
+          />
+        ))}
       </div>
-      <p
-        className={cn(
-          'select-none text-sm w-fit max-w-full truncate text-center',
-          'group-focus:bg-blue-900/50 group-focus:border-dotted group-focus:border-foreground border-[1px] border-transparent',
-          isSelected && 'bg-blue-900/50 border-dotted border-foreground '
-        )}
-      >
-        {icon.prompt}
-      </p>
-    </button>
+      <Taskbar />
+    </div>
   )
 }

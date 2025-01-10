@@ -1,7 +1,7 @@
-import { BaseWindowProps } from '../components/window/base'
-import { Hand } from '../icons/hand'
-import { QuestionMark } from '../icons/question-mark'
-import { WindowData } from './portals'
+import { BaseWindowProps } from './base'
+import { Hand } from '../../icons/hand'
+import { QuestionMark } from '../../icons/question-mark'
+import { WindowMap } from './context'
 
 interface PositionalData {
   windowId: string
@@ -16,14 +16,14 @@ interface PositionalData {
  * - Window for showing daily credit usage
  */
 
-export const initialWindows: Record<string, WindowData> = {
+export const initialWindows: WindowMap = {
   subtitle: {
     id: 'subtitle',
     zIndex: 1,
     isVisible: true,
   },
-  ratelimit: {
-    id: 'ratelimit',
+  ratelimitinfo: {
+    id: 'ratelimitinfo',
     zIndex: 1,
     isVisible: true,
   },
@@ -39,25 +39,27 @@ export const positionalData: PositionalData[] = [
   },
   {
     order: 1,
-    windowId: 'ratelimit',
+    windowId: 'ratelimitinfo',
     anchorElementId: 'output',
     deltaX: 350,
     deltaY: -300,
   },
 ]
 
-type WindowMetadata = Pick<
+type WindowConfig = Pick<
   BaseWindowProps,
   'variant' | 'title' | 'children' | 'className'
->
+> & {
+  closeable?: boolean
+}
 
-export const windowMetadata: Record<string, WindowMetadata> = {
+export const windowConfig: Record<string, WindowConfig> = {
   subtitle: {
     className: 'w-fit',
     variant: 'secondary',
     children: <Subtitle />,
   },
-  ratelimit: {
+  ratelimitinfo: {
     className: 'w-fit',
     children: <Ratelimit />,
   },

@@ -1,12 +1,12 @@
 import { Admin } from './components/admin'
 import { PixelGenerator } from './components/form'
-import { DragAndDrop } from './draggable'
+import { DraggableWindows } from './components/window'
 
 export default function Home() {
   return (
     <>
       <Admin />
-      <DragAndDrop />
+      <DraggableWindows />
       <PixelGenerator />
     </>
   )

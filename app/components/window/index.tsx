@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { PortalProvider, ResetPortalButton } from './portals'
-import DDContainer from './container'
+import { WindowsProvider } from './context'
+import { ResetWindowsButton, Windows } from './context'
 
 const breakpoint = 1200
 
-export function DragAndDrop() {
+export function DraggableWindows() {
   const [show, setShow] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -37,9 +37,9 @@ export function DragAndDrop() {
   if (!mounted || !show) return null
 
   return (
-    <PortalProvider>
-      <ResetPortalButton className='absolute top-4 right-4' />
-      <DDContainer />
-    </PortalProvider>
+    <WindowsProvider>
+      <ResetWindowsButton className='absolute top-4 right-4' />
+      <Windows />
+    </WindowsProvider>
   )
 }

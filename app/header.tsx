@@ -3,7 +3,6 @@ import { SelectionBox } from './components/selection-box'
 import { BaseWindow } from './components/window/base'
 import { Suspense } from 'react'
 import { Button } from './components/button'
-import { Welcome } from './components/welcome'
 import Link from 'next/link'
 
 export function Header() {
@@ -15,17 +14,14 @@ export function Header() {
           <SelectionBox>STUDIO</SelectionBox>
         </div>
       </div>
-      <BaseWindow title='Main Menu' id='menu'>
-        <div className='flex flex-col items-center w-fit gap-2'>
-          <Suspense fallback={<p className='h-6' />}>
-            <Welcome />
-          </Suspense>
-          <div className='flex gap-2'>
+      <BaseWindow title='Main Menu' id='menu' className='w-full xs:w-fit'>
+        <div className='flex flex-col items-center w-full gap-2'>
+          <div className='flex flex-col xs:flex-row gap-2 w-full'>
             <Link href='/'>
-              <Button className='text-sm'>Home</Button>
+              <Button className='text-sm w-full'>Home</Button>
             </Link>
             <Link href='/explore'>
-              <Button className='text-sm'>Explore</Button>
+              <Button className='text-sm w-full'>Explore</Button>
             </Link>
             <Suspense fallback={<Button className='flex w-44 h-[34px]' />}>
               <SessionButton />

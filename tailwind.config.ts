@@ -18,6 +18,10 @@ export default {
       borderWidth: {
         DEFAULT: '3px',
       },
+      screens: {
+        xs: '400px',
+        custom: '1200px',
+      },
     },
   },
   plugins: [],

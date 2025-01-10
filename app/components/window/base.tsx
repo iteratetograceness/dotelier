@@ -1,3 +1,4 @@
+import X from '@/app/icons/x'
 import { cn } from '@/app/utils/classnames'
 import { HTMLAttributes } from 'react'
 
@@ -24,9 +25,9 @@ export interface BaseWindowProps {
   children: React.ReactNode
   className?: string
   headerProps?: HTMLAttributes<HTMLDivElement>
-  headerChildren?: React.ReactNode
+  onClose?: () => void
   ref?: React.Ref<HTMLDivElement>
-  setActivatorNodeRef?: React.Ref<HTMLDivElement>
+  handleRef?: React.Ref<HTMLDivElement>
 }
 
 export function BaseWindow({
@@ -35,9 +36,9 @@ export function BaseWindow({
   className,
   title,
   headerProps,
-  headerChildren,
+  onClose,
   ref,
-  setActivatorNodeRef,
+  handleRef,
   ...props
 }: BaseWindowProps & HTMLAttributes<HTMLDivElement>) {
   const { background, border, accent, accentText, text } = variants[variant]
@@ -57,10 +58,20 @@ export function BaseWindow({
       <div
         className='flex items-center justify-between w-full h-7 px-1 pt-1'
         {...headerProps}
-        ref={setActivatorNodeRef}
+        ref={handleRef}
       >
         <span className='text-xl font-normal flex-1 select-none'>{title}</span>
-        {headerChildren}
+        {onClose && (
+          <button
+            aria-label='Close Window'
+            onClick={onClose}
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <X />
+          </button>
+        )}
       </div>
       <div className={cn('p-4 flex-1', text, background)}>{children}</div>
     </div>

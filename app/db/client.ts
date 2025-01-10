@@ -1,5 +1,6 @@
 import { createClient } from 'edgedb'
-import createAuth from '@edgedb/auth-nextjs/app'
+import createAuth from './auth/index'
+// import createAuth from '@edgedb/auth-nextjs/app'
 
 export const db = createClient()
 
