@@ -1,8 +1,6 @@
 const variants = {
-  primary:
-    'bg-background text-foreground hover:bg-[#E6E6E6] dark:hover:bg-[#1D1D1D]',
-  secondary:
-    'bg-foreground text-background hover:bg-[#1D1D1D] dark:hover:bg-[#E6E6E6]',
+  primary: 'bg-background text-foreground hover:bg-hover',
+  secondary: 'bg-foreground text-background hover:bg-hover',
 } as const
 
 const animation = `
@@ -17,18 +15,13 @@ const animation = `
   duration-75
 `
 
-const pressed = (variant: keyof typeof variants) => `
-  border
+const pressed = `
   border-shadow
-  border-r-highlight
-  border-b-highlight
+  !border-r-highlight
+  !border-b-highlight
   transition-[border-color]
   duration-75
-${
-  variant === 'primary'
-    ? 'bg-[#E6E6E6] dark:bg-[#1D1D1D]'
-    : 'bg-[#1D1D1D] dark:bg-[#E6E6E6]'
-}
+  !bg-hover
 `
 export function Button({
   children,
@@ -45,9 +38,7 @@ export function Button({
     <button
       className={`${
         variants[variant]
-      } px-4 py-1 w-fit ${className} ${animation} ${
-        isPressed ? pressed(variant) : ''
-      }`}
+      } px-4 py-1 w-fit ${className} ${animation} ${isPressed ? pressed : ''}`}
       {...props}
     >
       {children}

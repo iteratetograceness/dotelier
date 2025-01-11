@@ -100,7 +100,7 @@ export function Icon({
       <div
         className={cn(
           'relative',
-          'group-focus:after:content-[" "] group-focus:after:absolute group-focus:after:inset-0 group-focus:after:bg-blue-900/50 group-focus:after:size-[50px] group-focus:after:border-[1px] group-focus:after:border-dotted group-focus:after:border-foreground',
+          'group-focus:after:content-[" "] group-focus:after:absolute group-focus:after:inset-0 group-focus:after:bg-blue-900/50 group-focus:after:size-[50px] group-focus:after:border-[1px] group-focus:after:border-dotted group-focus:after:border-foreground group-focus:after:dark:bg-blue-300/50',
           active &&
             'after:content-[" "] after:absolute after:inset-0 after:bg-blue-900/50 after:size-[50px] after:border-[1px] after:border-dotted after:border-foreground'
         )}
@@ -117,7 +117,7 @@ export function Icon({
       <p
         className={cn(
           'select-none text-sm w-fit max-w-full truncate text-center',
-          'group-focus:bg-blue-900/50 group-focus:border-dotted group-focus:border-foreground border-[1px] border-transparent group-focus:text-white',
+          'group-focus:bg-blue-900/50 group-focus:dark:bg-blue-300/50 group-focus:border-dotted group-focus:border-foreground border-[1px] border-transparent group-focus:text-white',
           active && 'bg-blue-900/50 border-dotted border-foreground text-white'
         )}
       >

@@ -14,6 +14,7 @@ export default {
         shadow: 'var(--shadow)',
         highlight: 'var(--highlight)',
         white: '#f4f4f4',
+        hover: 'var(--hover)',
       },
       borderWidth: {
         DEFAULT: '3px',
