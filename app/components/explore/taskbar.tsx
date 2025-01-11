@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import { Button } from '../button'
@@ -45,6 +47,11 @@ export default function Taskbar() {
           <StartMenu />
         </Popover.Content>
       </Popover.Root>
+
+      {/* Here we will render the pages as opened "programs" on the taskbar */}
+      {/* Previous, disabled if current page is 1 */}
+      {/* Current page N */}
+      {/* Next, disabled if current page is the last page */}
 
       <div className='ml-auto flex items-center h-full'>
         <span className='text-sm min-w-[80px] text-center'>{time}</span>

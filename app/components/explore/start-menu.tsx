@@ -1,3 +1,8 @@
+/**
+ * Need to add:
+ * - Search bar
+ * - My icons
+ */
 export function StartMenu() {
   return (
     <div className='flex flex-col border border-foreground p-4 bg-background w-52'>

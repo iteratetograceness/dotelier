@@ -1,14 +1,17 @@
-import { getPixelatedIcons } from '../db'
-import { db } from '../db/client'
+import { Suspense } from 'react'
 import { IconGrid } from '../components/explore/grid'
-import { PublicIcon } from '../components/explore/icon'
+import Taskbar from '../components/explore/taskbar'
+import { IconGridSkeleton } from '../components/explore/grid/skeleton'
 
-export default async function Explore() {
-  const icons: PublicIcon[] = await getPixelatedIcons(db)
-
+export default function Explore() {
   return (
     <div className='flex items-center justify-center'>
-      <IconGrid icons={icons} />
+      <div className='relative border border-hover w-[90vw] h-[100vh] custom:h-auto custom:aspect-video m-10 flex flex-col justify-between dark:bg-[#333333]'>
+        <Suspense fallback={<IconGridSkeleton />}>
+          <IconGrid />
+        </Suspense>
+        <Taskbar />
+      </div>
     </div>
   )
 }

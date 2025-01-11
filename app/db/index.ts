@@ -1,9 +1,11 @@
+import { cache } from 'react'
 import e from '../../dbschema/edgeql-js'
 import { Client } from 'edgedb'
+import { PublicIcon } from '../components/explore/icon'
 
 export const PAGE_SIZE = 50
 
-export async function getUserName(client: Client) {
+async function _getUserName(client: Client) {
   const query = e.select(e.User, () => ({
     name: true,
   }))
@@ -11,7 +13,7 @@ export async function getUserName(client: Client) {
   return user[0]?.name
 }
 
-export async function getUserId(client: Client) {
+async function _getUserId(client: Client) {
   const query = e.select(e.User, () => ({
     id: true,
   }))
@@ -19,19 +21,15 @@ export async function getUserId(client: Client) {
   return user[0]?.id
 }
 
-export async function getTotalIconCount(
-  client: Client,
-  { userId }: { userId?: string } = {}
-) {
-  const query = e.select(e.Pixel, (pixel) => ({
-    filter: userId ? e.op(pixel.owner.id, '=', userId) : undefined,
-    count: true,
+async function _getTotalIconCount(client: Client, ownerId?: string) {
+  const query = e.select(e.count(e.Pixel), () => ({
+    filter: ownerId ? e.op(e.Pixel.owner.id, '=', ownerId) : undefined,
   }))
   const result = await query.run(client)
   return result
 }
 
-export async function getPixelatedIcons(
+async function _getPixelatedIcons(
   client: Client,
   {
     userId,
@@ -42,7 +40,7 @@ export async function getPixelatedIcons(
     offset?: number
     limit?: number
   } = {}
-) {
+): Promise<PublicIcon[]> {
   const query = e.select(e.Pixel, (pixel) => ({
     id: true,
     prompt: true,
@@ -67,6 +65,19 @@ export async function getPixelatedIcons(
   return icons
 }
 
-export function calculateTotalPages(totalCount: number): number {
+function calculateTotalPages(totalCount: number): number {
   return Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 }
+
+async function _getPageCount(
+  client: Client,
+  ownerId?: string
+): Promise<number> {
+  const totalCount = await _getTotalIconCount(client, ownerId)
+  return calculateTotalPages(totalCount)
+}
+
+export const getUserName = cache(_getUserName)
+export const getUserId = cache(_getUserId)
+export const getPageCount = cache(_getPageCount)
+export const getPixelatedIcons = cache(_getPixelatedIcons)
