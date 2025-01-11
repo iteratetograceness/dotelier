@@ -1,6 +1,8 @@
 import e from '../../dbschema/edgeql-js'
 import { Client } from 'edgedb'
 
+export const PAGE_SIZE = 50
+
 export async function getUserName(client: Client) {
   const query = e.select(e.User, () => ({
     name: true,
@@ -22,7 +24,7 @@ export async function getPixelatedIcons(
   {
     userId,
     offset = 0,
-    limit = 28,
+    limit = PAGE_SIZE,
   }: {
     userId?: string
     offset?: number
@@ -51,4 +53,8 @@ export async function getPixelatedIcons(
 
   const icons = await query.run(client)
   return icons
+}
+
+export function calculateTotalPages(totalCount: number): number {
+  return Math.ceil(totalCount / PAGE_SIZE)
 }
