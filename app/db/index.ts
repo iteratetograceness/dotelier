@@ -19,6 +19,18 @@ export async function getUserId(client: Client) {
   return user[0]?.id
 }
 
+export async function getTotalIconCount(
+  client: Client,
+  { userId }: { userId?: string } = {}
+) {
+  const query = e.select(e.Pixel, (pixel) => ({
+    filter: userId ? e.op(pixel.owner.id, '=', userId) : undefined,
+    count: true,
+  }))
+  const result = await query.run(client)
+  return result
+}
+
 export async function getPixelatedIcons(
   client: Client,
   {
@@ -56,5 +68,5 @@ export async function getPixelatedIcons(
 }
 
 export function calculateTotalPages(totalCount: number): number {
-  return Math.ceil(totalCount / PAGE_SIZE)
+  return Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 }
