@@ -1,3 +1,5 @@
+'server-only'
+
 import { cache } from 'react'
 import e from '../../dbschema/edgeql-js'
 import { Client } from 'edgedb'
