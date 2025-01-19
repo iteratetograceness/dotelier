@@ -213,7 +213,7 @@ function ErrorState({ error }: { error: string }) {
 function AddColorButton({ onClick }: { onClick: () => void }) {
   return (
     <button
-      className='flex items-center justify-center border-shadow border-2 p-2 size-10 shrink-0 text-shadow'
+      className='flex items-center justify-center border-foreground border-2 p-2 size-10 shrink-0 text-foreground'
       aria-label='Add color'
       type='button'
       onClick={onClick}
@@ -275,14 +275,14 @@ function ColorPicker({
       <Popover.Trigger asChild>
         <div className='relative group'>
           <button
-            className='size-10 border-2 p-2 border-shadow shrink-0'
+            className='size-10 border-2 p-2 border-foreground shrink-0'
             style={{ backgroundColor: color.hex }}
             type='button'
             aria-label={`Current color is #${color.hex}. Click to change.`}
           />
           <button
             onClick={removeColor}
-            className='absolute -top-1 -right-1 size-4 bg-background border-2 border-shadow flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'
+            className='absolute -top-1 -right-1 size-4 bg-background border-2 border-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'
             aria-label='Remove color'
             type='button'
           >
@@ -292,7 +292,7 @@ function ColorPicker({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
-          className='bg-background border-2 border-shadow p-[13px] pr-0 pb-2'
+          className='bg-background border-2 border-foreground p-[13px] pr-0 pb-2'
           sideOffset={5}
           align='start'
         >

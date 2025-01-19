@@ -24,6 +24,7 @@ export interface BaseWindowProps {
   title?: string
   children: React.ReactNode
   className?: string
+  innerClassName?: string
   headerProps?: HTMLAttributes<HTMLDivElement>
   onClose?: () => void
   ref?: React.Ref<HTMLDivElement>
@@ -39,6 +40,7 @@ export function BaseWindow({
   onClose,
   ref,
   handleRef,
+  innerClassName,
   ...props
 }: BaseWindowProps & HTMLAttributes<HTMLDivElement>) {
   const { background, border, accent, accentText, text } = variants[variant]
@@ -73,7 +75,9 @@ export function BaseWindow({
           </button>
         )}
       </div>
-      <div className={cn('p-4 flex-1', text, background)}>{children}</div>
+      <div className={cn('p-4 flex-1', text, background, innerClassName)}>
+        {children}
+      </div>
     </div>
   )
 }

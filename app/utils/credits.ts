@@ -22,6 +22,11 @@ class Credits {
     return `credits:${userId}:${today}`
   }
 
+  /**
+   * Gets the number of remaining free credits for a user for the current day.
+   * Returns a number between 0 and dailyFreeCredits, based on how many credits
+   * have been used so far today.
+   */
   async get(userId: string) {
     const key = this.getDayKey(userId)
     const used = (await this.redis.get<number>(key)) || 0
@@ -30,8 +35,7 @@ class Credits {
 
   async decrement(userId: string, amount: number = 1) {
     const key = this.getDayKey(userId)
-    const used = await this.get(userId)
-    const available = this.dailyFreeCredits - used
+    const available = await this.get(userId)
 
     if (available < amount) {
       return false

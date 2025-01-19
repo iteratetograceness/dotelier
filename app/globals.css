@@ -5,17 +5,19 @@
 :root {
   --background: #f4f4f4;
   --foreground: #111111;
-  --shadow: #2C2C2C;
-  --highlight: #e8e8e8;
+  --accent: #272727;
+  --shadow: #515151;
+  --highlight: #dddddd;
   --text-transform: uppercase;
   --hover: #d3d3d3;
-  --medium: #999999;
+  --medium: #b3b3b3;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #111111;
-    --foreground: #f4f4f4;
+    --foreground: #cacaca;
+    --accent: #afafaf;
     --shadow: #070707;
     --highlight: #494949;
     --hover: #1D1D1D;

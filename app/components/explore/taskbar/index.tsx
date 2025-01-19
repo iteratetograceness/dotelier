@@ -12,14 +12,19 @@ export async function Taskbar() {
   const count = await getPageCount(db)
 
   return (
-    <div className={cn('h-[50px] select-none bg-hover relative', highlight)}>
+    <div
+      className={cn('h-[50px] select-none bg-hover relative w-full', highlight)}
+    >
       <div className='flex items-center justify-between h-full px-0.5'>
-        <div className='flex items-center gap-1 h-full'>
+        <div className='flex items-center gap-1.5 h-full'>
           <StartMenu />
           <Divider />
           <Pages count={count} />
         </div>
-        <Time />
+        <div className='flex items-center gap-1.5 h-full'>
+          <Divider className='hidden xs:block' />
+          <Time />
+        </div>
       </div>
     </div>
   )
@@ -27,12 +32,11 @@ export async function Taskbar() {
 
 export function TaskbarSkeleton() {
   return (
-    <div className={cn('h-[50px] select-none bg-hover', highlight)}>
+    <div className={cn('h-[50px] select-none bg-hover w-full', highlight)}>
       <div className='flex items-center justify-between h-full px-0.5'>
         <div className='flex items-center gap-2'>
           <StartMenu />
         </div>
-        <Time />
       </div>
     </div>
   )

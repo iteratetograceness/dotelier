@@ -46,7 +46,7 @@ export function Time() {
   const [formattedTime, period] = timeString.split(/\s+/)
 
   return (
-    <span className='flex items-center gap-1 text-sm'>
+    <span className='flex items-center gap-1 text-sm px-2'>
       <span>{formattedTime}</span>
       <span className='opacity-60 uppercase'>{period}</span>
     </span>

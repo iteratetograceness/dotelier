@@ -1,9 +1,10 @@
 import { useDraggable } from '@neodrag/react'
 import { Category, Pixel, User } from '@/dbschema/interfaces'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { cn } from '@/app/utils/classnames'
 import { PARENT_ID } from './grid/client'
+import { useRouter } from 'next/navigation'
 
 export type PublicIcon = Pick<Pixel, 'id' | 'prompt' | 'url' | 'created_at'> & {
   category: Pick<Category, 'slug'> | null
@@ -29,10 +30,11 @@ export function Icon({
   active,
   setActive,
 }: {
-  icon: PublicIcon
+  icon: Omit<PublicIcon, 'created_at' | 'category' | 'owner'>
   active: boolean
   setActive: (id: string | undefined) => void
 }) {
+  const router = useRouter()
   const [lastTap, setLastTap] = useState(0)
   const [zIndex, setZIndex] = useState(1)
 
@@ -55,9 +57,9 @@ export function Icon({
     }
   }
 
-  const handleDoubleClick = () => {
-    console.log('Parallel route trigger')
-  }
+  const handleDoubleClick = useCallback(() => {
+    router.push(`/explore/${icon.id}`)
+  }, [icon.id, router])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const now = Date.now()
@@ -100,11 +102,12 @@ export function Icon({
       document.removeEventListener('click', handleGlobalClick)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [icon.id, setActive])
+  }, [handleDoubleClick, icon.id, setActive])
 
   return (
     <motion.div
       key={icon.id}
+      className='w-[70px] h-[96px]'
       variants={item}
       style={{
         transformOrigin: 'center center',

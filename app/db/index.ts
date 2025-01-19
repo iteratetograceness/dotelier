@@ -5,7 +5,7 @@ import e from '../../dbschema/edgeql-js'
 import { Client } from 'edgedb'
 import { PublicIcon } from '../components/explore/icon'
 
-export const PAGE_SIZE = 50
+export const PAGE_SIZE = 24
 
 async function _getUserName(client: Client) {
   const query = e.select(e.User, () => ({
@@ -42,18 +42,11 @@ async function _getPixelatedIcons(
     offset?: number
     limit?: number
   } = {}
-): Promise<PublicIcon[]> {
+): Promise<Omit<PublicIcon, 'created_at' | 'category' | 'owner'>[]> {
   const query = e.select(e.Pixel, (pixel) => ({
     id: true,
     prompt: true,
     url: true,
-    created_at: true,
-    category: {
-      slug: true,
-    },
-    owner: {
-      name: true,
-    },
     filter: userId ? e.op(pixel.owner.id, '=', userId) : undefined,
     order_by: {
       expression: pixel.created_at,
@@ -65,6 +58,29 @@ async function _getPixelatedIcons(
 
   const icons = await query.run(client)
   return icons
+}
+
+async function _getIconDetails(
+  client: Client,
+  id: string
+): Promise<PublicIcon | null> {
+  const query = e
+    .select(e.Pixel, (pixel) => ({
+      id: true,
+      prompt: true,
+      url: true,
+      created_at: true,
+      category: {
+        slug: true,
+      },
+      owner: {
+        name: true,
+      },
+      filter: e.op(pixel.id, '=', e.uuid(id)),
+    }))
+    .assert_single()
+  const icon = await query.run(client)
+  return icon
 }
 
 function calculateTotalPages(totalCount: number): number {
@@ -83,3 +99,4 @@ export const getUserName = cache(_getUserName)
 export const getUserId = cache(_getUserId)
 export const getPageCount = cache(_getPageCount)
 export const getPixelatedIcons = cache(_getPixelatedIcons)
+export const getIconDetails = cache(_getIconDetails)
