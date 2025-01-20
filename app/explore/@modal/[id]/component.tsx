@@ -1,8 +1,8 @@
 'use client'
 
-import { Button } from '@/app/components/button'
-import { PublicIcon } from '@/app/components/explore/icon'
-import { BaseWindow } from '@/app/components/window/base'
+import { Button } from '@/app/_components/button'
+import { PublicIcon } from '@/app/_components/explore/icon'
+import { BaseWindow } from '@/app/_components/window/base'
 import { DownloadIcon } from '@/app/icons/download'
 import { useDraggable } from '@neodrag/react'
 import { useRouter } from 'next/navigation'

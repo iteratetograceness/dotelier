@@ -1,8 +1,8 @@
-import { SessionButton } from './components/session-button'
-import { SelectionBox } from './components/selection-box'
-import { BaseWindow } from './components/window/base'
+import { SessionButton } from './_components/session-button'
+import { SelectionBox } from './_components/selection-box'
+import { BaseWindow } from './_components/window/base'
 import { Suspense } from 'react'
-import { Button } from './components/button'
+import { Button } from './_components/button'
 import Link from 'next/link'
 
 export function Header() {

@@ -2,8 +2,8 @@
 
 import { useActionState, useState } from 'react'
 import Image from 'next/image'
-import { BaseWindow } from '../components/window/base'
-import { Button } from '../components/button'
+import { BaseWindow } from '../_components/window/base'
+import { Button } from '../_components/button'
 
 interface FormState {
   styleId?: string

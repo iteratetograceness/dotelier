@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
-import { IconGrid } from '../components/explore/grid'
-import { IconGridSkeleton } from '../components/explore/grid/skeleton'
-import { Taskbar, TaskbarSkeleton } from '../components/explore/taskbar'
+import { IconGrid } from '../_components/explore/grid'
+import { IconGridSkeleton } from '../_components/explore/grid/skeleton'
+import { Taskbar, TaskbarSkeleton } from '../_components/explore/taskbar'
 
 export default function Explore({
   searchParams,

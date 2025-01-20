@@ -3,7 +3,7 @@
 import { cache } from 'react'
 import e from '../../dbschema/edgeql-js'
 import { Client } from 'edgedb'
-import { PublicIcon } from '../components/explore/icon'
+import { PublicIcon } from '../_components/explore/icon'
 
 export const PAGE_SIZE = 24
 

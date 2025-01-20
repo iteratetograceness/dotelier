@@ -1,8 +1,8 @@
 import { useDraggable } from '@neodrag/react'
 import { useMemo, useRef } from 'react'
 import { BaseWindow, BaseWindowProps } from './base'
-import { useWindows } from '@/app/components/window/context'
-import { windowConfig } from '@/app/components/window/control'
+import { useWindows } from '@/app/_components/window/context'
+import { windowConfig } from '@/app/_components/window/control'
 import { cn } from '@/app/utils/classnames'
 
 export type WindowProps = Omit<BaseWindowProps, 'children'> & {
