@@ -13,7 +13,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <main className='flex flex-col items-center justify-center gap-4'>
+    <main className='flex flex-col items-center justify-center gap-4 p-4'>
       <h1 className='text-2xl'>super secret admin page</h1>
       <HomeButton />
       <CreateStyleForm />

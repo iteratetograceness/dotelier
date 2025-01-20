@@ -1,3 +1,5 @@
+'use client'
+
 import { useDraggable } from '@neodrag/react'
 import { Category, Pixel, User } from '@/dbschema/interfaces'
 import { useState, useRef, useEffect, useCallback } from 'react'
