@@ -1,21 +1,13 @@
-import { auth } from '../db/client'
-import { getUserName } from '../db'
-
-// TODO: Funky enter animation
+// TODO: animate
 
 export async function Welcome() {
-  const session = await auth.getSession()
+  return <p>Welcome!</p>
 
-  if (!session.authToken) {
-    return <p>Welcome!</p>
-  }
-
-  const name = await getUserName(session.client)
-
-  return (
-    <p>
-      Welcome
-      {name ? `, ${name.length > 20 ? `${name.slice(0, 13)}...` : name}` : ''}!
-    </p>
-  )
+  // TODO: supabase user metadata
+  // return (
+  //   <p>
+  //     Welcome
+  //     {name ? `, ${name.length > 20 ? `${name.slice(0, 13)}...` : name}` : ''}!
+  //   </p>
+  // )
 }
