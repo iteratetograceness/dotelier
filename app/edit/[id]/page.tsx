@@ -4,7 +4,8 @@ import {
 } from '@/app/_components/editor'
 import { Suspense } from 'react'
 
-export default function Editor({ params }: { params: { id: number } }) {
+export default async function Editor(props: { params: Promise<{ id: number }> }) {
+  const params = await props.params;
   return (
     <Suspense fallback={<EditorStudioSkeleton />}>
       <EditorStudioOuter id={params.id} />
