@@ -1,16 +1,14 @@
 import { cn } from '@/app/utils/classnames'
 import { Time } from './time'
 import StartMenu from './start-menu'
-import { db } from '@/app/db/client'
 import { Pages } from './pages'
-import { getPageCount } from '@/app/db'
 import { Divider } from './divider'
+import { getPageCount } from '@/app/db/supabase/queries'
 
 const highlight = `border-t-[1px] border-hover before:absolute before:top-0 before:w-full before:h-[1px] before:bg-highlight`
 
-export async function Taskbar() {
-  const count = await getPageCount(db)
-
+export async function Taskbar({ userId }: { userId?: string }) {
+  const count = await getPageCount(userId)
   return (
     <div
       className={cn('h-[50px] select-none bg-hover relative w-full', highlight)}

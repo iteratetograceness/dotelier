@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        hostname: 'img.recraft.ai',
+        hostname: 'nnzpbbiqbkjjyijfropj.supabase.co',
         protocol: 'https',
         port: '',
         pathname: '/**',

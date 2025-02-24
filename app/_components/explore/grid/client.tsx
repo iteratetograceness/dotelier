@@ -2,18 +2,15 @@
 
 import { useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
-import { Icon, PublicIcon } from '../icon'
+import { Icon } from '../icon'
 import { cn } from '@/app/utils/classnames'
+import { ExplorePixel } from '@/app/db/supabase/types'
 
 export const PARENT_ID = 'icon-grid'
 
-export function IconGridClient({
-  icons,
-}: {
-  icons: Omit<PublicIcon, 'created_at' | 'category' | 'owner'>[]
-}) {
+export function IconGridClient({ icons }: { icons: ExplorePixel[] }) {
   const prefersReducedMotion = useReducedMotion()
-  const [active, setActive] = useState<string>()
+  const [active, setActive] = useState<number>()
   const containerRef = useRef<HTMLDivElement>(null)
 
   const container = {

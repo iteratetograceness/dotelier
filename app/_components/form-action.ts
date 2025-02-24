@@ -6,13 +6,15 @@ export interface FormState {
 }
 
 import { cookies } from 'next/headers'
-import { auth } from '../db/client'
+import { createClient } from '@/app/db/supabase/server'
 
 export async function generate(previousState: FormState, formData: FormData) {
-  const session = await auth.getSession()
-  const isSignedIn = await session.isSignedIn()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!isSignedIn) {
+  if (!user) {
     return {
       error: 'You must be signed in to generate an icon',
     }

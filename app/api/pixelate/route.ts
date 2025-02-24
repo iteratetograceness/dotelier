@@ -1,10 +1,8 @@
-import { auth, db } from '@/app/db/client'
 import { after, NextRequest, NextResponse } from 'next/server'
-import { getRandomStyleId } from './style-id'
-import { apiKey } from '@/lib/provider'
-import { apiUrlGenerate } from '@/lib/provider'
-import { getUserId } from '@/app/db'
+// import { apiKey } from '@/lib/provider'
+// import { apiUrlGenerate } from '@/lib/provider'
 import { credits } from '@/app/utils/credits'
+import { createClient } from '@/app/db/supabase/server'
 
 interface PixelateResponse {
   images: {
@@ -19,26 +17,21 @@ interface ErrorResponse {
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<PixelateResponse | ErrorResponse>> {
-  const session = await auth.getSession()
-  const isSignedIn = await session.isSignedIn()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  if (!isSignedIn) {
+  if (!user) {
     return NextResponse.json(
       { error: 'You must be signed in to generate an icon.' },
       { status: 401 }
     )
   }
 
-  const userId = await getUserId(session.client)
-
-  if (!userId) {
-    return NextResponse.json({ error: 'User not found.' }, { status: 401 })
-  }
-
-  const [hasCredits, formData, styleId] = await Promise.all([
-    credits.decrement(userId),
+  const [hasCredits, formData] = await Promise.all([
+    credits.decrement(user.id),
     request.formData(),
-    getRandomStyleId(),
   ])
 
   if (!hasCredits) {
@@ -61,61 +54,56 @@ export async function POST(
   const colors = decodeColors(encodedColors)
   const artisticLevel = formData.get('artistic_level') || 4
 
-  const response = await fetch(apiUrlGenerate, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    method: 'POST',
-    body: JSON.stringify({
-      prompt: generatePrompt(prompt),
-      style_id: styleId,
-      model: 'recraft20b',
-      artistic_level: artisticLevel,
-      controls: {
-        colors,
-      },
-    }),
-  })
+  // const response = await fetch(apiUrlGenerate, {
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //     Authorization: `Bearer ${apiKey}`,
+  //   },
+  //   method: 'POST',
+  //   body: JSON.stringify({
+  //     prompt: generatePrompt(prompt),
+  //     style_id: 'color_v2',
+  //     artistic_level: artisticLevel,
+  //     controls: {
+  //       colors,
+  //     },
+  //   }),
+  // })
 
-  if (!response.ok) {
-    const data = await response.json()
-    console.error(data)
-    return NextResponse.json(
-      { error: 'Failed to generate icon.' },
-      { status: 500 }
-    )
-  }
+  // if (!response.ok) {
+  //   const data = await response.json()
+  //   console.error(data)
+  //   return NextResponse.json(
+  //     { error: 'Failed to generate icon.' },
+  //     { status: 500 }
+  //   )
+  // }
 
-  const data = await response.json()
+  // const data = await response.json()
 
-  const isValidData = invariantCheck(data)
+  // const isValidData = invariantCheck(data)
 
-  if (!isValidData) {
-    console.error('Failed invariant check: ', data)
-    return NextResponse.json(
-      { error: 'Failed to generate icon.' },
-      { status: 500 }
-    )
-  }
+  // if (!isValidData) {
+  //   console.error('Failed invariant check: ', data)
+  //   return NextResponse.json(
+  //     { error: 'Failed to generate icon.' },
+  //     { status: 500 }
+  //   )
+  // }
 
-  const images = data.data
+  // const images = data.data
 
-  after(async () => {
-    await Promise.all(
-      images.map((image: { url: string }) =>
-        db.execute(
-          `INSERT Pixel {
-          prompt := "${prompt}",
-          url := "${image.url}",
-          created_at := datetime_current(),
-        }`
-        )
-      )
-    )
-  })
+  // after(async () => {
+  //   await Promise.all(
+  //     images.map((image: { url: string }) =>
+  //       // Save to postgres pixel table
+  //       // Upload to icons storage bucket
+  //       supabase.storage.from('icons').upload(image.url, image.url)
+  //     )
+  //   )
+  // })
 
-  return NextResponse.json({ images })
+  return NextResponse.json({ images: [] })
 }
 
 function decodeRgb(rgb: string) {

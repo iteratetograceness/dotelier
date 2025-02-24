@@ -1,17 +1,13 @@
 'use client'
 
 import { useDraggable } from '@neodrag/react'
-import { Category, Pixel, User } from '@/dbschema/interfaces'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { cn } from '@/app/utils/classnames'
 import { PARENT_ID } from './grid/client'
-import { useRouter } from 'next/navigation'
-
-export type PublicIcon = Pick<Pixel, 'id' | 'prompt' | 'url' | 'created_at'> & {
-  category: Pick<Category, 'slug'> | null
-  owner: Pick<User, 'name'> | null
-}
+import { usePathname, useRouter } from 'next/navigation'
+import { ExplorePixel } from '@/app/db/supabase/types'
+import { getPublicPixelAsset } from '@/app/db/supabase/storage'
 
 const item = {
   hidden: {
@@ -32,11 +28,12 @@ export function Icon({
   active,
   setActive,
 }: {
-  icon: Omit<PublicIcon, 'created_at' | 'category' | 'owner'>
+  icon: ExplorePixel
   active: boolean
-  setActive: (id: string | undefined) => void
+  setActive: (id: number | undefined) => void
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [lastTap, setLastTap] = useState(0)
   const [zIndex, setZIndex] = useState(1)
 
@@ -60,8 +57,8 @@ export function Icon({
   }
 
   const handleDoubleClick = useCallback(() => {
-    router.push(`/explore/${icon.id}`)
-  }, [icon.id, router])
+    router.push(`${pathname}/${icon.id}`)
+  }, [icon.id, pathname, router])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const now = Date.now()
@@ -136,7 +133,7 @@ export function Icon({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             className='select-none'
-            src={icon.url}
+            src={getPublicPixelAsset(icon.file_path)}
             alt={icon.prompt}
             width={50}
             height={50}

@@ -66,7 +66,7 @@ export function PixelGenerator() {
       <BaseWindow className='w-full md:w-[500px]' title='input' id='input'>
         <form className='flex flex-col gap-4'>
           <textarea
-            className='w-full border border-shadow bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80'
+            className='w-full border border-foreground bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80'
             id='prompt'
             name='prompt'
             placeholder='A carrot sonny angel'
