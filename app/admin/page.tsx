@@ -1,7 +1,6 @@
 import { verifyToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import CreateStyleForm from './form'
 import { HomeButton } from './home-button'
 
 export default async function AdminPage() {
@@ -16,7 +15,7 @@ export default async function AdminPage() {
     <main className='flex flex-col items-center justify-center gap-4 p-4'>
       <h1 className='text-2xl'>super secret admin page</h1>
       <HomeButton />
-      <CreateStyleForm />
+      <p>nothing to see yet</p>
     </main>
   )
 }

@@ -1,17 +1,14 @@
 'use client'
 
 import { useDraggable } from '@neodrag/react'
-import { Category, Pixel, User } from '@/dbschema/interfaces'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { cn } from '@/app/utils/classnames'
 import { PARENT_ID } from './grid/client'
-import { useRouter } from 'next/navigation'
-
-export type PublicIcon = Pick<Pixel, 'id' | 'prompt' | 'url' | 'created_at'> & {
-  category: Pick<Category, 'slug'> | null
-  owner: Pick<User, 'name'> | null
-}
+import { usePathname, useRouter } from 'next/navigation'
+import { Pixel } from '@/app/db/supabase/types'
+import { getPublicPixelAsset } from '@/app/db/supabase/storage'
+import Image from 'next/image'
 
 const item = {
   hidden: {
@@ -32,11 +29,12 @@ export function Icon({
   active,
   setActive,
 }: {
-  icon: Omit<PublicIcon, 'created_at' | 'category' | 'owner'>
+  icon: Pick<Pixel, 'id' | 'file_path' | 'prompt'>
   active: boolean
-  setActive: (id: string | undefined) => void
+  setActive: (id: number | undefined) => void
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [lastTap, setLastTap] = useState(0)
   const [zIndex, setZIndex] = useState(1)
 
@@ -60,8 +58,9 @@ export function Icon({
   }
 
   const handleDoubleClick = useCallback(() => {
-    router.push(`/explore/${icon.id}`)
-  }, [icon.id, router])
+    const basePathname = pathname.split('/').slice(0, 2).join('/')
+    router.push(`${basePathname}/${icon.id}`)
+  }, [icon.id, pathname, router])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const now = Date.now()
@@ -133,13 +132,13 @@ export function Icon({
               'after:content-[" "] after:absolute after:inset-0 after:bg-blue-900/50 after:size-[50px] after:border-[1px] after:border-dotted after:border-foreground'
           )}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             className='select-none'
-            src={icon.url}
+            src={getPublicPixelAsset(icon.file_path)}
             alt={icon.prompt}
             width={50}
             height={50}
+            unoptimized
           />
         </div>
         <p

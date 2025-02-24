@@ -1,9 +1,10 @@
-import { SessionButton } from './_components/session-button'
+import Link from 'next/link'
 import { SelectionBox } from './_components/selection-box'
 import { BaseWindow } from './_components/window/base'
-import { Suspense } from 'react'
 import { Button } from './_components/button'
-import Link from 'next/link'
+import { LoginButton } from './_components/login/button'
+
+// Signed in: show user details like credits left
 
 export function Header() {
   return (
@@ -23,9 +24,7 @@ export function Header() {
             <Link href='/explore'>
               <Button className='text-sm w-full'>Explore</Button>
             </Link>
-            <Suspense fallback={<Button className='flex w-44 h-[34px]' />}>
-              <SessionButton />
-            </Suspense>
+            <LoginButton />
           </div>
         </div>
       </BaseWindow>

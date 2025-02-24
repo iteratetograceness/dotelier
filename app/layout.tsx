@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { Tiny5 } from 'next/font/google'
 import './globals.css'
 import { Header } from './header'
+import { ErrorHandler } from './utils/error-handler'
 
 const tiny5 = Tiny5({
   subsets: ['latin'],
@@ -27,6 +28,7 @@ export default function RootLayout({
         {children}
         <Toaster />
         <Analytics />
+        <ErrorHandler />
       </body>
     </html>
   )

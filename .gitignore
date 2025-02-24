@@ -43,3 +43,6 @@ next-env.d.ts
 
 dbschema/edgeql-js
 .aider*
+
+# supabase
+supabase/.temp

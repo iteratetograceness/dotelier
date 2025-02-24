@@ -1,16 +1,11 @@
 import { Suspense } from 'react'
 import IconDetails from './component'
-import { getIconDetails } from '@/app/db'
-import { db } from '@/app/db/client'
 import { redirect } from 'next/navigation'
+import { getPixelById } from '@/app/db/supabase/queries'
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function Page({ params }: { params: Promise<{ id: number }> }) {
   const { id } = await params
-  const icon = await getIconDetails(db, id)
+  const icon = await getPixelById(id)
 
   if (!icon) {
     redirect('/explore')

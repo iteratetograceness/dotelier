@@ -1,4 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose'
+import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 
 const secretKey = process.env.JWT_SECRET_KEY
 
@@ -29,4 +31,20 @@ export async function verifyToken(token: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+export async function adminMiddleware(request: NextRequest) {
+  const token = request.cookies.get('token')?.value
+
+  if (!token) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  const verified = await verifyToken(token)
+
+  if (!verified) {
+    return NextResponse.redirect(new URL('/home', request.url))
+  }
+
+  return NextResponse.next()
 }

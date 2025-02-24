@@ -1,23 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from './lib/auth'
+import { adminMiddleware } from './lib/auth'
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
-
-  if (!token) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  const verified = await verifyToken(token)
-
-  if (!verified) {
-    return NextResponse.redirect(new URL('/home', request.url))
+  if (request.nextUrl.pathname.includes('/admin')) {
+    return adminMiddleware(request)
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/api/style/:path*', '/admin/:path*'],
+  matcher: ['/admin/:path*'],
 }

@@ -1,146 +1,98 @@
-import { auth, db } from '@/app/db/client'
 import { after, NextRequest, NextResponse } from 'next/server'
-import { getRandomStyleId } from './style-id'
-import { apiKey } from '@/lib/provider'
-import { apiUrlGenerate } from '@/lib/provider'
-import { getUserId } from '@/app/db'
-import { credits } from '@/app/utils/credits'
+// import { credits } from '@/app/utils/credits'
+import { createClient } from '@/app/db/supabase/server'
+import { authorizeRequest } from '@/app/db/supabase/auth'
+import { ERROR_CODES, ErrorResponse } from '@/lib/error'
+import { generatePixelIcon } from '@/app/pixel-api/generate'
+import { generateId } from 'ai'
+import { postProcessPixelate } from './post-process'
 
 interface PixelateResponse {
-  images: {
-    url: string
-  }[]
-}
-
-interface ErrorResponse {
-  error: string
+  image: string
 }
 
 export async function POST(
   request: NextRequest
 ): Promise<NextResponse<PixelateResponse | ErrorResponse>> {
-  const session = await auth.getSession()
-  const isSignedIn = await session.isSignedIn()
+  try {
+    const [authResult, formData, supabase] = await Promise.all([
+      authorizeRequest(),
+      request.formData(),
+      createClient(),
+    ])
 
-  if (!isSignedIn) {
-    return NextResponse.json(
-      { error: 'You must be signed in to generate an icon.' },
-      { status: 401 }
-    )
-  }
-
-  const userId = await getUserId(session.client)
-
-  if (!userId) {
-    return NextResponse.json({ error: 'User not found.' }, { status: 401 })
-  }
-
-  const [hasCredits, formData, styleId] = await Promise.all([
-    credits.decrement(userId),
-    request.formData(),
-    getRandomStyleId(),
-  ])
-
-  if (!hasCredits) {
-    return NextResponse.json(
-      { error: 'You have reached your daily limit.' },
-      { status: 400 }
-    )
-  }
-
-  const prompt = formData.get('prompt')
-
-  if (typeof prompt !== 'string') {
-    return NextResponse.json(
-      { error: 'Invalid input. Please try again.' },
-      { status: 400 }
-    )
-  }
-
-  const encodedColors = formData.get('colors')
-  const colors = decodeColors(encodedColors)
-  const artisticLevel = formData.get('artistic_level') || 4
-
-  const response = await fetch(apiUrlGenerate, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    method: 'POST',
-    body: JSON.stringify({
-      prompt: generatePrompt(prompt),
-      style_id: styleId,
-      model: 'recraft20b',
-      artistic_level: artisticLevel,
-      controls: {
-        colors,
-      },
-    }),
-  })
-
-  if (!response.ok) {
-    const data = await response.json()
-    console.error(data)
-    return NextResponse.json(
-      { error: 'Failed to generate icon.' },
-      { status: 500 }
-    )
-  }
-
-  const data = await response.json()
-
-  const isValidData = invariantCheck(data)
-
-  if (!isValidData) {
-    console.error('Failed invariant check: ', data)
-    return NextResponse.json(
-      { error: 'Failed to generate icon.' },
-      { status: 500 }
-    )
-  }
-
-  const images = data.data
-
-  after(async () => {
-    await Promise.all(
-      images.map((image: { url: string }) =>
-        db.execute(
-          `INSERT Pixel {
-          prompt := "${prompt}",
-          url := "${image.url}",
-          created_at := datetime_current(),
-        }`
-        )
+    if (!authResult.success) {
+      return NextResponse.json(
+        { error: ERROR_CODES.UNAUTHORIZED },
+        { status: 401 }
       )
+    }
+
+    // const hasCredits = await credits.decrement(authResult.user.id)
+
+    // if (!hasCredits) {
+    //   return NextResponse.json(
+    //     { error: ERROR_CODES.NO_CREDITS },
+    //     { status: 400 }
+    //   )
+    // }
+
+    const prompt = formData.get('prompt')
+
+    if (typeof prompt !== 'string') {
+      return NextResponse.json(
+        { error: ERROR_CODES.INVALID_BODY },
+        { status: 400 }
+      )
+    }
+
+    const result = await generatePixelIcon({
+      prompt: generatePrompt(prompt),
+    })
+
+    const base64Image = result.image.base64
+
+    after(async () => {
+      const buffer = Buffer.from(base64Image, 'base64')
+      const postProcessedBuffer = await postProcessPixelate(buffer)
+      const { data, error } = await supabase.storage
+        .from('icons')
+        .upload(generateId(), postProcessedBuffer, {
+          contentType: 'image/png',
+        })
+
+      if (error) {
+        // TODO: Implement retries:
+        console.error('[POST /api/pixelate]: ', error)
+        return
+      }
+
+      await supabase.from('pixel').insert({
+        prompt,
+        file_path: data.path,
+      })
+    })
+
+    return NextResponse.json({ image: base64Image })
+  } catch (error) {
+    console.error('[POST /api/pixelate]: ', error)
+    return NextResponse.json(
+      { error: ERROR_CODES.UNEXPECTED_ERROR },
+      { status: 500 }
     )
-  })
-
-  return NextResponse.json({ images })
-}
-
-function decodeRgb(rgb: string) {
-  const rgbArray = rgb.split('/').map(Number)
-  return { rgb: rgbArray }
-}
-
-function decodeColors(colors: unknown) {
-  if (typeof colors !== 'string' || colors.length === 0) return []
-  return colors.split(',').map((c) => decodeRgb(c))
-}
-
-function invariantCheck(data: unknown): data is { data: { url: string }[] } {
-  if (
-    !data ||
-    typeof data !== 'object' ||
-    !('data' in data) ||
-    !Array.isArray(data.data)
-  ) {
-    return false
   }
-
-  return true
 }
+
+// function decodeRgb(rgb: string) {
+//   const rgbArray = rgb.split('/').map(Number)
+//   return { rgb: rgbArray }
+// }
+
+// function decodeColors(colors: unknown) {
+//   if (typeof colors !== 'string' || colors.length === 0) return []
+//   return colors.split(',').map((c) => decodeRgb(c))
+// }
 
 function generatePrompt(prompt: string) {
-  return `Create a pixelated icon of: ${prompt}. Do NOT add a white background; the background should be transparent.`
+  return `a PXCON, a 16-bit pixel art icon of ${prompt}. do NOT add a white background; the background should be TRANSPARENT.`
 }
