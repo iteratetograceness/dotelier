@@ -46,7 +46,6 @@ export function EditorStudioInner({
   const handleSaveImage = useCallback(() => {
     startSavingImage(async () => {
       try {
-        console.log({ currentImage })
         const result = await saveImageToDb({
           originalPath: icon.file_path,
           imageUrl: currentImage,
