@@ -4,8 +4,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { getError } from '@/lib/error'
 import { toast } from 'sonner'
 import { useEffect } from 'react'
+import { Suspense } from 'react'
 
-export function ErrorHandler() {
+function ErrorHandlerContent() {
   const searchParams = useSearchParams()
   const pathname = usePathname()
   const router = useRouter()
@@ -20,4 +21,12 @@ export function ErrorHandler() {
   }, [error, pathname, router])
 
   return null
+}
+
+export function ErrorHandler() {
+  return (
+    <Suspense>
+      <ErrorHandlerContent />
+    </Suspense>
+  )
 }
