@@ -3,7 +3,7 @@
 import { useActionState, useCallback, useState } from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import Compact from '@uiw/react-color-compact'
-import { Button } from './button'
+import { Button, ButtonLink } from './button'
 import { toast } from 'sonner'
 import RetroLoader from './loader'
 import SadFace from '../icons/sad-face'
@@ -11,19 +11,16 @@ import { BaseWindow } from './window/base'
 import Plus from '../icons/plus'
 import X from '../icons/x'
 import { Tangerine } from '../icons/tangerine'
-import { generate, FormState } from './form-action'
+import { generateIcon, FormState } from './form-action'
 import { ColorMap, ColorResult, encodeColors } from '../utils/colors'
-
-/**
- * Need to add:
- * - Input for artistic level (1-5)
- */
+import { ErrorCode, getError } from '@/lib/error'
+import Image from 'next/image'
 
 export function PixelGenerator() {
   const [state, dispatch, isPending] = useActionState<FormState, FormData>(
-    generate,
+    generateIcon,
     {
-      url: undefined,
+      image: undefined,
       error: undefined,
     }
   )
@@ -57,7 +54,7 @@ export function PixelGenerator() {
     })
   }, [])
 
-  const resetColors = useCallback(() => {
+  const resetForm = useCallback(() => {
     setColors(new Map())
   }, [])
 
@@ -79,7 +76,7 @@ export function PixelGenerator() {
             removeColor={removeColor}
           />
           <div className='flex w-full gap-2'>
-            <Button type='reset' onClick={resetColors}>
+            <Button type='reset' onClick={resetForm}>
               clear
             </Button>
             <Button
@@ -99,42 +96,43 @@ export function PixelGenerator() {
         title='output'
         id='output'
       >
-        <Output url={state.url} error={state.error} pending={isPending} />
+        <Output image={state.image} error={state.error} pending={isPending} />
       </BaseWindow>
     </main>
   )
 }
 
 function Output({
-  url,
+  image,
   error,
   pending,
 }: {
-  url?: string
-  error?: string
+  image?: string
+  error?: ErrorCode
   pending: boolean
 }) {
   if (pending) return <Pending />
-  if (url) return <PixelImage src={url} />
+  if (image) return <PixelImage base64={image} />
   if (error) return <ErrorState error={error} />
   return <EmptyState />
 }
 
-function PixelImage({ src }: { src: string }) {
-  const onDownload = async (src: string) => {
+function PixelImage({ base64 }: { base64: string }) {
+  const onDownload = useCallback(async (imageData: string) => {
     try {
-      const response = await fetch(src)
+      const response = await fetch(imageData)
+
       if (!response.ok) {
         throw new Error('Failed to fetch image')
       }
 
       const blob = await response.blob()
-      const blobWithType = new Blob([blob], { type: 'image/svg+xml' })
+      const blobWithType = new Blob([blob], { type: 'image/png' })
       const url = window.URL.createObjectURL(blobWithType)
 
       const link = document.createElement('a')
       link.href = url
-      link.download = 'my-pixel-icon.svg'
+      link.download = 'my-pixel-icon.png'
 
       link.style.display = 'none'
       document.body.appendChild(link)
@@ -144,27 +142,36 @@ function PixelImage({ src }: { src: string }) {
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
       }, 100)
-    } catch (error) {
-      console.error(error)
+    } catch {
       toast.error('Failed to download image. Please try again.')
     }
-  }
+  }, [])
 
   return (
-    <div className='flex flex-col items-center flex-1 h-full'>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        className='flex-1'
-        src={src}
-        alt='pixelated icon'
-        width={150}
-        height={150}
-      />
-      <div className='flex gap-2 self-end'>
+    <div className='flex flex-col gap-4 items-center flex-1 h-full'>
+      <div className='flex-1 w-full relative aspect-square border-[2px] border-shadow border-r-highlight border-b-highlight'>
+        <Image
+          className='object-contain'
+          src={`data:image/png;base64,${base64}`}
+          alt='pixelated icon'
+          fill
+          quality={100}
+        />
+      </div>
+      <div className='flex gap-2 w-full'>
+        <ButtonLink
+          type='button'
+          className='flex-1 text-center'
+          href={`/atelier`}
+          variant='secondary'
+        >
+          View All
+        </ButtonLink>
         <Button
+          className='flex-1'
           type='button'
           variant='secondary'
-          onClick={() => onDownload(src)}
+          onClick={() => onDownload(`data:image/png;base64,${base64}`)}
         >
           Download
         </Button>
@@ -196,7 +203,7 @@ function EmptyState() {
   )
 }
 
-function ErrorState({ error }: { error: string }) {
+function ErrorState({ error }: { error: ErrorCode }) {
   return (
     <div className='flex flex-col items-center gap-7 justify-center h-full'>
       <div className='text-foreground'>
@@ -204,7 +211,9 @@ function ErrorState({ error }: { error: string }) {
       </div>
       <div className='flex items-center flex-col gap-2'>
         <p className='text-xl font-bold'>something went wrong</p>
-        <p className='text-sm text-amber-600 dark:text-amber-400'>{error}</p>
+        <p className='text-sm text-amber-600 dark:text-amber-400'>
+          {getError(error)}
+        </p>
       </div>
     </div>
   )

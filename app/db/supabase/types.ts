@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          operationName?: string
-          query?: string
-          variables?: Json
-          extensions?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       pixel: {
@@ -53,7 +28,7 @@ export type Database = {
           privacy?: Database['public']['Enums']['Privacy']
           prompt: string
           prompt_embedding?: string | null
-          style: Database['public']['Enums']['Style']
+          style?: Database['public']['Enums']['Style']
           updated_at?: string | null
           user_id?: string
         }
@@ -62,7 +37,7 @@ export type Database = {
           file_path?: string
           id?: number
           privacy?: Database['public']['Enums']['Privacy']
-          prompt?: string | null
+          prompt?: string
           prompt_embedding?: string | null
           style?: Database['public']['Enums']['Style']
           updated_at?: string | null
@@ -355,8 +330,4 @@ export type CompositeTypes<
   ? PublicSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
   : never
 
-export type ExplorePixel = Pick<Tables<'pixel'>, 'id' | 'file_path' | 'prompt'>
-export type Pixel = Omit<
-  Tables<'pixel'>,
-  'prompt_embedding' | 'created_at' | 'updated_at'
->
+export type Pixel = Tables<'pixel'>

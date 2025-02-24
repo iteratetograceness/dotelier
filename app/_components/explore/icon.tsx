@@ -6,8 +6,9 @@ import { motion } from 'motion/react'
 import { cn } from '@/app/utils/classnames'
 import { PARENT_ID } from './grid/client'
 import { usePathname, useRouter } from 'next/navigation'
-import { ExplorePixel } from '@/app/db/supabase/types'
+import { Pixel } from '@/app/db/supabase/types'
 import { getPublicPixelAsset } from '@/app/db/supabase/storage'
+import Image from 'next/image'
 
 const item = {
   hidden: {
@@ -28,7 +29,7 @@ export function Icon({
   active,
   setActive,
 }: {
-  icon: ExplorePixel
+  icon: Pick<Pixel, 'id' | 'file_path' | 'prompt'>
   active: boolean
   setActive: (id: number | undefined) => void
 }) {
@@ -57,7 +58,8 @@ export function Icon({
   }
 
   const handleDoubleClick = useCallback(() => {
-    router.push(`${pathname}/${icon.id}`)
+    const basePathname = pathname.split('/').slice(0, 2).join('/')
+    router.push(`${basePathname}/${icon.id}`)
   }, [icon.id, pathname, router])
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -130,13 +132,13 @@ export function Icon({
               'after:content-[" "] after:absolute after:inset-0 after:bg-blue-900/50 after:size-[50px] after:border-[1px] after:border-dotted after:border-foreground'
           )}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             className='select-none'
             src={getPublicPixelAsset(icon.file_path)}
             alt={icon.prompt}
             width={50}
             height={50}
+            unoptimized
           />
         </div>
         <p

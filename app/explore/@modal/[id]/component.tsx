@@ -11,7 +11,14 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef } from 'react'
 
-export default function IconDetails({ icon }: { icon: Pixel }) {
+export default function IconDetails({
+  icon,
+}: {
+  icon: Pick<
+    Pixel,
+    'id' | 'file_path' | 'prompt' | 'style' | 'privacy' | 'user_id'
+  >
+}) {
   const router = useRouter()
   const { user } = useUser()
   const handleRef = useRef<HTMLDivElement>(null!)
@@ -49,10 +56,11 @@ export default function IconDetails({ icon }: { icon: Pixel }) {
               alt={`Pixelated icon generated from prompt: ${icon.prompt}`}
               width={250}
               height={250}
+              unoptimized
             />
           </div>
           <div className='flex flex-col gap-1'>
-            <p className='text-sm inline-flex gap-2 items-center'>
+            <p className='text-sm inline-flex gap-2 items-start'>
               <span className='bg-foreground text-background px-1'>Prompt</span>
               {icon.prompt}
             </p>

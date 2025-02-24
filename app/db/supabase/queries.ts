@@ -2,7 +2,7 @@
 
 import { cache } from 'react'
 import { createClient } from './server'
-import { ExplorePixel, Pixel } from './types'
+import { Pixel } from './types'
 import { PAGE_SIZE } from './constants'
 
 async function _getAllPixels({
@@ -11,7 +11,7 @@ async function _getAllPixels({
 }: {
   page?: number
   ownerId?: string
-}): Promise<ExplorePixel[]> {
+}): Promise<Pick<Pixel, 'id' | 'file_path' | 'prompt'>[]> {
   const supabase = await createClient()
   const query = supabase
     .from('pixel')
@@ -35,7 +35,12 @@ async function _getAllPixels({
   return data
 }
 
-async function _getPixelById(id: number): Promise<Pixel | null> {
+async function _getPixelById(
+  id: number
+): Promise<Pick<
+  Pixel,
+  'id' | 'file_path' | 'prompt' | 'style' | 'privacy' | 'user_id'
+> | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('pixel')

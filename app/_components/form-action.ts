@@ -1,59 +1,67 @@
 'use server'
 
+import { z } from 'zod'
+import { cookies as getCookies } from 'next/headers'
+import { authorizeRequest } from '../db/supabase/auth'
+import { PIXELATE_API } from '@/lib/constants'
+import { ERROR_CODES, ErrorCode } from '@/lib/error'
+
 export interface FormState {
-  url?: string
-  error?: string
+  image?: string
+  error?: ErrorCode
 }
 
-import { cookies } from 'next/headers'
-import { createClient } from '@/app/db/supabase/server'
+const PixelateSuccessSchema = z.object({
+  image: z.string(),
+})
 
-export async function generate(previousState: FormState, formData: FormData) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export async function generateIcon(
+  _previousState: FormState,
+  formData: FormData
+) {
+  const [authResult, cookies] = await Promise.all([
+    authorizeRequest(),
+    getCookies(),
+  ])
 
-  if (!user) {
+  if (!authResult.success) {
     return {
-      error: 'You must be signed in to generate an icon',
+      error: ERROR_CODES.UNAUTHORIZED,
     }
   }
 
   if (!formData.get('prompt')) {
     return {
-      error: 'Input is required',
+      error: ERROR_CODES.MISSING_PROMPT,
     }
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'
-  const response = await fetch(`${baseUrl}/api/pixelate`, {
+  const response = await fetch(PIXELATE_API, {
     method: 'POST',
     body: formData,
     headers: {
-      cookie: (await cookies()).toString(),
+      cookie: cookies.toString(),
     },
   })
 
-  const data = await response.json()
-
-  if ('error' in data) {
+  if (!response.ok) {
     return {
-      error: data.error,
+      error: ERROR_CODES.FAILED_TO_GENERATE_ICON,
     }
   }
 
-  if (
-    'images' in data &&
-    Array.isArray(data.images) &&
-    data.images.length > 0
-  ) {
+  const data = await response.json()
+
+  const parsedData = PixelateSuccessSchema.safeParse(data)
+
+  if (!parsedData.success) {
+    console.error('[generateIcon]: ', parsedData.error)
     return {
-      url: data.images[0].url,
+      error: ERROR_CODES.FAILED_TO_GENERATE_ICON,
     }
   }
 
   return {
-    error: 'Failed to generate icon. Please try again.',
+    image: parsedData.data.image,
   }
 }
