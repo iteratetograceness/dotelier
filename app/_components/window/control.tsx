@@ -60,9 +60,7 @@ function Subtitle() {
     <div className='flex flex-col'>
       <h2 className='font-normal text-lg'>What is dotelier studio?</h2>
       <p className='text-sm'>
-        A pixel icon generator created by Grace Yun.
-        <br />
-        Powered by a fine-tuned FLUX.1 [dev] model.
+        A pixel icon generator, powered by a fine-tuned FLUX.1 [dev] model.
       </p>
     </div>
   )
