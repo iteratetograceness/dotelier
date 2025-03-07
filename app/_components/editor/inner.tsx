@@ -23,7 +23,7 @@ export function EditorStudioInner({
     getPublicPixelAsset(icon.file_path)
   )
   const [isSvg, setIsSvg] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
+  const [isSaved, setIsSaved] = useState(true)
   const [isRemovingBackground, startRemovingBackground] = useTransition()
   const [isSavingImage, startSavingImage] = useTransition()
   const [isVectorizingImage, startVectorizingImage] = useTransition()
