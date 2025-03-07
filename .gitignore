@@ -38,11 +38,10 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 .env*.local
-
-dbschema/edgeql-js
-.aider*
 
 # supabase
 supabase/.temp
+
+# etc
+.aider*
