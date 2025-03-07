@@ -43,9 +43,11 @@ export async function removeBackground(
 }
 
 export async function saveImageToDb({
+  id,
   originalPath,
   imageUrl,
 }: {
+  id: number
   originalPath: string
   imageUrl: string
 }): Promise<
@@ -87,6 +89,7 @@ export async function saveImageToDb({
 
   revalidatePath('/atelier')
   revalidatePath('/explore')
+  revalidatePath(`/edit/${id}`)
 
   return { data }
 }

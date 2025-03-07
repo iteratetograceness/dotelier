@@ -14,7 +14,7 @@ export function LoginButton() {
       className='text-sm !w-24'
       onClick={() => {
         if (user) logout()
-        else signIn({ path: '/explore' })
+        else signIn({ path: '/' })
       }}
     >
       {user ? 'Sign Out' : 'Sign In'}
