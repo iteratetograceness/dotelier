@@ -47,15 +47,15 @@ export function EditorStudioInner({
     startSavingImage(async () => {
       try {
         const result = await saveImageToDb({
+          id: icon.id,
           originalPath: icon.file_path,
           imageUrl: currentImage,
         })
         if ('error' in result) {
           throw new Error(getError(result.error))
         }
-        toast.success('Image saved successfully.')
-        revalidatePath(`/edit/${icon.id}`)
         setIsSaved(true)
+        toast.success('Image saved successfully.')
       } catch {
         toast.error('Failed to save image. Please try again.')
       }
@@ -82,7 +82,8 @@ export function EditorStudioInner({
       try {
         const response = await fetch(currentImage, { method: 'HEAD' })
         const contentType = response.headers.get('content-type')
-        setIsSvg(contentType?.includes('svg') ?? false)
+        const isSvg = contentType?.includes('svg') ?? false
+        setIsSvg(isSvg)
       } catch (error) {
         console.error('Failed to check image type:', error)
         setIsSvg(false)

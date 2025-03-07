@@ -132,13 +132,10 @@ export function Icon({
               'after:content-[" "] after:absolute after:inset-0 after:bg-blue-900/50 after:size-[50px] after:border-[1px] after:border-dotted after:border-foreground'
           )}
         >
-          <Image
+          <img
             className='select-none'
             src={getPublicPixelAsset(icon.file_path)}
             alt={icon.prompt}
-            width={50}
-            height={50}
-            unoptimized
           />
         </div>
         <p

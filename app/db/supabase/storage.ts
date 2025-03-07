@@ -1,6 +1,5 @@
-import { supabase } from './client'
+const PUBLIC_URL = process.env.NEXT_PUBLIC_STORAGE_URL
 
 export function getPublicPixelAsset(filePath: string) {
-  const { data } = supabase.storage.from('icons').getPublicUrl(filePath)
-  return data.publicUrl
+  return `${PUBLIC_URL}/${filePath}`
 }
