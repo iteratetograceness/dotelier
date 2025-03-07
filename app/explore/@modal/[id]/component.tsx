@@ -7,7 +7,6 @@ import { Pixel } from '@/app/db/supabase/types'
 import { downloadIcon } from '@/app/utils/download'
 import { useUser } from '@/app/utils/use-user'
 import { useDraggable } from '@neodrag/react'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useMemo, useRef } from 'react'
 

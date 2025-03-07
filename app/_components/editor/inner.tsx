@@ -9,7 +9,6 @@ import { useCallback, useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { removeBackground, saveImageToDb, vectorizeImage } from './actions'
 import { getError } from '@/lib/error'
-import { revalidatePath } from 'next/cache'
 
 export function EditorStudioInner({
   icon,

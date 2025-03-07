@@ -8,7 +8,6 @@ import { PARENT_ID } from './grid/client'
 import { usePathname, useRouter } from 'next/navigation'
 import { Pixel } from '@/app/db/supabase/types'
 import { getPublicPixelAsset } from '@/app/db/supabase/storage'
-import Image from 'next/image'
 
 const item = {
   hidden: {
