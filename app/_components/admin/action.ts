@@ -43,7 +43,7 @@ export async function startInference(prompt: string) {
   }
 
   const response = await fetch(
-    'https://iteratetograceness--pixel-api-dev.modal.run/v1/pixel',
+    'https://iteratetograceness--pixel-api.modal.run/v1/pixel',
     {
       method: 'POST',
       headers: {
