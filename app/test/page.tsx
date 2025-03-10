@@ -2,9 +2,9 @@ import { verifyToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Preview } from '../_components/admin/preview'
-import { HomeButton } from './home-button'
+import { HomeButton } from '../admin/home-button'
 
-export default async function AdminPage() {
+export default async function TestPage() {
   const cookieStore = await cookies()
   const token = cookieStore.get('token')?.value
 
@@ -14,12 +14,9 @@ export default async function AdminPage() {
 
   return (
     <main className='flex flex-col items-center justify-center gap-4 p-4'>
-      <h1 className='text-2xl'>super secret admin page</h1>
+      <h1 className='text-2xl'>super secret admin testing page</h1>
       <HomeButton />
-      <div className='flex flex-col gap-4'>
-        <h2>Test Inference</h2>
-        <Preview />
-      </div>
+      <Preview />
     </main>
   )
 }
