@@ -1,10 +1,11 @@
-import { after, NextRequest, NextResponse } from 'next/server'
-// import { credits } from '@/app/utils/credits'
-import { createClient } from '@/app/db/supabase/server'
 import { authorizeRequest } from '@/app/db/supabase/auth'
-import { ERROR_CODES, ErrorResponse } from '@/lib/error'
+import { isAdmin } from '@/app/db/supabase/is-admin'
+import { createClient } from '@/app/db/supabase/server'
 import { generatePixelIcon } from '@/app/pixel-api/generate'
+import { credits } from '@/app/utils/credits'
+import { ERROR_CODES, ErrorResponse } from '@/lib/error'
 import { generateId } from 'ai'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { postProcessPixelate } from './post-process'
 
 interface PixelateResponse {
@@ -28,14 +29,16 @@ export async function POST(
       )
     }
 
-    // const hasCredits = await credits.decrement(authResult.user.id)
-
-    // if (!hasCredits) {
-    //   return NextResponse.json(
-    //     { error: ERROR_CODES.NO_CREDITS },
-    //     { status: 400 }
-    //   )
-    // }
+    // if super admin, skip credits check
+    if (!isAdmin(authResult.user.email)) {
+      const hasCredits = await credits.decrement(authResult.user.id)
+      if (!hasCredits) {
+        return NextResponse.json(
+          { error: ERROR_CODES.NO_CREDITS },
+          { status: 400 }
+        )
+      }
+    }
 
     const prompt = formData.get('prompt')
 
