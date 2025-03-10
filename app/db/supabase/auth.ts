@@ -7,6 +7,7 @@ interface AuthorizedRequest {
   success: true
   user: {
     id: string
+    email?: string
   }
 }
 
@@ -41,6 +42,7 @@ export async function authorizeRequest(): Promise<
       success: true,
       user: {
         id: user.id,
+        email: user.email,
       },
     }
   } catch (error) {
