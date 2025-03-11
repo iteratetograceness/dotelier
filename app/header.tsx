@@ -26,11 +26,6 @@ export function Header() {
       return [
         ...MENU_ITEMS,
         {
-          // Not happy with this naming
-          label: 'Activity',
-          href: '/activity',
-        },
-        {
           label: 'Sign Out',
           onClick: () => logout(),
         },
@@ -47,11 +42,10 @@ export function Header() {
   }, [user, loading])
 
   return (
-    <header className='flex flex-col items-center relative z-0'>
+    <header className='flex flex-col items-center z-0 sticky top-0 left-0 right-0'>
       <div className='w-full bg-foreground h-9 flex items-center justify-center'>
         <h1 className='text-white text-sm'>dotelier studio</h1>
       </div>
-
       <MenuBar config={menuItems} />
     </header>
   )

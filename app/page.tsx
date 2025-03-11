@@ -1,7 +1,6 @@
 import { Suspense } from 'react'
 import { Admin } from './_components/admin'
-// import { PixelGenerator } from './_components/form'
-import { UserProfile } from './_components/user/profile'
+import { PixelGenerator } from './_components/form'
 // import { DraggableWindows } from './_components/window'
 
 export default function Home() {
@@ -11,12 +10,7 @@ export default function Home() {
         <Admin />
       </Suspense>
       {/* <DraggableWindows /> */}
-      {/* <PixelGenerator /> */}
-      <Suspense fallback={null}>
-        <div className='fixed bottom-0 left-0'>
-          <UserProfile />
-        </div>
-      </Suspense>
+      <PixelGenerator />
     </>
   )
 }

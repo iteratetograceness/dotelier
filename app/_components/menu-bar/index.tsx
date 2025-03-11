@@ -12,7 +12,7 @@ interface MenuBarProps {
 
 export function MenuBar({ config }: MenuBarProps) {
   return (
-    <div className='w-full flex items-center p-1 border-b-2 border-1.5 border-foreground'>
+    <div className='w-full flex items-center p-1 border-b-2 border-1.5 border-foreground bg-background'>
       {config.map((item) => {
         if (item.href) {
           return (

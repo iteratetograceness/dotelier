@@ -6,15 +6,17 @@ import Compact from '@uiw/react-color-compact'
 import Image from 'next/image'
 import { useActionState, useCallback, useState } from 'react'
 import { toast } from 'sonner'
+import { Cooper } from '../icons/cooper'
+import { Louie } from '../icons/louie'
 import Plus from '../icons/plus'
 import SadFace from '../icons/sad-face'
 import { Tangerine } from '../icons/tangerine'
 import X from '../icons/x'
 import { ColorMap, ColorResult, encodeColors } from '../utils/colors'
 import { Button, ButtonLink } from './button'
+import { SimpleContainer } from './container/simple'
 import { FormState, generateIcon } from './form-action'
 import RetroLoader from './loader'
-import { BaseWindow } from './window/base'
 
 export function PixelGenerator() {
   const [state, dispatch, isPending] = useActionState<FormState, FormData>(
@@ -59,14 +61,64 @@ export function PixelGenerator() {
   }, [])
 
   return (
-    <main className='p-2 flex flex-col md:flex-row items-center justify-center pointer-events-auto'>
-      <BaseWindow className='w-full md:w-[500px]' title='input' id='input'>
+    <main className='p-2 flex flex-col items-center justify-center pointer-events-auto'>
+      <div className='flex flex-col border-4 border-foreground p-2 min-w-[300px] w-full max-w-[500px] relative mt-28'>
+        <div className='absolute -top-[105px] left-1/2 -translate-x-1/2'>
+          <div className='relative mt-20'>
+            <Cooper
+              className='absolute -top-[75px] left-0 -z-10'
+              width={120}
+              height={120}
+            />
+            <Louie
+              className='absolute -top-[85px] left-[72px] -z-20'
+              width={120}
+              height={140}
+            />
+            <SimpleContainer
+              classNameOuter=''
+              classNameInner='z-10 px-3 text-center'
+              addBorder
+            >
+              <p>create a pixel icon</p>
+            </SimpleContainer>
+          </div>
+        </div>
+        <form className='flex flex-col gap-2 mt-8'>
+          <label className='flex flex-col gap-1' htmlFor='prompt'>
+            <p className='text-sm bg-foreground text-background px-2 py-1 w-fit'>
+              prompt*
+            </p>
+            <textarea
+              className='w-full bg-foreground text-background px-3 py-2 focus:outline-none resize-y min-h-10 h-32 max-h-80 placeholder:text-background/75'
+              id='prompt'
+              name='prompt'
+              placeholder='a lop-ear rabbit sonny angel'
+              required
+            />
+          </label>
+          <input type='hidden' name='colors' value={encodeColors(colors)} />
+          <div className='flex w-full gap-2'>
+            <Button type='reset' onClick={resetForm}>
+              clear
+            </Button>
+            <Button
+              className='flex-1'
+              disabled={isPending}
+              formAction={dispatch}
+            >
+              start
+            </Button>
+          </div>
+        </form>
+      </div>
+      {/* <BaseWindow className='w-full md:w-96' title='input' id='input'>
         <form className='flex flex-col gap-4'>
           <textarea
-            className='w-full border border-foreground bg-background text-foreground p-2 focus:outline-none resize-y min-h-44 h-44 max-h-80'
+            className='w-full bg-foreground text-background px-3 py-2 focus:outline-none resize-y min-h-10 h-10 max-h-80 placeholder:text-medium'
             id='prompt'
             name='prompt'
-            placeholder='A carrot sonny angel'
+            placeholder='a lop-ear rabbit sonny angel'
           />
           <input type='hidden' name='colors' value={encodeColors(colors)} />
           <Colors
@@ -89,15 +141,15 @@ export function PixelGenerator() {
             </Button>
           </div>
         </form>
-      </BaseWindow>
+      </BaseWindow> */}
 
-      <BaseWindow
+      {/* <BaseWindow
         className='w-full aspect-square md:w-[400px]'
         title='output'
         id='output'
       >
         <Output image={state.image} error={state.error} pending={isPending} />
-      </BaseWindow>
+      </BaseWindow> */}
     </main>
   )
 }
@@ -163,14 +215,12 @@ function PixelImage({ base64 }: { base64: string }) {
           type='button'
           className='flex-1 text-center'
           href={`/atelier`}
-          variant='secondary'
         >
           View All
         </ButtonLink>
         <Button
           className='flex-1'
           type='button'
-          variant='secondary'
           onClick={() => onDownload(`data:image/png;base64,${base64}`)}
         >
           Download

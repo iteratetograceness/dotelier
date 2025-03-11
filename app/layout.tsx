@@ -1,7 +1,9 @@
 import { Analytics } from '@vercel/analytics/react'
 import type { Metadata } from 'next'
 import { Tiny5 } from 'next/font/google'
+import { Suspense } from 'react'
 import { Toaster } from 'sonner'
+import { UserProfile } from './_components/user/profile'
 import './globals.css'
 import { Header } from './header'
 import { ErrorHandler } from './utils/error-handler'
@@ -23,9 +25,14 @@ export default function RootLayout({
 }>) {
   return (
     <html className={tiny5.className} lang='en'>
-      <body>
+      <body className='flex flex-col h-screen overflow-hidden'>
         <Header />
-        {children}
+        <div className='flex-1 overflow-auto'>{children}</div>
+        <Suspense fallback={null}>
+          <div className='self-end'>
+            <UserProfile />
+          </div>
+        </Suspense>
         <Toaster />
         <Analytics />
         <ErrorHandler />

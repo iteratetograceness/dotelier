@@ -1,12 +1,10 @@
 import Link from 'next/link'
-import { cn } from '../utils/classnames'
 import { ComponentProps } from 'react'
+import { cn } from '../utils/classnames'
 
 const variants = {
   primary:
     'bg-background text-foreground hover:bg-hover border-r-shadow border-b-shadow border-highlight',
-  secondary:
-    'bg-foreground text-background hover:bg-accent dark:border-accent dark:border-r-highlight dark:border-b-highlight border-r-shadow border-b-shadow border-medium',
 } as const
 
 const base = `px-4 py-1 w-fit border`
@@ -57,11 +55,10 @@ export function Button({
   className,
   variant = 'primary',
   isPressed = false,
-  disabled,
+  disabled: isDisabled = false,
   iconOnly = false,
   ...props
 }: ButtonProps) {
-  const isDisabled = disabled
   return (
     <button
       className={cn(

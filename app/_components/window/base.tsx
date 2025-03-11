@@ -48,7 +48,7 @@ export function BaseWindow({
   return (
     <div
       className={cn(
-        'flex flex-col border-[3px] p-1 pt-0',
+        'flex flex-col border-0.5 p-1 pt-0',
         border,
         accent,
         accentText,
@@ -75,7 +75,7 @@ export function BaseWindow({
           </button>
         )}
       </div>
-      <div className={cn('p-4 flex-1', text, background, innerClassName)}>
+      <div className={cn('p-2 flex-1', text, background, innerClassName)}>
         {children}
       </div>
     </div>
