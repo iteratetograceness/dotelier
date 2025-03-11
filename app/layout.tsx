@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { Analytics } from '@vercel/analytics/react'
-import { Toaster } from 'sonner'
+import type { Metadata } from 'next'
 import { Tiny5 } from 'next/font/google'
+import { Toaster } from 'sonner'
 import './globals.css'
 import { Header } from './header'
 import { ErrorHandler } from './utils/error-handler'
@@ -12,8 +12,8 @@ const tiny5 = Tiny5({
 })
 
 export const metadata: Metadata = {
-  title: 'dotelier',
-  description: 'pixel art studio',
+  title: 'dotelier studio',
+  description: 'pixel art atelier',
 }
 
 export default function RootLayout({

@@ -1,12 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface RetroLoaderProps {
   totalSegments?: number
   segmentWidth?: number
   segmentGap?: number
   height?: number
+  animate?: boolean
+  initialProgress?: number
+  title?: string
+  className?: string
 }
 
 export default function RetroLoader({
@@ -14,10 +18,16 @@ export default function RetroLoader({
   segmentWidth = 16,
   segmentGap = 3,
   height = 24,
+  animate = true,
+  initialProgress = 0,
+  title,
+  className,
 }: RetroLoaderProps) {
-  const [progress, setProgress] = useState(0)
+  const [progress, setProgress] = useState(initialProgress)
 
   useEffect(() => {
+    if (!animate) return
+
     const timer = setTimeout(() => {
       setProgress((prev) => {
         if (prev >= totalSegments) {
@@ -31,9 +41,8 @@ export default function RetroLoader({
   }, [progress, totalSegments])
 
   return (
-    <div className='p-8 text-foreground flex flex-col items-center justify-center gap-4'>
-      <p className='text-center'>RUNNING DOTELIER.EXE...</p>
-
+    <div className={className}>
+      {title && <p className='text-center'>{title}</p>}
       <svg
         width={(segmentWidth + segmentGap) * totalSegments + 10}
         height={height + 12}

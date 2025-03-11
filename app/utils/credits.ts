@@ -4,7 +4,7 @@ const redis = Redis.fromEnv()
 
 class Credits {
   private redis: Redis
-  private dailyFreeCredits = 3
+  private dailyFreeCredits = 1
   private timezone = 'America/New_York'
 
   constructor() {

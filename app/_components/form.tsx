@@ -1,20 +1,20 @@
 'use client'
 
-import { useActionState, useCallback, useState } from 'react'
+import { ErrorCode, getError } from '@/lib/error'
 import * as Popover from '@radix-ui/react-popover'
 import Compact from '@uiw/react-color-compact'
-import { Button, ButtonLink } from './button'
-import { toast } from 'sonner'
-import RetroLoader from './loader'
-import SadFace from '../icons/sad-face'
-import { BaseWindow } from './window/base'
-import Plus from '../icons/plus'
-import X from '../icons/x'
-import { Tangerine } from '../icons/tangerine'
-import { generateIcon, FormState } from './form-action'
-import { ColorMap, ColorResult, encodeColors } from '../utils/colors'
-import { ErrorCode, getError } from '@/lib/error'
 import Image from 'next/image'
+import { useActionState, useCallback, useState } from 'react'
+import { toast } from 'sonner'
+import Plus from '../icons/plus'
+import SadFace from '../icons/sad-face'
+import { Tangerine } from '../icons/tangerine'
+import X from '../icons/x'
+import { ColorMap, ColorResult, encodeColors } from '../utils/colors'
+import { Button, ButtonLink } from './button'
+import { FormState, generateIcon } from './form-action'
+import RetroLoader from './loader'
+import { BaseWindow } from './window/base'
 
 export function PixelGenerator() {
   const [state, dispatch, isPending] = useActionState<FormState, FormData>(
@@ -59,7 +59,7 @@ export function PixelGenerator() {
   }, [])
 
   return (
-    <main className='min-w-screen flex flex-col md:flex-row gap-8 items-center justify-center p-10 pointer-events-auto'>
+    <main className='p-2 flex flex-col md:flex-row items-center justify-center pointer-events-auto'>
       <BaseWindow className='w-full md:w-[500px]' title='input' id='input'>
         <form className='flex flex-col gap-4'>
           <textarea
@@ -183,7 +183,10 @@ function PixelImage({ base64 }: { base64: string }) {
 function Pending() {
   return (
     <div className='flex items-center flex-1 justify-center h-full'>
-      <RetroLoader />
+      <RetroLoader
+        className='p-8 text-foreground flex flex-col items-center justify-center gap-4'
+        title='RUNNING DOTELIER.EXE...'
+      />
     </div>
   )
 }

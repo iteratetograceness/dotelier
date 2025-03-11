@@ -14,7 +14,7 @@ export default {
         accent: 'var(--accent)',
         shadow: 'var(--shadow)',
         highlight: 'var(--highlight)',
-        white: '#f4f4f4',
+        white: 'var(--white)',
         hover: 'var(--hover)',
         medium: 'var(--medium)',
       },

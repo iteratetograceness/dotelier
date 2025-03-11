@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { WindowsProvider } from './context'
-import { ResetWindowsButton, Windows } from './context'
+import { useEffect, useRef, useState } from 'react'
+import { Windows, WindowsProvider } from './context'
 
 const breakpoint = 1200
 
@@ -38,7 +37,6 @@ export function DraggableWindows() {
 
   return (
     <WindowsProvider>
-      <ResetWindowsButton className='absolute top-4 right-4' />
       <Windows />
     </WindowsProvider>
   )

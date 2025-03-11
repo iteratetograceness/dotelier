@@ -1,33 +1,58 @@
-import Link from 'next/link'
-import { SelectionBox } from './_components/selection-box'
-import { BaseWindow } from './_components/window/base'
-import { Button } from './_components/button'
-import { LoginButton } from './_components/login/button'
+'use client'
 
-// Signed in: show user details like credits left
+import { logout, signIn } from '@/app/db/supabase/client-queries'
+import { useMemo } from 'react'
+import { MenuBar } from './_components/menu-bar'
+import { useUser } from './utils/use-user'
+
+const MENU_ITEMS = [
+  {
+    label: 'Home',
+    href: '/',
+  },
+  {
+    label: 'Explore',
+    href: '/explore',
+  },
+]
 
 export function Header() {
+  const { user, loading } = useUser()
+
+  const menuItems = useMemo(() => {
+    if (loading) return MENU_ITEMS
+
+    if (user) {
+      return [
+        ...MENU_ITEMS,
+        {
+          // Not happy with this naming
+          label: 'Activity',
+          href: '/activity',
+        },
+        {
+          label: 'Sign Out',
+          onClick: () => logout(),
+        },
+      ]
+    }
+
+    return [
+      ...MENU_ITEMS,
+      {
+        label: 'Login',
+        onClick: () => signIn({ path: '/' }),
+      },
+    ]
+  }, [user, loading])
+
   return (
-    <header className='flex flex-col items-center gap-8 p-8 pb-0 relative z-0'>
-      <div className='pointer-events-none flex flex-col items-center gap-4 text-6xl'>
-        <SelectionBox>DOTELIER</SelectionBox>
-        <div className='sm:ml-72'>
-          <SelectionBox>STUDIO</SelectionBox>
-        </div>
+    <header className='flex flex-col items-center relative z-0'>
+      <div className='w-full bg-foreground h-9 flex items-center justify-center'>
+        <h1 className='text-white text-sm'>dotelier studio</h1>
       </div>
-      <BaseWindow title='Main Menu' id='menu' className='w-full xs:w-fit'>
-        <div className='flex flex-col items-center w-full gap-2'>
-          <div className='flex flex-col xs:flex-row gap-2 w-full'>
-            <Link href='/'>
-              <Button className='text-sm w-full'>Home</Button>
-            </Link>
-            <Link href='/explore'>
-              <Button className='text-sm w-full'>Explore</Button>
-            </Link>
-            <LoginButton />
-          </div>
-        </div>
-      </BaseWindow>
+
+      <MenuBar config={menuItems} />
     </header>
   )
 }
