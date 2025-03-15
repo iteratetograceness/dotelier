@@ -2,19 +2,9 @@
 
 import { supabase } from '@/app/db/supabase/client'
 import { getPublicPixelAsset } from '@/app/db/supabase/storage'
+import { JobStatus } from '@/lib/constants'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { startInference } from './action'
-
-// TODO: move
-enum JobStatus {
-  QUEUED = 'queued',
-  INITIATED = 'initiated',
-  INFERENCE = 'inference',
-  BACKGROUND_REMOVAL = 'background_removal',
-  VECTORIZATION = 'svg_conversion',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-}
 
 export function Preview() {
   const [prompt, setPrompt] = useState('')
@@ -122,10 +112,8 @@ function renderJobStatus(status: string) {
       return <p>Running Inference</p>
     case JobStatus.INITIATED:
       return <p>Initiated</p>
-    case JobStatus.BACKGROUND_REMOVAL:
-      return <p>Removing Background</p>
-    case JobStatus.VECTORIZATION:
-      return <p>Vectorizing</p>
+    case JobStatus.POST_PROCESSING:
+      return <p>Post Processing</p>
     case JobStatus.QUEUED:
       return <p>Queued</p>
   }

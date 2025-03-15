@@ -9,14 +9,59 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      jobs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          error_stage: string | null
+          id: string
+          message: string | null
+          modal_job_id: string | null
+          prompt: string
+          result_url: string | null
+          status: Database['public']['Enums']['job_status']
+          style: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          error_stage?: string | null
+          id?: string
+          message?: string | null
+          modal_job_id?: string | null
+          prompt: string
+          result_url?: string | null
+          status?: Database['public']['Enums']['job_status']
+          style?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          error_stage?: string | null
+          id?: string
+          message?: string | null
+          modal_job_id?: string | null
+          prompt?: string
+          result_url?: string | null
+          status?: Database['public']['Enums']['job_status']
+          style?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pixel: {
         Row: {
           created_at: string
           file_path: string
           id: number
+          job_id: string | null
           privacy: Database['public']['Enums']['Privacy']
           prompt: string
-          prompt_embedding: string | null
           style: Database['public']['Enums']['Style']
           updated_at: string | null
           user_id: string
@@ -25,9 +70,9 @@ export type Database = {
           created_at?: string
           file_path: string
           id?: number
+          job_id?: string | null
           privacy?: Database['public']['Enums']['Privacy']
           prompt: string
-          prompt_embedding?: string | null
           style?: Database['public']['Enums']['Style']
           updated_at?: string | null
           user_id?: string
@@ -36,194 +81,40 @@ export type Database = {
           created_at?: string
           file_path?: string
           id?: number
+          job_id?: string | null
           privacy?: Database['public']['Enums']['Privacy']
           prompt?: string
-          prompt_embedding?: string | null
           style?: Database['public']['Enums']['Style']
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'pixel_job_id_fkey'
+            columns: ['job_id']
+            isOneToOne: true
+            referencedRelation: 'jobs'
+            referencedColumns: ['id']
+          }
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      binary_quantize:
-        | {
-            Args: {
-              '': string
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              '': unknown
-            }
-            Returns: unknown
-          }
-      halfvec_avg: {
-        Args: {
-          '': number[]
-        }
-        Returns: unknown
-      }
-      halfvec_out: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      halfvec_send: {
-        Args: {
-          '': unknown
-        }
-        Returns: string
-      }
-      halfvec_typmod_in: {
-        Args: {
-          '': unknown[]
-        }
-        Returns: number
-      }
-      hnsw_bit_support: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      hnsw_halfvec_support: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      hnsw_sparsevec_support: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      hnswhandler: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      ivfflat_bit_support: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      ivfflat_halfvec_support: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      ivfflathandler: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      l2_norm:
-        | {
-            Args: {
-              '': unknown
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              '': unknown
-            }
-            Returns: number
-          }
-      l2_normalize:
-        | {
-            Args: {
-              '': string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              '': unknown
-            }
-            Returns: unknown
-          }
-        | {
-            Args: {
-              '': unknown
-            }
-            Returns: unknown
-          }
-      sparsevec_out: {
-        Args: {
-          '': unknown
-        }
-        Returns: unknown
-      }
-      sparsevec_send: {
-        Args: {
-          '': unknown
-        }
-        Returns: string
-      }
-      sparsevec_typmod_in: {
-        Args: {
-          '': unknown[]
-        }
-        Returns: number
-      }
-      vector_avg: {
-        Args: {
-          '': number[]
-        }
-        Returns: string
-      }
-      vector_dims:
-        | {
-            Args: {
-              '': string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              '': unknown
-            }
-            Returns: number
-          }
-      vector_norm: {
-        Args: {
-          '': string
-        }
-        Returns: number
-      }
-      vector_out: {
-        Args: {
-          '': string
-        }
-        Returns: unknown
-      }
-      vector_send: {
-        Args: {
-          '': string
-        }
-        Returns: string
-      }
-      vector_typmod_in: {
-        Args: {
-          '': unknown[]
-        }
-        Returns: number
-      }
+      [_ in never]: never
     }
     Enums: {
+      job_status:
+        | 'queued'
+        | 'initiated'
+        | 'inference'
+        | 'background_removal'
+        | 'svg_conversion'
+        | 'completed'
+        | 'failed'
+        | 'post_processing'
       Privacy: 'public' | 'private'
       Style: 'color_v2' | 'bw'
     }
@@ -331,3 +222,4 @@ export type CompositeTypes<
   : never
 
 export type Pixel = Tables<'pixel'>
+export type Job = Tables<'jobs'>

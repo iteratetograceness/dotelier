@@ -1,9 +1,9 @@
 'server-only'
 
 import { cache } from 'react'
+import { JOBS_PAGE_SIZE, PAGE_SIZE } from './constants'
 import { createClient } from './server'
-import { Pixel } from './types'
-import { PAGE_SIZE } from './constants'
+import { Job, Pixel } from './types'
 
 async function _getAllPixels({
   page = 1,
@@ -90,7 +90,45 @@ async function _getPageCount(ownerId?: string): Promise<number> {
   return calculateTotalPages(totalCount)
 }
 
+async function _getJobs({
+  limit = JOBS_PAGE_SIZE,
+  page = 0,
+}: {
+  limit?: number
+  page?: number
+} = {}): Promise<Pick<Job, 'id' | 'prompt' | 'status' | 'updated_at'>[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('jobs')
+    .select('id, prompt, status, updated_at, created_at')
+    .order('created_at', { ascending: false })
+    .range(page * limit, (page + 1) * limit - 1)
+
+  const cleanUpData = data?.map((job) => ({
+    id: job.id,
+    prompt: cleanUpPrompt(job.prompt),
+    status: job.status,
+    updated_at: job.updated_at ?? job.created_at,
+  }))
+
+  if (error) {
+    console.error('[getJobs]: ', error)
+  }
+
+  return cleanUpData ?? []
+}
+
+function cleanUpPrompt(prompt: string): string {
+  const split = prompt.split('of:')[1]
+  return split
+    ? split.replace(
+        ', 16-bit, on white background, only use up to 7 colors inclusive of #fff and #000, only use #fff for the background and #000 for black outline',
+        ''
+      )
+    : prompt
+}
 export const getAllPixels = cache(_getAllPixels)
 export const getPixelById = cache(_getPixelById)
 export const getTotalIconCount = cache(_getTotalIconCount)
 export const getPageCount = cache(_getPageCount)
+export const getJobs = cache(_getJobs)

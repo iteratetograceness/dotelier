@@ -29,7 +29,7 @@ export default function RootLayout({
         <Header />
         <div className='flex-1 overflow-auto'>{children}</div>
         <Suspense fallback={null}>
-          <div className='self-end'>
+          <div className='self-end z-40'>
             <UserProfile />
           </div>
         </Suspense>
