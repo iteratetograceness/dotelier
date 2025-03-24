@@ -18,7 +18,7 @@ export async function UserProfile() {
 
   if (!session) {
     return (
-      <div className='flex p-5 bg-foreground w-screen gap-4 justify-between'>
+      <div className='flex w-fit p-2 m-4 items-end'>
         <SignInButton />
       </div>
     )

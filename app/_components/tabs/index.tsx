@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/app/utils/classnames'
-import { authClient } from '@/lib/auth/client'
+import { signOut, useSession } from '@/lib/auth/client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -15,7 +15,7 @@ interface TabsProps {
 
 export function Tabs({ tabs, className }: TabsProps) {
   const pathname = usePathname()
-  const { data: session } = authClient.useSession()
+  const { data: session } = useSession()
 
   return (
     <div
@@ -57,7 +57,13 @@ export function Tabs({ tabs, className }: TabsProps) {
       {session && (
         <button
           onClick={() => {
-            authClient.signOut()
+            signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  window.location.href = '/'
+                },
+              },
+            })
           }}
           className={cn(
             'relative',
