@@ -2,7 +2,7 @@
 
 import { cn } from '@/app/utils/classnames'
 import { motion, useReducedMotion } from 'motion/react'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 
 export const PARENT_ID = 'icon-grid'
 
@@ -11,8 +11,9 @@ export function IconGridClient({
 }: {
   icons: { id: string; prompt: string }[]
 }) {
+  console.log(icons)
   const prefersReducedMotion = useReducedMotion()
-  const [active, setActive] = useState<string>()
+  // const [active, setActive] = useState<string>()
   const containerRef = useRef<HTMLDivElement>(null)
 
   const container = {

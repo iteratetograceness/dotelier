@@ -38,7 +38,7 @@ export default function RetroLoader({
     }, 150)
 
     return () => clearTimeout(timer)
-  }, [progress, totalSegments])
+  }, [animate, progress, totalSegments])
 
   return (
     <div className={className}>

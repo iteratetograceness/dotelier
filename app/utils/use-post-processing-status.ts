@@ -1,4 +1,4 @@
-import { PostProcessingStatus } from 'kysely-codegen'
+import { PostProcessingStatus } from '@/lib/constants'
 import { useEffect, useMemo, useState } from 'react'
 
 interface Payload {

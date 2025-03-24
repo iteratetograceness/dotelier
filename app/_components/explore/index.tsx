@@ -4,10 +4,8 @@ import { IconGridSkeleton } from './grid/skeleton'
 
 export function Explorer({
   searchParams,
-  userId,
 }: {
   searchParams: Promise<{ p: string | null }>
-  userId?: string
 }) {
   return (
     <div className='flex items-center justify-center'>
