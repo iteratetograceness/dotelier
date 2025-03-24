@@ -45,3 +45,4 @@ supabase/.temp
 
 # etc
 .aider*
+.vscode

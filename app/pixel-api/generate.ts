@@ -1,19 +1,133 @@
 'use server'
 
-import { experimental_generateImage as generateImage } from 'ai'
-import { pixelProvider } from './provider'
-import { ApiStyle } from './constants'
+import { authorizeRequest } from '@/lib/auth/request'
+import { PIXEL_API_URL } from '@/lib/constants'
+import { createPixel, startPostProcessing } from '@/lib/db/queries'
+import { ERROR_CODES, ErrorCode } from '@/lib/error'
+import { isAdmin } from '@/lib/is-admin'
+import { headers } from 'next/headers'
+import { after } from 'next/server'
+import { v4 as uuidv4 } from 'uuid'
+import { credits } from '../utils/credits'
+import { postProcessPixelIcon } from './post-process'
+import { PixelApiResponse, PixelApiResponseSchema } from './types'
 
 export async function generatePixelIcon({
   prompt,
-  style = 'color_v2',
+  id,
 }: {
   prompt: string
-  style?: ApiStyle
-}) {
-  const model = pixelProvider.image(style)
-  return generateImage({
-    model,
-    prompt,
-  })
+  id?: string
+}): Promise<
+  | {
+      result: PixelApiResponse
+      id: string
+      success: true
+    }
+  | {
+      error: ErrorCode
+      id?: string
+      success: false
+    }
+> {
+  let bypassCredits = false
+  let userId: string
+  const pixelId = id ?? uuidv4()
+
+  try {
+    const [authResult, headersList] = await Promise.all([
+      authorizeRequest({ withJwt: true }),
+      headers(),
+    ])
+
+    if (!authResult.success) {
+      return { error: ERROR_CODES.UNAUTHORIZED, success: false }
+    }
+
+    const dbPromise = createPixel({
+      userId: authResult.user.id,
+      prompt,
+      pixelId,
+    })
+
+    const { jwt } = authResult
+
+    if (!jwt) {
+      return { error: ERROR_CODES.UNAUTHORIZED, success: false }
+    }
+
+    userId = authResult.user.id
+    bypassCredits = isAdmin(authResult.user.email)
+
+    if (!bypassCredits) {
+      const hasCredits = await credits.decrement(userId)
+      if (!hasCredits) {
+        return { error: ERROR_CODES.NO_CREDITS, success: false }
+      }
+    }
+
+    const maybePixelId = await dbPromise
+
+    if (!maybePixelId) {
+      throw new Error('Failed to save pixel')
+    }
+
+    const response = await fetch(PIXEL_API_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.MODAL_AUTH_TOKEN}`,
+        'Content-Type': 'application/json',
+        'X-Auth-JWT': jwt,
+        Origin: headersList.get('Origin') ?? 'https://dotelier.studio',
+      },
+      body: JSON.stringify({
+        prompt,
+        pixel_id: pixelId,
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(error)
+    }
+
+    const data = await response.json()
+
+    const parsedData = PixelApiResponseSchema.safeParse(data)
+
+    if (!parsedData.success) {
+      console.error('[generatePixelIcon] Invalid response: ', data)
+      throw new Error('Invalid response')
+    }
+
+    const postProcessingPromise = postProcessPixelIcon({
+      pixelId,
+      fileKey: parsedData.data.images[0].fileKey,
+    })
+
+    const startPostProcessingPromise = startPostProcessing({
+      pixelId,
+      fileKey: parsedData.data.images[0].fileKey,
+    })
+
+    after(async () =>
+      startPostProcessingPromise.then(async () => {
+        await postProcessingPromise
+      })
+    )
+
+    return {
+      result: parsedData.data,
+      id: pixelId,
+      success: true,
+    }
+  } catch (error) {
+    console.error('[generatePixelIcon]: ', error)
+    after(async () => {
+      if (!bypassCredits && userId) {
+        await credits.increment(userId)
+      }
+    })
+    return { error: ERROR_CODES.UNEXPECTED_ERROR, success: false }
+  }
 }

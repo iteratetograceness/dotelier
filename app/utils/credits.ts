@@ -1,10 +1,11 @@
+import { FREE_CREDITS } from '@/lib/constants'
 import { Redis } from '@upstash/redis'
 
 const redis = Redis.fromEnv()
 
 class Credits {
   private redis: Redis
-  private dailyFreeCredits = 3
+  private freeCredits = FREE_CREDITS
   private timezone = 'America/New_York'
 
   constructor() {
@@ -43,6 +44,11 @@ class Credits {
 
     await this.redis.incrby(key, amount)
     return true
+  }
+
+  async increment(userId: string, amount: number = 1) {
+    const key = this.getDayKey(userId)
+    await this.redis.incrby(key, amount)
   }
 }
 

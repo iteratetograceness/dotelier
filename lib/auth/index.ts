@@ -1,0 +1,47 @@
+import { betterAuth } from 'better-auth'
+import { nextCookies } from 'better-auth/next-js'
+import { jwt } from 'better-auth/plugins'
+import { getBaseUrl } from '../base-url'
+import { standardDb } from '../db/pg'
+import { redis } from '../redis'
+
+export const auth = betterAuth({
+  appName: 'Dotelier Studio',
+  baseUrl: getBaseUrl(),
+  database: {
+    db: standardDb,
+    type: 'postgres',
+  },
+  secondaryStorage: {
+    get: async (key) => {
+      const value = await redis.get(key)
+      return value ? JSON.stringify(value) : null
+    },
+    set: async (key, value, ttl) => {
+      if (ttl) {
+        await redis.set(key, value, { ex: ttl })
+      } else {
+        await redis.set(key, value)
+      }
+    },
+    delete: async (key) => {
+      await redis.del(key)
+    },
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
+  plugins: [
+    nextCookies(),
+    jwt({
+      jwt: {
+        definePayload: ({ user }) => ({
+          id: user.id,
+        }),
+      },
+    }),
+  ],
+})
