@@ -31,7 +31,7 @@ class Credits {
   async get(userId: string) {
     const key = this.getDayKey(userId)
     const used = (await this.redis.get<number>(key)) || 0
-    return Math.max(this.dailyFreeCredits - used, 0)
+    return Math.max(this.freeCredits - used, 0)
   }
 
   async decrement(userId: string, amount: number = 1) {

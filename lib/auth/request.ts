@@ -36,7 +36,7 @@ export async function authorizeRequest({
   }
 
   if (result instanceof Response) {
-    const jwt = result.headers.get('set-auth-jwt')
+    const jwt = result.headers.get('set-auth-jwt') ?? undefined
     const body = await result.json()
     return {
       success: true,
