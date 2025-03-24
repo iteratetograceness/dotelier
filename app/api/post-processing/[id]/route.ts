@@ -38,7 +38,7 @@ export async function GET(
             await pgClient.query('SELECT 1')
             sendEvent({ type: 'heartbeat', timestamp: Date.now() })
           } catch (error) {
-            cleanUp({ pgClient, heartbeatInterval, id })
+            await cleanUp({ pgClient, heartbeatInterval, id })
             controller.error(error)
           }
         }, 30000)
@@ -56,7 +56,7 @@ export async function GET(
               payload.status === 'background_removal_failed' ||
               payload.status === 'convert_to_svg_failed'
             ) {
-              cleanUp({ pgClient, heartbeatInterval, id }).then(() => {
+              void cleanUp({ pgClient, heartbeatInterval, id }).then(() => {
                 controller.close()
               })
             }
@@ -71,9 +71,11 @@ export async function GET(
 
         req.signal.addEventListener('abort', async () => {
           try {
-            cleanUp({ pgClient, heartbeatInterval, id })
+            await cleanUp({ pgClient, heartbeatInterval, id })
           } catch (error) {
             console.error('Error cleaning up connection:', error)
+          } finally {
+            controller.close()
           }
         })
       } catch (error) {
@@ -97,7 +99,7 @@ export async function GET(
   })
 }
 
-function cleanUp({
+async function cleanUp({
   pgClient,
   heartbeatInterval,
   id,
