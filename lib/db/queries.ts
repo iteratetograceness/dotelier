@@ -70,7 +70,12 @@ const _updatePostProcessingStatus = async ({
     .executeTakeFirst()
   return result?.id
 }
-async function _getExplorePagePixels(page = 1) {
+async function _getExplorePagePixels(page = 1): Promise<
+  {
+    id: string
+    prompt: string
+  }[]
+> {
   const offset = (page - 1) * PAGE_SIZE
   return fastDb
     .selectFrom('pixel')
