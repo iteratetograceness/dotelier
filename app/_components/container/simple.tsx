@@ -1,5 +1,5 @@
 import { cn } from '@/app/utils/classnames'
-import { PIXEL_BORDER } from '@/app/utils/constants'
+import { PIXEL_BORDER } from '@/lib/constants'
 
 const variants = {
   default: {

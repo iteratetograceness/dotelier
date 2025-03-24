@@ -1,120 +1,93 @@
 'use client'
 
-import { supabase } from '@/app/db/supabase/client'
-import { getPublicPixelAsset } from '@/app/db/supabase/storage'
-import { JobStatus } from '@/lib/constants'
-import { useEffect, useRef, useState, useTransition } from 'react'
-import { startInference } from './action'
+import { generatePixelIcon } from '@/app/pixel-api/generate'
+import { PixelApiResponse } from '@/app/pixel-api/types'
+import { usePostProcessingStatus } from '@/app/utils/use-post-processing-status'
+import { PostProcessingStatus } from '@/lib/constants'
+import { getError } from '@/lib/error'
+import Image from 'next/image'
+import { useState, useTransition } from 'react'
+import { v4 as uuidv4 } from 'uuid'
 
 export function Preview() {
   const [prompt, setPrompt] = useState('')
-  const [svg, setSvg] = useState<string>()
   const [duration, setDuration] = useState(0)
-  const [jobId, setJobId] = useState<string>()
-  const [jobStatus, setJobStatus] = useState<string>()
-  const [isPending, startTransition] = useTransition()
-
-  const interval = useRef<NodeJS.Timeout>(null)
+  const [pixelId, setPixelId] = useState<string>()
+  const [images, setImages] = useState<PixelApiResponse['images']>()
+  const [status, setStatus] = useState<PostProcessingStatus>()
+  const [error, setError] = useState<string>()
+  const [isGenerating, startGenerating] = useTransition()
+  const {
+    updates,
+    latestUpdate,
+    error: postProcessingError,
+    connected,
+  } = usePostProcessingStatus(pixelId)
 
   const testInference = async () => {
-    startTransition(async () => {
-      if (duration > 0) setDuration(0)
+    if (duration > 0) setDuration(0)
+    setError(undefined)
+    setImages(undefined)
+    setStatus(undefined)
 
-      const startTime = Date.now()
-      interval.current = setInterval(() => {
-        setDuration(Math.floor((Date.now() - startTime) / 1000))
-      }, 100)
+    const id = uuidv4()
+    setPixelId(id)
 
-      try {
-        const result = await startInference(prompt)
-        if (result.error) {
-          throw new Error(result.error)
-        }
+    startGenerating(async () => {
+      const output = await generatePixelIcon({
+        prompt,
+        id,
+      })
 
-        if (result.jobId) {
-          setJobId(result.jobId)
-          setJobStatus('queued')
-        }
-      } catch (error) {
-        clearInterval(interval.current)
-        console.error('Error:', error)
+      if (!output.success) {
+        setError(getError(output.error))
+        return
       }
+
+      setImages(output.result.images)
+      setDuration(output.result.inference_time)
+      setStatus(PostProcessingStatus.INITIATED)
     })
   }
 
-  useEffect(() => {
-    return () => {
-      if (interval.current) {
-        clearInterval(interval.current)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!jobId) return
-
-    const channel = supabase
-      .channel('db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'jobs',
-          filter: `id=eq.${jobId}`,
-        },
-        (payload) => {
-          const status = payload.new.status
-
-          if (status === JobStatus.COMPLETED && payload.new.result_url) {
-            if (interval.current) clearInterval(interval.current)
-            setJobStatus(status)
-            const path = payload.new.result_url
-            const url = getPublicPixelAsset(path)
-            setSvg(url)
-          } else if (status === JobStatus.FAILED) {
-            setJobStatus(status)
-            if (interval.current) clearInterval(interval.current)
-          } else {
-            setJobStatus(status)
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      channel.unsubscribe()
-      if (interval.current) clearInterval(interval.current)
-    }
-  }, [jobId])
+  // Realtime updates to post_processing table:
 
   return (
     <div className='flex flex-col gap-4'>
       <input type='text' onChange={(e) => setPrompt(e.target.value)} />
-      <button onClick={testInference} disabled={isPending}>
-        {isPending ? 'Running' : 'Run'}
+      <button onClick={testInference} disabled={isGenerating}>
+        {isGenerating ? 'Running' : 'Run'}
       </button>
-      {duration > 0 && <p>Duration: {duration}s</p>}
-      {jobId && <pre>Job ID: {jobId}</pre>}
-      {jobStatus && <pre>Job Status: {renderJobStatus(jobStatus)}</pre>}
-      {svg && <img src={svg} alt='preview' />}
+      {status && renderPostProcessingStatus(status)}
+      {error && <p>Error: {error}</p>}
+      {duration > 0 && <p>Inference Duration: {duration}s</p>}
+      {pixelId && <p>Pixel ID: {pixelId}</p>}
+      {images && (
+        <Image
+          src={images[0].url}
+          alt='preview'
+          width={200}
+          height={200}
+          className='rounded-md'
+        />
+      )}
     </div>
   )
 }
 
-function renderJobStatus(status: string) {
+function renderPostProcessingStatus(status: PostProcessingStatus) {
   switch (status) {
-    case JobStatus.COMPLETED:
-      return <p>Completed</p>
-    case JobStatus.FAILED:
-      return <p>Failed</p>
-    case JobStatus.INFERENCE:
-      return <p>Running Inference</p>
-    case JobStatus.INITIATED:
-      return <p>Initiated</p>
-    case JobStatus.POST_PROCESSING:
-      return <p>Post Processing</p>
-    case JobStatus.QUEUED:
-      return <p>Queued</p>
+    case PostProcessingStatus.COMPLETED:
+      return <p>Post Processing Completed</p>
+    case PostProcessingStatus.BACKGROUND_REMOVAL:
+      return <p>Background Removal</p>
+    case PostProcessingStatus.BACKGROUND_REMOVAL_FAILED:
+      return <p>Background Removal Failed</p>
+    case PostProcessingStatus.CONVERT_TO_SVG:
+      return <p>Converting to SVG</p>
+    case PostProcessingStatus.CONVERT_TO_SVG_FAILED:
+      return <p>SVG Conversion Failed</p>
+    case PostProcessingStatus.INITIATED:
+      return <p>Post Processing Initiated</p>
   }
 }

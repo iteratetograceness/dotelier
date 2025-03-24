@@ -1,20 +1,18 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
-import { Icon } from '../icon'
 import { cn } from '@/app/utils/classnames'
-import { Pixel } from '@/app/db/supabase/types'
+import { motion, useReducedMotion } from 'motion/react'
+import { useRef, useState } from 'react'
 
 export const PARENT_ID = 'icon-grid'
 
 export function IconGridClient({
   icons,
 }: {
-  icons: Pick<Pixel, 'id' | 'file_path' | 'prompt'>[]
+  icons: { id: string; prompt: string }[]
 }) {
   const prefersReducedMotion = useReducedMotion()
-  const [active, setActive] = useState<number>()
+  const [active, setActive] = useState<string>()
   const containerRef = useRef<HTMLDivElement>(null)
 
   const container = {
@@ -38,14 +36,14 @@ export function IconGridClient({
           'flex flex-col flex-wrap gap-0'
         )}
       >
-        {icons.map((icon) => (
+        {/* {icons.map((icon) => (
           <Icon
             key={icon.id}
             icon={icon}
             active={active === icon.id}
             setActive={setActive}
           />
-        ))}
+        ))} */}
       </motion.div>
     </div>
   )

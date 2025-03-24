@@ -9,9 +9,10 @@
   --shadow: #515151;
   --highlight: #fcfcfc;
   --text-transform: uppercase;
-  --hover: #d3d3d3;
+  --hover: #d8d8d8;
   --medium: #b3b3b3;
-  --white: #ffffff;
+  --light-shadow: #6d6d6d;
+  --white: #e7e5e4;
 }
 
 body {

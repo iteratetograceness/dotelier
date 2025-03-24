@@ -7,19 +7,7 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
-        hostname: 'nnzpbbiqbkjjyijfropj.supabase.co',
-        protocol: 'https',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        hostname: 'replicate.delivery',
-        protocol: 'https',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        hostname: 'img.recraft.ai',
+        hostname: 'l34ak679fl.ufs.sh',
         protocol: 'https',
         port: '',
         pathname: '/**',
@@ -36,9 +24,9 @@ const nextConfig: NextConfig = {
     ppr: true,
   },
   webpack: (config) => {
-    config.externals.push({
-      sharp: 'commonjs sharp',
-    })
+    // config.externals.push({
+    //   sharp: 'commonjs sharp',
+    // })
     return config
   },
 }
