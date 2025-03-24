@@ -1,11 +1,6 @@
 import { Client } from '@neondatabase/serverless'
 import { NextRequest, NextResponse } from 'next/server'
 
-export const config = {
-  runtime: 'nodejs',
-}
-export const maxDuration = 3 * 60
-
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
