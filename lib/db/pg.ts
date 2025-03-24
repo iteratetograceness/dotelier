@@ -12,6 +12,7 @@ const standardDialect = new NeonDialect({
 
 export const standardDb = new Kysely<DB>({
   dialect: standardDialect,
+  plugins: [new CamelCasePlugin()],
 })
 
 export const fastDb = new Kysely<DB>({
