@@ -65,7 +65,7 @@ const _updatePostProcessingStatus = async ({
   const result = await fastDb
     .updateTable('postProcessing')
     .set(newData)
-    .where('pixelId', '=', pixelId)
+    .where('postProcessing.pixelId', '=', pixelId)
     .returning('id')
     .executeTakeFirst()
   return result?.id
@@ -127,6 +127,21 @@ async function _getPixelById(pixelId: string) {
     .executeTakeFirst()
 }
 
+async function _insertPixelVersion({
+  pixelId,
+  fileKey,
+}: {
+  pixelId: string
+  fileKey: string
+}) {
+  const result = await fastDb
+    .insertInto('pixelVersion')
+    .values({ pixelId, fileKey, isCurrent: true })
+    .returning('id')
+    .executeTakeFirst()
+  return result?.id
+}
+
 // PIXELS
 export const getExplorePagePixels = cache(_getExplorePagePixels)
 export const getLatestPixelVersion = cache(_getLatestPixelVersion)
@@ -135,3 +150,6 @@ export const getPixelById = cache(_getPixelById)
 export const createPixel = _createPixel
 export const startPostProcessing = _startPostProcessing
 export const updatePostProcessingStatus = _updatePostProcessingStatus
+
+// VERSION
+export const insertPixelVersion = _insertPixelVersion

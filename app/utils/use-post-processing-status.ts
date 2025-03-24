@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 interface Payload {
   operation: 'INSERT' | 'UPDATE'
   id: string
-  pixel_id: string
+  pixelId: string
   status: PostProcessingStatus
   timestamp: number
 }
@@ -25,6 +25,11 @@ export function usePostProcessingStatus(pixelId?: string) {
   useEffect(() => {
     if (!pixelId) return
 
+    setUpdates([])
+    setLatestUpdate(undefined)
+    setError(undefined)
+    setConnected(false)
+
     const eventSource = new EventSource(`/api/post-processing/${pixelId}`)
 
     eventSource.onmessage = (event) => {
@@ -36,6 +41,9 @@ export function usePostProcessingStatus(pixelId?: string) {
           setConnected(true)
         } else if (data.type === 'update' && data.payload) {
           setLatestUpdate(data.payload)
+          if (data.payload.status === 'completed') {
+            eventSource.close()
+          }
         } else if (data.type === 'error') {
           setError(data.message || 'Unknown error')
         }
@@ -53,19 +61,9 @@ export function usePostProcessingStatus(pixelId?: string) {
     }
 
     return () => {
+      setConnected(false)
       eventSource.close()
     }
-  }, [pixelId])
-
-  useEffect(() => {
-    const cleanUp = () => {
-      setUpdates([])
-      setLatestUpdate(undefined)
-      setError(undefined)
-      setConnected(false)
-    }
-    cleanUp()
-    return cleanUp
   }, [pixelId])
 
   const isCompleted = useMemo(() => {

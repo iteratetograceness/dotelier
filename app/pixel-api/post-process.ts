@@ -1,6 +1,9 @@
 'server only'
 
-import { updatePostProcessingStatus } from '@/lib/db/queries'
+import {
+  insertPixelVersion,
+  updatePostProcessingStatus,
+} from '@/lib/db/queries'
 import { replicate } from '@/lib/replicate'
 import { getPublicPixelAsset, uploadApi } from '@/lib/ut'
 import { after } from 'next/server'
@@ -163,7 +166,19 @@ export async function postProcessPixelIcon({
           status: 'completed',
           completedAt: new Date(),
         }),
-        uploadApi.uploadFiles([svgFile]),
+        uploadApi.uploadFiles([svgFile]).then((files) => {
+          if (files[0].error) {
+            console.error(
+              '[postProcessPixelIcon] Failed to upload SVG: ',
+              files[0].error
+            )
+          } else {
+            return insertPixelVersion({
+              pixelId,
+              fileKey: files[0].data.key,
+            })
+          }
+        }),
       ])
     })
 

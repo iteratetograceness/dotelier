@@ -8,7 +8,7 @@
     "prebuild": "pnpm generate-types",
     "start": "next start",
     "lint": "next lint",
-    "generate-types": "kysely-codegen --dialect postgres --camel-case"
+    "generate-types": "kysely-codegen --dialect postgres"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

@@ -14,16 +14,12 @@ export async function GET(
   }
 
   const encoder = new TextEncoder()
+
   const stream = new ReadableStream({
     async start(controller) {
       const sendEvent = (data: unknown) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
-
-      sendEvent({
-        type: 'connected',
-        message: `Listening for updates on post_processing_${id}`,
-      })
 
       try {
         const pgClient = new Client({
@@ -55,9 +51,8 @@ export async function GET(
               payload.status === 'background_removal_failed' ||
               payload.status === 'convert_to_svg_failed'
             ) {
-              void cleanUp({ pgClient, heartbeatInterval, id }).then(() => {
-                controller.close()
-              })
+              void cleanUp({ pgClient, heartbeatInterval, id })
+              controller.close()
             }
           } catch (error) {
             sendEvent({
@@ -65,17 +60,22 @@ export async function GET(
               message: 'Error parsing notification payload',
               error: String(error),
             })
+            controller.close()
           }
         })
 
         req.signal.addEventListener('abort', async () => {
           try {
             await cleanUp({ pgClient, heartbeatInterval, id })
+            controller.close()
           } catch (error) {
             console.error('Error cleaning up connection:', error)
-          } finally {
-            controller.close()
           }
+        })
+
+        sendEvent({
+          type: 'connected',
+          message: `Listening for updates on post_processing_${id}`,
         })
       } catch (error) {
         console.error('Error setting up notification listener:', error)

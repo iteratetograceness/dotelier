@@ -1,4 +1,4 @@
-import { CamelCasePlugin, Kysely } from 'kysely'
+import { Kysely } from 'kysely'
 import { DB } from 'kysely-codegen'
 import { NeonDialect, NeonHTTPDialect } from 'kysely-neon'
 
@@ -12,12 +12,10 @@ const standardDialect = new NeonDialect({
 
 export const standardDb = new Kysely<DB>({
   dialect: standardDialect,
-  plugins: [new CamelCasePlugin()],
 })
 
 export const fastDb = new Kysely<DB>({
   dialect: new NeonHTTPDialect({
     connectionString: process.env.DATABASE_URL || '',
   }),
-  plugins: [new CamelCasePlugin()],
 })

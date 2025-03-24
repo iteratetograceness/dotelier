@@ -2,14 +2,14 @@ import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
 import { jwt } from 'better-auth/plugins'
 import { getBaseUrl } from '../base-url'
-import { standardDb } from '../db/pg'
+import { fastDb } from '../db/pg'
 import { redis } from '../redis'
 
 export const auth = betterAuth({
   appName: 'Dotelier Studio',
   baseUrl: getBaseUrl(),
   database: {
-    db: standardDb,
+    db: fastDb,
     type: 'postgres',
   },
   secondaryStorage: {
@@ -41,6 +41,15 @@ export const auth = betterAuth({
         definePayload: ({ user }) => ({
           id: user.id,
         }),
+      },
+      schema: {
+        jwks: {
+          fields: {
+            publicKey: 'publicKey',
+            privateKey: 'privateKey',
+            createdAt: 'createdAt',
+          },
+        },
       },
     }),
   ],
