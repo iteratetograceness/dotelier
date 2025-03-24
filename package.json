@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "prebuild": "pnpm generate-types",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-types": "kysely-codegen"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
