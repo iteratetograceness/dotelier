@@ -1,5 +1,21 @@
 export class Point {
   constructor(public x: number, public y: number) {}
+
+  equals(other: Point): boolean {
+    return this.x === other.x && this.y === other.y
+  }
+
+  toString(): string {
+    return `${this.x},${this.y}`
+  }
+
+  static from(p: Point): Point {
+    return new Point(p.x, p.y)
+  }
+
+  static zero(): Point {
+    return new Point(0, 0)
+  }
 }
 
 /**
@@ -9,31 +25,36 @@ export class Point {
  * @returns Array of points along the line
  */
 export function line(p1: Point, p2: Point): Point[] {
-  const points: Point[] = []
-  const dx = Math.abs(p2.x - p1.x)
-  const sx = p1.x < p2.x ? 1 : -1
-  const dy = -Math.abs(p2.y - p1.y)
-  const sy = p1.y < p2.y ? 1 : -1
-  let err = dx + dy
+  if (p1.equals(p2)) return [Point.from(p1)]
 
-  let x1 = p1.x
-  let y1 = p1.y
+  const points: Point[] = []
+
+  const deltaX = Math.abs(p2.x - p1.x)
+  const deltaYNegative = -Math.abs(p2.y - p1.y)
+
+  const stepX = p1.x < p2.x ? 1 : -1
+  const stepY = p1.y < p2.y ? 1 : -1
+
+  let errorTerm = deltaX + deltaYNegative
+
+  let currentX = p1.x
+  let currentY = p1.y
 
   while (true) {
-    points.push(new Point(x1, y1))
+    points.push(new Point(currentX, currentY))
 
-    if (x1 === p2.x && y1 === p2.y) {
-      break
+    if (currentX === p2.x && currentY === p2.y) break
+
+    const doubleError = 2 * errorTerm
+
+    if (doubleError >= deltaYNegative) {
+      errorTerm += deltaYNegative
+      currentX += stepX
     }
 
-    const e2 = 2 * err
-    if (e2 >= dy) {
-      err += dy
-      x1 += sx
-    }
-    if (e2 <= dx) {
-      err += dx
-      y1 += sy
+    if (doubleError <= deltaX) {
+      errorTerm += deltaX
+      currentY += stepY
     }
   }
 
@@ -41,38 +62,41 @@ export function line(p1: Point, p2: Point): Point[] {
 }
 
 /**
- * Generate points for a circle using Midpoint Circle Algorithm
+ * Generate points for a circle using optimized Midpoint Circle Algorithm
  * @param r - Radius of the circle
  * @param pc - Center point of the circle
  * @returns Array of points forming the circle
  */
-export function circle(r: number, pc: Point): Point[] {
-  const points: Point[] = []
-  let x = 0
-  let y = r
+export function circle(radius: number, center: Point): Point[] {
+  if (radius <= 0) return []
+  if (radius === 1) return [Point.from(center)]
 
-  points.push(new Point(x, y))
+  const octantPoints: Point[] = []
 
-  let p = 1 - r
+  let currentX = 0
+  let currentY = radius
+  let decisionParameter = 1 - radius
 
-  while (x <= y) {
-    x++
+  octantPoints.push(new Point(currentX, currentY))
 
-    if (p < 0) {
-      points.push(new Point(x, y))
-      p = p + 2 * x + 1
+  while (currentX <= currentY) {
+    currentX++
+
+    if (decisionParameter < 0) {
+      octantPoints.push(new Point(currentX, currentY))
+      decisionParameter = decisionParameter + 2 * currentX + 1
     } else {
-      y--
-      points.push(new Point(x, y))
-      p = p + 2 * x + 1 - 2 * y
+      currentY--
+      octantPoints.push(new Point(currentX, currentY))
+      decisionParameter = decisionParameter + 2 * currentX + 1 - 2 * currentY
     }
   }
 
-  const fullCircle = _sym8(points)
+  const fullCircle = _sym8(octantPoints)
 
-  for (const pt of fullCircle) {
-    pt.x += pc.x
-    pt.y += pc.y
+  for (const point of fullCircle) {
+    point.x += center.x
+    point.y += center.y
   }
 
   return fullCircle
@@ -84,113 +108,31 @@ export function circle(r: number, pc: Point): Point[] {
  * @returns Points for all 8 octants
  */
 function _sym8(points: Point[]): Point[] {
-  const nPoints: Point[] = [...points]
+  const transforms = [
+    (p: Point) => new Point(p.x, p.y), // original
+    (p: Point) => new Point(p.y, p.x), // swap x,y
+    (p: Point) => new Point(-p.y, p.x), // rotate 90° clockwise
+    (p: Point) => new Point(-p.x, p.y), // reflect x
+    (p: Point) => new Point(-p.x, -p.y), // rotate 180°
+    (p: Point) => new Point(-p.y, -p.x), // rotate 270° clockwise
+    (p: Point) => new Point(p.y, -p.x), // reflect y
+    (p: Point) => new Point(p.x, -p.y), // reflect diagonal
+  ]
 
-  for (const p of points) {
-    nPoints.push(new Point(p.y, p.x))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(-p.y, p.x))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(-p.x, p.y))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(-p.x, -p.y))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(-p.y, -p.x))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(p.y, -p.x))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(p.x, -p.y))
-  }
+  const uniquePoints = new Set<string>()
+  const result: Point[] = []
 
-  return nPoints
-}
+  for (const point of points) {
+    for (const transform of transforms) {
+      const newPoint = transform(point)
+      const key = `${newPoint.x},${newPoint.y}`
 
-/**
- * Generate points for an ellipse using the Midpoint Ellipse Algorithm
- * @param rx - X radius (semi-major axis)
- * @param ry - Y radius (semi-minor axis)
- * @param pc - Center point of the ellipse
- * @returns Array of points forming the ellipse
- */
-export function ellipse(rx: number, ry: number, pc: Point): Point[] {
-  const points: Point[] = []
-  let x = 0
-  let y = ry
-
-  let p1 = ry * ry - rx * rx * ry + 0.25 * rx * rx
-  let dx = 2 * ry * ry * x
-  let dy = 2 * rx * rx * y
-
-  while (dx < dy) {
-    points.push(new Point(x, y))
-
-    if (p1 < 0) {
-      x++
-      dx += 2 * ry * ry
-      p1 += dx + ry * ry
-    } else {
-      x++
-      y--
-      dx += 2 * ry * ry
-      dy -= 2 * rx * rx
-      p1 += dx - dy + ry * ry
+      if (!uniquePoints.has(key)) {
+        uniquePoints.add(key)
+        result.push(newPoint)
+      }
     }
   }
 
-  let p2 =
-    ry * ry * ((x + 0.5) * (x + 0.5)) +
-    rx * rx * ((y - 1) * (y - 1)) -
-    rx * rx * ry * ry
-
-  while (y >= 0) {
-    points.push(new Point(x, y))
-
-    if (p2 > 0) {
-      y--
-      dy -= 2 * rx * rx
-      p2 += rx * rx - dy
-    } else {
-      y--
-      x++
-      dx += 2 * ry * ry
-      dy -= 2 * rx * rx
-      p2 += dx - dy + rx * rx
-    }
-  }
-
-  const fullEllipse = _sym4(points)
-
-  for (const pt of fullEllipse) {
-    pt.x += pc.x
-    pt.y += pc.y
-  }
-
-  return fullEllipse
-}
-
-/**
- * Helper function for generating all 4 quadrants of an ellipse
- * @param points - Points from the first quadrant
- * @returns Points for all 4 quadrants
- */
-function _sym4(points: Point[]): Point[] {
-  const nPoints: Point[] = [...points]
-
-  for (const p of points) {
-    nPoints.push(new Point(-p.x, p.y))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(-p.x, -p.y))
-  }
-  for (const p of points) {
-    nPoints.push(new Point(p.x, -p.y))
-  }
-
-  return nPoints
+  return result
 }

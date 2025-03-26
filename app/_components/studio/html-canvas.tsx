@@ -115,6 +115,6 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
       <p className='text-sm text-shadow'>{error}</p>
     </div>
   ) : (
-    <canvas id={id} ref={canvasRef} className='size-full' />
+    <canvas id={id} ref={canvasRef} className='size-full cursor-crosshair' />
   )
 })

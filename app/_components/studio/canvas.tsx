@@ -2,14 +2,14 @@
 
 import { cn } from '@/app/utils/classnames'
 import { getPublicPixelAsset } from '@/lib/ut/client'
-import Compact from '@uiw/react-color-compact'
-import { memo, startTransition, use, useRef, useState } from 'react'
+import { memo, use, useEffect, useRef, useState } from 'react'
+import { RgbaColorPicker } from 'react-colorful'
 import { StudioPixel } from '.'
 import { Button } from '../button'
 import { Pill } from '../pill'
 import { sharedClasses } from './constants'
 import { DownloadButton } from './download-button'
-import { PixelEditorTool } from './editor'
+import { Color, PixelEditorTool } from './editor'
 import { HtmlCanvasRef, HtmlCanvasWithRef } from './html-canvas'
 
 function CanvasInner({
@@ -30,12 +30,21 @@ function CanvasInner({
   const [activeTool, setActiveTool] = useState<PixelEditorTool>(
     PixelEditorTool.Pen
   )
-  const [currentHsvaColor, setCurrentHsvaColor] = useState({
-    h: 0,
-    s: 0,
-    v: 0,
+  const [rgbaColor, setRgbaColor] = useState({
+    r: 0,
+    g: 0,
+    b: 0,
     a: 1,
   })
+
+  useEffect(() => {
+    const editor = editorRef.current?.getEditor()
+    return () => {
+      if (editor?.eventsBinded) {
+        editor.destroy()
+      }
+    }
+  }, [])
 
   return (
     <div
@@ -80,89 +89,69 @@ function CanvasInner({
           </Pill>
         </div>
         {/* Color Picker */}
-        <Compact
-          color={currentHsvaColor}
+        <RgbaColorPicker
+          color={rgbaColor}
           onChange={(color) => {
-            setCurrentHsvaColor(color.hsva)
-            editorRef.current
-              ?.getEditor()
-              ?.setColor([
-                color.rgba.r,
-                color.rgba.g,
-                color.rgba.b,
-                Math.round(color.rgba.a * 255),
-              ])
+            const colorArray = [color.r, color.g, color.b, color.a] as Color
+            editorRef.current?.getEditor()?.setColor(colorArray)
+            setRgbaColor(color)
           }}
         />
+        {/* <HexColorInput /> */}
         <div className='flex flex-col w-full gap-0.5'>
           {/* TOOLS */}
           <div className='flex gap-0.5 h-10 sm:h-12 flex-wrap'>
-            {/* Pen */}
             <Button
               aria-label='Pen Tool'
               iconOnly
               isPressed={activeTool === PixelEditorTool.Pen}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool(PixelEditorTool.Pen)
-                startTransition(() => {
-                  setActiveTool(PixelEditorTool.Pen)
-                })
+                setActiveTool(PixelEditorTool.Pen)
               }}
             >
               <span>P</span>
             </Button>
-            {/* Eraser */}
             <Button
               aria-label='Eraser Tool'
               iconOnly
               isPressed={activeTool === PixelEditorTool.Eraser}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool(PixelEditorTool.Eraser)
-                startTransition(() => {
-                  setActiveTool(PixelEditorTool.Eraser)
-                })
+                setActiveTool(PixelEditorTool.Eraser)
               }}
             >
               <span>E</span>
             </Button>
-            {/* Fill */}
             <Button
               aria-label='Fill Tool'
               iconOnly
               isPressed={activeTool === PixelEditorTool.Fill}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool(PixelEditorTool.Fill)
-                startTransition(() => {
-                  setActiveTool(PixelEditorTool.Fill)
-                })
+                setActiveTool(PixelEditorTool.Fill)
               }}
             >
               <span>F</span>
             </Button>
-            {/* Circle */}
             <Button
               aria-label='Circle Tool'
               iconOnly
               isPressed={activeTool === PixelEditorTool.Circle}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool(PixelEditorTool.Circle)
-                startTransition(() => {
-                  setActiveTool(PixelEditorTool.Circle)
-                })
+                setActiveTool(PixelEditorTool.Circle)
               }}
             >
               <span>C</span>
             </Button>
-            {/* Line */}
             <Button
               aria-label='Line Tool'
               iconOnly
               isPressed={activeTool === PixelEditorTool.Line}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool(PixelEditorTool.Line)
-                startTransition(() => {
-                  setActiveTool(PixelEditorTool.Line)
-                })
+                setActiveTool(PixelEditorTool.Line)
               }}
             >
               <span>L</span>
