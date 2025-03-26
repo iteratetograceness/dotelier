@@ -19,6 +19,7 @@ export default {
         white: 'var(--white)',
         hover: 'var(--hover)',
         medium: 'var(--medium)',
+        'dark-hover': 'var(--dark-hover)',
       },
       borderWidth: {
         DEFAULT: '3px',
@@ -85,6 +86,15 @@ export default {
         },
         '.pixel-border-background': {
           '--pixel-border-color': 'var(--background)',
+        },
+        '.pixel-border-medium': {
+          '--pixel-border-color': 'var(--medium)',
+        },
+        '.pixel-border-light-shadow': {
+          '--pixel-border-color': 'var(--light-shadow)',
+        },
+        '.pixel-border-accent': {
+          '--pixel-border-color': 'var(--accent)',
         },
       }
 

@@ -5,7 +5,8 @@ import {
   updatePostProcessingStatus,
 } from '@/lib/db/queries'
 import { replicate } from '@/lib/replicate'
-import { getPublicPixelAsset, uploadApi } from '@/lib/ut'
+import { getPublicPixelAsset } from '@/lib/ut/client'
+import { uploadApi } from '@/lib/ut/server'
 import { after } from 'next/server'
 import { z } from 'zod'
 

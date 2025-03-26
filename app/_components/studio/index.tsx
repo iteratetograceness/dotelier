@@ -1,29 +1,48 @@
+import { getLatestPixelVersion } from '@/lib/db/queries'
+import { Pixel } from '@/lib/db/types'
+import { Suspense } from 'react'
 import { Carousel } from '../carousel'
 import { Canvas } from './canvas'
-import { NewPixelInput } from './input'
+import { NewCanvas } from './new-canvas'
+import { CanvasSkeleton } from './skeleton'
 
 /**
  * Need to do:
  *
  * - Fetch users' pixels to display in CANVAS
  * - In-canvas functionality
- * - Architecture for input -> new canvas
  */
 
-export function Studio() {
+export const preload = (id: string) => {
+  void getLatestPixelVersion(id)
+}
+
+export type StudioPixel = Pick<
+  Pixel,
+  'id' | 'prompt' | 'createdAt' | 'updatedAt' | 'showExplore'
+>
+
+export function Studio({
+  className,
+  pixels,
+}: {
+  className?: string
+  pixels: StudioPixel[]
+}) {
   return (
-    <main className='flex flex-col py-8'>
-      <div className='flex'>
-        <Carousel>
-          <Canvas />
-          <Canvas />
-          <Canvas />
-        </Carousel>
-        <div id='new-canvas' className='snap-center'>
-          <Canvas />
-        </div>
-      </div>
-      <NewPixelInput />
-    </main>
+    <Carousel className={className}>
+      <Suspense fallback={<CanvasSkeleton />}>
+        <NewCanvas />
+      </Suspense>
+      {pixels.map((pixel) => (
+        <Suspense key={pixel.id} fallback={<CanvasSkeleton />}>
+          <Canvas
+            key={pixel.id}
+            pixel={pixel}
+            versionPromise={getLatestPixelVersion(pixel.id)}
+          />
+        </Suspense>
+      ))}
+    </Carousel>
   )
 }

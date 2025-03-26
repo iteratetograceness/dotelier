@@ -92,11 +92,13 @@ async function _getLatestPixelVersion(pixelId: string) {
 async function _getPixelsByOwner({
   page = 1,
   ownerId,
+  limit = PAGE_SIZE,
 }: {
   page?: number
   ownerId: string
+  limit?: number
 }) {
-  const offset = (page - 1) * PAGE_SIZE
+  const offset = (page - 1) * limit
 
   return fastDb
     .selectFrom('pixel')
@@ -109,7 +111,7 @@ async function _getPixelsByOwner({
     ])
     .where('pixel.userId', '=', ownerId)
     .orderBy('pixel.createdAt', 'desc')
-    .limit(PAGE_SIZE)
+    .limit(limit)
     .offset(offset)
     .execute()
 }

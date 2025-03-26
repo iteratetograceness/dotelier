@@ -1,8 +1,27 @@
 'use client'
 
 import { signInWithGoogle } from '@/lib/auth/client'
-import { Button } from '../button'
+import { Button, ButtonProps } from '../button'
 
-export function SignInButton({ text = 'Sign in' }: { text?: string }) {
-  return <Button onClick={() => signInWithGoogle()}>{text}</Button>
+export function SignInButton({
+  text = 'Sign in',
+  className,
+  variant = 'primary',
+  type = 'button',
+}: {
+  text?: string
+  className?: string
+  variant?: ButtonProps['variant']
+  type?: ButtonProps['type']
+}) {
+  return (
+    <Button
+      onClick={() => signInWithGoogle()}
+      className={className}
+      variant={variant}
+      type={type}
+    >
+      {text}
+    </Button>
+  )
 }
