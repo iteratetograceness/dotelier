@@ -34,17 +34,26 @@ export class PixelEditor {
       this.renderer.requestRedraw()
     },
     touchStart: (e: TouchEvent) => {
+      if (e.target === this.canvas) {
+        e.preventDefault()
+      }
       this.isDrawing = true
       this.history.startAction()
       this.toolManager.currentTool.onDown(e, this.color)
       this.renderer.requestRedraw()
     },
     touchMove: (e: TouchEvent) => {
+      if (e.target === this.canvas) {
+        e.preventDefault()
+      }
       if (!this.isDrawing) return
       this.toolManager.currentTool.onMove(e, this.color)
       if (!this.toolManager.currentTool.atomic) this.renderer.requestRedraw()
     },
     touchEnd: (e: TouchEvent) => {
+      if (e.target === this.canvas) {
+        e.preventDefault()
+      }
       if (!this.isDrawing) return
       this.isDrawing = false
       this.toolManager.currentTool.onUp(e, this.color)

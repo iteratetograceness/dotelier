@@ -120,11 +120,17 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
         id={`main-canvas-${id}`}
         ref={canvasRef}
         className='size-full cursor-crosshair'
+        style={{
+          touchAction: 'none',
+        }}
       />
       <canvas
         id={`preview-canvas-${id}`}
         ref={previewCanvasRef}
         className='size-full pointer-events-none absolute inset-0'
+        style={{
+          touchAction: 'none',
+        }}
       />
     </div>
   )
