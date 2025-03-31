@@ -4,37 +4,64 @@ import { cn } from '../utils/classnames'
 
 const variants = {
   primary:
-    'bg-background text-foreground hover:bg-hover border-r-shadow border-b-shadow border-highlight',
+    'bg-background text-accent hover:bg-hover border-r-light-shadow border-b-light-shadow border-highlight [text-shadow:_1px_1px_0_var(--medium)]',
+  dark: 'bg-accent text-medium hover:bg-dark-hover border-r-foreground border-b-foreground border-light-shadow [text-shadow:_1px_1px_0_var(--foreground)]',
 } as const
 
 const base = `px-4 py-1 w-fit border`
 
-const icon = `!p-1 aspect-square shrink-0`
+const icon = `!p-3 !aspect-square w-auto h-full flex items-center justify-center`
 
-const animation = `
-  active:border-shadow
-  active:border-r-highlight
-  active:border-b-highlight
+const animation = {
+  primary: `
+  active:border-light-shadow
+  active:border-r-medium
+  active:border-b-medium
   transition-[border-color]
   duration-75
-`
+`,
+  dark: `
+  active:border-foreground
+  active:border-r-light-shadow
+  active:border-b-light-shadow
+  transition-[border-color]
+  duration-75
+`,
+} as const
 
-const pressed = `
-  border-shadow
+const pressed = {
+  primary: `
+  !border-light-shadow
   !border-r-highlight
   !border-b-highlight
   transition-[border-color]
   duration-75
   !bg-hover
-`
+`,
+  dark: `
+  !border-foreground
+  !border-r-light-shadow
+  !border-b-light-shadow
+  transition-[border-color]
+  duration-75
+  !bg-dark-hover
+`,
+} as const
 
-const disabled = `
+const disabled = {
+  primary: `
   !bg-hover
   cursor-not-allowed
   text-medium
-  dark:[text-shadow:_1px_1px_0_var(--highlight)]
-  [text-shadow:_1px_1px_0_var(--background)]
-`
+  [text-shadow:_1px_1px_0_var(--white)]
+`,
+  dark: `
+  !bg-dark-hover
+  cursor-not-allowed
+  !text-highlight
+  [text-shadow:_1px_1px_0_var(--light-shadow)]
+`,
+} as const
 
 interface BaseProps {
   children?: React.ReactNode
@@ -64,9 +91,9 @@ export function Button({
       className={cn(
         variants[variant],
         base,
-        !isDisabled && animation,
-        !isDisabled && isPressed && pressed,
-        isDisabled && disabled,
+        !isDisabled && animation[variant],
+        !isDisabled && isPressed && pressed[variant],
+        isDisabled && disabled[variant],
         iconOnly && icon,
         className
       )}

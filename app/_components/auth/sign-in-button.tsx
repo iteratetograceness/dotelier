@@ -1,16 +1,25 @@
 'use client'
 
-import { authClient } from '@/lib/auth/client'
-import { Button } from '../button'
+import { signInWithGoogle } from '@/lib/auth/client'
+import { Button, ButtonProps } from '../button'
 
-export function SignInButton({ text = 'Sign in' }: { text?: string }) {
+export function SignInButton({
+  text = 'Sign in',
+  className,
+  variant = 'primary',
+  type = 'button',
+}: {
+  text?: string
+  className?: string
+  variant?: ButtonProps['variant']
+  type?: ButtonProps['type']
+}) {
   return (
     <Button
-      onClick={async () => {
-        await authClient.signIn.social({
-          provider: 'google',
-        })
-      }}
+      onClick={() => signInWithGoogle()}
+      className={className}
+      variant={variant}
+      type={type}
     >
       {text}
     </Button>

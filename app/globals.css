@@ -6,13 +6,13 @@
   --background: #cfcfcf;
   --foreground: #111111;
   --accent: #272727;
+  --dark-hover: #3a3a3a;
   --shadow: #515151;
   --highlight: #fcfcfc;
-  --text-transform: uppercase;
   --hover: #d8d8d8;
   --medium: #b3b3b3;
   --light-shadow: #6d6d6d;
-  --white: #e7e5e4;
+  --white: #e4e7e7;
 }
 
 body {
@@ -21,37 +21,5 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6, p, span, a, button, input, textarea {
-  text-transform: var(--text-transform);
-}
-
-.w-color-compact {
-  gap: 4px;
-}
-
-.w-color-editable-input,
-.w-color-editable-input-rgba,
-.w-color-editable-input input,
-.w-color-editable-input-rgba input {
-  font-size: 14px !important;
-}
-
-.w-color-editable-input > span > div {
-  width: 13px !important;
-  height: 13px !important;
-}
-
-@layer utilities {
-  .before\:bg-pattern::before {
-    @apply bg-pattern;
-  }
-
-  .bg-pattern {
-    background: repeating-conic-gradient(
-      var(--foreground) 0% 25%,
-      var(--background) 25% 50%,
-      var(--foreground) 50% 75%,
-      var(--background) 75% 100%
-    );
-    background-size: 4px 4px;
-  }
+  text-transform: uppercase;
 }
