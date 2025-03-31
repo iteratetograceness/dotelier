@@ -9,17 +9,16 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Color, DEFAULT_HEIGHT, DEFAULT_WIDTH, PixelEditor } from './editor'
+import { DEFAULT_SIZE, PixelEditor } from './editor'
 
 const ZOOM_FACTOR = 10
 
 interface HtmlCanvasProps {
   id: string
   fileKey: string
-  onPixelDataChange?: (pixelData: Color[][]) => void
 }
 
-function HtmlCanvasInner({ id, fileKey, onPixelDataChange }: HtmlCanvasProps) {
+function HtmlCanvasInner({ id, fileKey }: HtmlCanvasProps) {
   const url = getPublicPixelAsset(fileKey)
   const [error, setError] = useState<string>()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -48,7 +47,7 @@ function HtmlCanvasInner({ id, fileKey, onPixelDataChange }: HtmlCanvasProps) {
       editorRef.current?.destroy()
       editorRef.current = null
     }
-  }, [url, onPixelDataChange])
+  }, [url])
 
   return error ? (
     <div className='size-full flex items-center justify-center'>
@@ -69,10 +68,10 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
   id,
   ref,
   fileKey,
-  onPixelDataChange,
 }: HtmlCanvasProps & { ref: Ref<HtmlCanvasRef> }) {
   const url = getPublicPixelAsset(fileKey)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const editorRef = useRef<PixelEditor | null>(null)
   const [error, setError] = useState<string>()
 
@@ -86,15 +85,16 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
   )
 
   useEffect(() => {
-    if (!canvasRef.current) return
+    if (!canvasRef.current || !previewCanvasRef.current) return
 
     const canvas = canvasRef.current
-    canvas.width = DEFAULT_WIDTH * ZOOM_FACTOR
-    canvas.height = DEFAULT_HEIGHT * ZOOM_FACTOR
+    const previewCanvas = previewCanvasRef.current
+    canvas.width = DEFAULT_SIZE * ZOOM_FACTOR
+    canvas.height = DEFAULT_SIZE * ZOOM_FACTOR
+    previewCanvas.width = DEFAULT_SIZE * ZOOM_FACTOR
+    previewCanvas.height = DEFAULT_SIZE * ZOOM_FACTOR
 
-    const editor = new PixelEditor(canvas, {
-      onPixelDataChange,
-    })
+    const editor = new PixelEditor(canvas, previewCanvas)
 
     editorRef.current = editor
 
@@ -108,13 +108,24 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
       editorRef.current?.destroy()
       editorRef.current = null
     }
-  }, [url, onPixelDataChange])
+  }, [url])
 
   return error ? (
     <div className='size-full flex items-center justify-center'>
       <p className='text-sm text-shadow'>{error}</p>
     </div>
   ) : (
-    <canvas id={id} ref={canvasRef} className='size-full cursor-crosshair' />
+    <div className='relative size-full'>
+      <canvas
+        id={`main-canvas-${id}`}
+        ref={canvasRef}
+        className='size-full cursor-crosshair'
+      />
+      <canvas
+        id={`preview-canvas-${id}`}
+        ref={previewCanvasRef}
+        className='size-full pointer-events-none absolute inset-0'
+      />
+    </div>
   )
 })

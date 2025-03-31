@@ -9,7 +9,8 @@ import { Button } from '../button'
 import { Pill } from '../pill'
 import { sharedClasses } from './constants'
 import { DownloadButton } from './download-button'
-import { Color, PixelEditorTool } from './editor'
+import { Color } from './editor/renderer'
+import { ToolName } from './editor/tool'
 import { HtmlCanvasRef, HtmlCanvasWithRef } from './html-canvas'
 
 function CanvasInner({
@@ -27,9 +28,7 @@ function CanvasInner({
 }) {
   const pixelVersion = use(versionPromise)
   const editorRef = useRef<HtmlCanvasRef>(null)
-  const [activeTool, setActiveTool] = useState<PixelEditorTool>(
-    PixelEditorTool.Pen
-  )
+  const [activeTool, setActiveTool] = useState<ToolName>('pen')
   const [rgbaColor, setRgbaColor] = useState({
     r: 0,
     g: 0,
@@ -39,22 +38,11 @@ function CanvasInner({
 
   useEffect(() => {
     const editor = editorRef.current?.getEditor()
-    return () => {
-      if (editor?.eventsBinded) {
-        editor.destroy()
-      }
-    }
+    return () => editor?.destroy()
   }, [])
 
   return (
-    <div
-      id={`canvas-${pixel.id}`}
-      className={cn(
-        sharedClasses,
-        'h-fit'
-        // 'h-[calc(100%-144px)] sm:h-[450px]',
-      )}
-    >
+    <div id={`canvas-${pixel.id}`} className={cn(sharedClasses, 'h-fit')}>
       {/* Canvas */}
       <div
         className={cn(
@@ -88,11 +76,28 @@ function CanvasInner({
               pixel.createdAt.toLocaleDateString()}
           </Pill>
         </div>
+        <div className='flex gap-1'>
+          <Button
+            aria-label='Toggle Grid'
+            iconOnly
+            onClick={() => {
+              editorRef.current?.getEditor()?.toggleGrid()
+            }}
+          >
+            <span>G</span>
+          </Button>
+        </div>
+
         {/* Color Picker */}
         <RgbaColorPicker
           color={rgbaColor}
           onChange={(color) => {
-            const colorArray = [color.r, color.g, color.b, color.a] as Color
+            const colorArray = [
+              color.r,
+              color.g,
+              color.b,
+              color.a * 255,
+            ] as Color
             editorRef.current?.getEditor()?.setColor(colorArray)
             setRgbaColor(color)
           }}
@@ -104,10 +109,10 @@ function CanvasInner({
             <Button
               aria-label='Pen Tool'
               iconOnly
-              isPressed={activeTool === PixelEditorTool.Pen}
+              isPressed={activeTool === 'pen'}
               onClick={() => {
-                editorRef.current?.getEditor()?.setTool(PixelEditorTool.Pen)
-                setActiveTool(PixelEditorTool.Pen)
+                editorRef.current?.getEditor()?.setTool('pen')
+                setActiveTool('pen')
               }}
             >
               <span>P</span>
@@ -115,10 +120,10 @@ function CanvasInner({
             <Button
               aria-label='Eraser Tool'
               iconOnly
-              isPressed={activeTool === PixelEditorTool.Eraser}
+              isPressed={activeTool === 'eraser'}
               onClick={() => {
-                editorRef.current?.getEditor()?.setTool(PixelEditorTool.Eraser)
-                setActiveTool(PixelEditorTool.Eraser)
+                editorRef.current?.getEditor()?.setTool('eraser')
+                setActiveTool('eraser')
               }}
             >
               <span>E</span>
@@ -126,32 +131,21 @@ function CanvasInner({
             <Button
               aria-label='Fill Tool'
               iconOnly
-              isPressed={activeTool === PixelEditorTool.Fill}
+              isPressed={activeTool === 'fill'}
               onClick={() => {
-                editorRef.current?.getEditor()?.setTool(PixelEditorTool.Fill)
-                setActiveTool(PixelEditorTool.Fill)
+                editorRef.current?.getEditor()?.setTool('fill')
+                setActiveTool('fill')
               }}
             >
               <span>F</span>
             </Button>
             <Button
-              aria-label='Circle Tool'
-              iconOnly
-              isPressed={activeTool === PixelEditorTool.Circle}
-              onClick={() => {
-                editorRef.current?.getEditor()?.setTool(PixelEditorTool.Circle)
-                setActiveTool(PixelEditorTool.Circle)
-              }}
-            >
-              <span>C</span>
-            </Button>
-            <Button
               aria-label='Line Tool'
               iconOnly
-              isPressed={activeTool === PixelEditorTool.Line}
+              isPressed={activeTool === 'line'}
               onClick={() => {
-                editorRef.current?.getEditor()?.setTool(PixelEditorTool.Line)
-                setActiveTool(PixelEditorTool.Line)
+                editorRef.current?.getEditor()?.setTool('line')
+                setActiveTool('line')
               }}
             >
               <span>L</span>
