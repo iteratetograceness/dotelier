@@ -1,3 +1,4 @@
+import throttle from 'lodash.throttle'
 import { toast } from 'sonner'
 import { circle, line, Point } from './shapes'
 
@@ -38,6 +39,9 @@ export class PixelEditor {
   private pixelData: Color[][]
   private pixelSizeX: number
   private pixelSizeY: number
+  private throttledMouseMove: ReturnType<typeof throttle>
+  private throttledTouchMove: ReturnType<typeof throttle>
+  private isLinePreviewMode: boolean = false
 
   public eventsBinded: boolean = false
 
@@ -49,6 +53,11 @@ export class PixelEditor {
     | { x: number; y: number; color: Color }
     | Array<{ x: number; y: number; color: Color }>
   > = []
+  private currentDrawOrEraseGroup: Array<{
+    x: number
+    y: number
+    color: Color
+  }> | null = null
 
   private onPixelDataChange?: (pixelData: Color[][]) => void
 
@@ -76,6 +85,21 @@ export class PixelEditor {
 
     this.canvas.style.imageRendering = 'pixelated'
 
+    this.throttledMouseMove = throttle(
+      (e: MouseEvent) => {
+        this._handleMouseMove.call(this, e)
+      },
+      16,
+      { leading: true }
+    )
+    this.throttledTouchMove = throttle(
+      (e: TouchEvent) => {
+        this._handleTouchMove.call(this, e)
+      },
+      16,
+      { leading: true }
+    )
+
     this._clearCanvas()
     this._bindEvents()
     this.eventsBinded = true
@@ -84,7 +108,7 @@ export class PixelEditor {
   private _bindEvents(): void {
     // Mouse events
     this.canvas.addEventListener('mousedown', this._handleMouseDown.bind(this))
-    this.canvas.addEventListener('mousemove', this._handleMouseMove.bind(this))
+    this.canvas.addEventListener('mousemove', this.throttledMouseMove)
     this.canvas.addEventListener('mouseup', this._handleMouseUp.bind(this))
     this.canvas.addEventListener('mouseleave', this._handleMouseUp.bind(this))
 
@@ -93,32 +117,32 @@ export class PixelEditor {
       'touchstart',
       this._handleTouchStart.bind(this)
     )
-    this.canvas.addEventListener('touchmove', this._handleTouchMove.bind(this))
+    this.canvas.addEventListener('touchmove', this.throttledTouchMove)
     this.canvas.addEventListener('touchend', this._handleTouchEnd.bind(this))
   }
 
   private _handleMouseDown(e: MouseEvent): void {
     this.isDrawing = true
     const { x, y } = this._getPixelCoords(e)
+
+    if (
+      this.tool === PixelEditorTool.Pen ||
+      this.tool === PixelEditorTool.Eraser
+    ) {
+      this.currentDrawOrEraseGroup = []
+    }
+
     this._handleToolAction(x, y)
   }
 
   private _handleMouseMove(e: MouseEvent): void {
     if (this.tool === PixelEditorTool.Line && this.linePreviewPoint) {
-      const rect = this.canvas.getBoundingClientRect()
-      const x = Math.floor((e.clientX - rect.left) / this.pixelSizeX)
-      const y = Math.floor((e.clientY - rect.top) / this.pixelSizeY)
-
+      const { x, y } = this._getPixelCoords(e)
       this._handleLinePreview(x, y)
     } else {
       if (!this.isDrawing) return
-
       const { x, y } = this._getPixelCoords(e)
-
-      // Only handle continuous drawing for pen and eraser
-      if (this.tool === 0 || this.tool === 1) {
-        this._handleToolAction(x, y)
-      }
+      this._handleToolAction(x, y)
     }
   }
 
@@ -129,6 +153,10 @@ export class PixelEditor {
       this.previewCanvas.height = this.canvas.height
       this.previewCanvas.style.position = 'absolute'
       this.previewCanvas.style.pointerEvents = 'none'
+      this.previewCanvas.style.left = this.canvas.offsetLeft + 'px'
+      this.previewCanvas.style.top = this.canvas.offsetTop + 'px'
+      this.previewCanvas.style.width = this.canvas.clientWidth + 'px'
+      this.previewCanvas.style.height = this.canvas.clientHeight + 'px'
       this.canvas.parentElement?.appendChild(this.previewCanvas)
     }
   }
@@ -136,12 +164,7 @@ export class PixelEditor {
   private _clearLinePreview(): void {
     const previewCtx = this.previewCanvas?.getContext('2d')
     if (!previewCtx) return
-    previewCtx.clearRect(
-      0,
-      0,
-      this.previewCanvas?.width ?? this.canvas.width,
-      this.previewCanvas?.height ?? this.canvas.height
-    )
+    previewCtx.clearRect(0, 0, this.canvas.width, this.canvas.height)
   }
 
   private _drawLinePreview(points: Point[]): void {
@@ -179,40 +202,66 @@ export class PixelEditor {
 
   private _handleMouseUp(): void {
     this.isDrawing = false
+    if (this.currentDrawOrEraseGroup) {
+      this.undoStack.push(this.currentDrawOrEraseGroup)
+      this.redoStack = []
+      this.currentDrawOrEraseGroup = null
+    }
   }
 
   private _handleTouchStart(e: TouchEvent): void {
-    e.preventDefault()
-    this.isDrawing = true
-    const { x, y } = this._getTouchPixelCoords(e)
-    this._handleToolAction(x, y)
-  }
-
-  private _handleTouchMove(e: TouchEvent): void {
-    e.preventDefault()
-
-    if (this.tool === PixelEditorTool.Line && this.linePreviewPoint) {
-      const touch = e.touches[0]
-      const rect = this.canvas.getBoundingClientRect()
-      const x = Math.floor((touch.clientX - rect.left) / this.pixelSizeX)
-      const y = Math.floor((touch.clientY - rect.top) / this.pixelSizeY)
-
-      this._handleLinePreview(x, y)
-    }
-
-    if (!this.isDrawing) return
-
     const { x, y } = this._getTouchPixelCoords(e)
 
-    // Only handle continuous drawing for pen and eraser
-    if (this.tool === 0 || this.tool === 1) {
+    if (x >= 0 && x < this.pixelWidth && y >= 0 && y < this.pixelHeight) {
+      e.preventDefault()
+      this.isDrawing = true
+      if (
+        this.tool === PixelEditorTool.Pen ||
+        this.tool === PixelEditorTool.Eraser
+      ) {
+        this.currentDrawOrEraseGroup = []
+      }
       this._handleToolAction(x, y)
     }
   }
 
+  private _handleTouchMove(e: TouchEvent): void {
+    if (this.tool === PixelEditorTool.Line && this.linePreviewPoint) {
+      const { x, y } = this._getTouchPixelCoords(e)
+      if (x >= 0 && x < this.pixelWidth && y >= 0 && y < this.pixelHeight) {
+        e.preventDefault()
+        this._handleLinePreview(x, y)
+      }
+    } else if (this.isDrawing) {
+      const { x, y } = this._getTouchPixelCoords(e)
+      if (x >= 0 && x < this.pixelWidth && y >= 0 && y < this.pixelHeight) {
+        e.preventDefault()
+        if (
+          this.tool === PixelEditorTool.Pen ||
+          this.tool === PixelEditorTool.Eraser
+        ) {
+          this._handleToolAction(x, y)
+        }
+      }
+    }
+  }
+
   private _handleTouchEnd(e: TouchEvent): void {
+    if (!this.isDrawing && !this.linePreviewPoint) return
+
     e.preventDefault()
     this.isDrawing = false
+
+    if (this.tool === PixelEditorTool.Line && this.linePreviewPoint) {
+      const { x, y } = this._getTouchPixelCoords(e, true)
+      this._handleLineToolClick(x, y)
+    }
+
+    if (this.currentDrawOrEraseGroup) {
+      this.undoStack.push(this.currentDrawOrEraseGroup)
+      this.redoStack = []
+      this.currentDrawOrEraseGroup = null
+    }
   }
 
   private _getPixelCoords(e: MouseEvent): { x: number; y: number } {
@@ -226,15 +275,18 @@ export class PixelEditor {
     return { x, y }
   }
 
-  private _getTouchPixelCoords(e: TouchEvent): { x: number; y: number } {
+  private _getTouchPixelCoords(
+    e: TouchEvent,
+    changedTouches = false
+  ): { x: number; y: number } {
     const rect = this.canvas.getBoundingClientRect()
-    const touch = e.touches[0]
-    const x = Math.floor(
-      ((touch.clientX - rect.left) / this.canvas.clientWidth) * this.pixelWidth
-    )
-    const y = Math.floor(
-      ((touch.clientY - rect.top) / this.canvas.clientHeight) * this.pixelHeight
-    )
+    const touch = changedTouches ? e.changedTouches[0] : e.touches[0]
+
+    const scaleX = this.pixelWidth / this.canvas.clientWidth
+    const scaleY = this.pixelHeight / this.canvas.clientHeight
+    const x = Math.floor((touch.clientX - rect.left) * scaleX)
+    const y = Math.floor((touch.clientY - rect.top) * scaleY)
+
     return { x, y }
   }
 
@@ -264,8 +316,13 @@ export class PixelEditor {
     if (x < 0 || x >= this.pixelWidth || y < 0 || y >= this.pixelHeight) return
 
     if (JSON.stringify(this.pixelData[x][y]) !== JSON.stringify(this.color)) {
-      this.undoStack.push({ x, y, color: [...this.pixelData[x][y]] })
-      this.redoStack = []
+      this.currentDrawOrEraseGroup?.push({
+        x,
+        y,
+        color: [...this.pixelData[x][y]],
+      })
+      // this.undoStack.push({ x, y, color: [...this.pixelData[x][y]] })
+      // this.redoStack = []
 
       this.pixelData[x][y] = [...this.color]
 
@@ -284,8 +341,13 @@ export class PixelEditor {
   private _erasePixel(x: number, y: number): void {
     if (x < 0 || x >= this.pixelWidth || y < 0 || y >= this.pixelHeight) return
 
-    this.undoStack.push({ x, y, color: [...this.pixelData[x][y]] })
-    this.redoStack = []
+    this.currentDrawOrEraseGroup?.push({
+      x,
+      y,
+      color: [...this.pixelData[x][y]],
+    })
+    // this.undoStack.push({ x, y, color: [...this.pixelData[x][y]] })
+    // this.redoStack = []
 
     this.pixelData[x][y] = [255, 255, 255, 1]
 
@@ -393,13 +455,10 @@ export class PixelEditor {
       }
 
       if (changes.length > 0) {
-        this.undoStack = this.undoStack.slice(
-          0,
-          this.undoStack.length - changes.length
-        )
         this.undoStack.push(changes)
         this.redoStack = []
         this._notifyPixelDataChange()
+        this._clearLinePreview()
       }
 
       this.linePoints = []
@@ -437,10 +496,6 @@ export class PixelEditor {
     }
 
     if (changes.length > 0) {
-      this.undoStack = this.undoStack.slice(
-        0,
-        this.undoStack.length - changes.length
-      )
       this.undoStack.push(changes)
       this.redoStack = []
       this._notifyPixelDataChange()
@@ -456,6 +511,10 @@ export class PixelEditor {
     }
   }
 
+  private _getFillStyle(color: Color): string {
+    return `rgba(${color[0]},${color[1]},${color[2]},${color[3]})`
+  }
+
   public undo(): void {
     if (this.undoStack.length === 0) return
 
@@ -466,47 +525,58 @@ export class PixelEditor {
       return
     }
 
+    this.ctx.beginPath()
+
     if (Array.isArray(lastAction)) {
       const redoChanges: Array<{
         x: number
         y: number
         color: Color
       }> = []
+      const seen = new Set()
+      const changesByColor = new Map<string, { color: Color; pixels: Array<[number, number]> }>()
 
-      for (const change of lastAction) {
-        const { x, y, color } = change
-
+      for (const { x, y, color } of lastAction) {
+        const key = `${x}-${y}`
+        if (seen.has(key)) continue
+        seen.add(key)
+  
         redoChanges.push({
-          x,
-          y,
-          color: [...this.pixelData[x][y]],
+          x, y,
+          color: this.pixelData[x][y].slice() as Color
         })
+  
+        this.pixelData[x][y] = color.slice() as Color
+  
+        const colorKey = color.join(',')
+        if (!changesByColor.has(colorKey)) {
+          changesByColor.set(colorKey, { color, pixels: [] })
+        }
+        changesByColor.get(colorKey)!.pixels.push([x, y])
+      }
 
-        this.pixelData[x][y] = [...color]
-
-        this.ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`
-        console.log(`rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`)
-        this.ctx.fillRect(
-          Math.floor(x * this.pixelSizeX),
-          Math.floor(y * this.pixelSizeY),
-          Math.ceil(this.pixelSizeX),
-          Math.ceil(this.pixelSizeY)
-        )
+      for (const { color, pixels } of changesByColor.values()) {
+        this.ctx.fillStyle = this._getFillStyle(color)
+        for (const [x, y] of pixels) {
+          this.ctx.fillRect(
+            Math.floor(x * this.pixelSizeX),
+            Math.floor(y * this.pixelSizeY),
+            Math.ceil(this.pixelSizeX),
+            Math.ceil(this.pixelSizeY)
+          )
+        }
       }
 
       this.redoStack.push(redoChanges)
     } else {
       const { x, y, color } = lastAction
-
       const redoChange = {
-        x,
-        y,
-        color: [...this.pixelData[x][y]] as Color,
+        x, y,
+        color: this.pixelData[x][y].slice() as Color
       }
 
-      this.pixelData[x][y] = [...color]
-
-      this.ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`
+      this.pixelData[x][y] = color.slice() as Color
+      this.ctx.fillStyle = this._getFillStyle(color)
       this.ctx.fillRect(
         Math.floor(x * this.pixelSizeX),
         Math.floor(y * this.pixelSizeY),
@@ -517,6 +587,7 @@ export class PixelEditor {
       this.redoStack.push(redoChange)
     }
 
+    this.ctx.closePath()
     this._notifyPixelDataChange()
   }
 
@@ -524,7 +595,6 @@ export class PixelEditor {
     if (this.redoStack.length === 0) return
 
     const lastRedoAction = this.redoStack.pop()
-
     if (!lastRedoAction) {
       toast.error('Failed to redo')
       return
@@ -536,25 +606,38 @@ export class PixelEditor {
         y: number
         color: Color
       }> = []
+      const seen = new Set()
+      const changesByColor = new Map<string, { color: Color; pixels: Array<[number, number]> }>()
 
-      for (const change of lastRedoAction) {
-        const { x, y, color } = change
+      for (const { x, y, color } of lastRedoAction) {
+        const key = `${x}-${y}`
+        if (seen.has(key)) continue
+        seen.add(key)
 
         undoChanges.push({
-          x,
-          y,
-          color: [...this.pixelData[x][y]],
+          x, y,
+          color: this.pixelData[x][y].slice() as Color
         })
 
-        this.pixelData[x][y] = [...color]
+        this.pixelData[x][y] = color.slice() as Color
 
-        this.ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`
-        this.ctx.fillRect(
-          Math.floor(x * this.pixelSizeX),
-          Math.floor(y * this.pixelSizeY),
-          Math.ceil(this.pixelSizeX),
-          Math.ceil(this.pixelSizeY)
-        )
+        const colorKey = color.join(',')
+        if (!changesByColor.has(colorKey)) {
+          changesByColor.set(colorKey, { color, pixels: [] })
+        }
+        changesByColor.get(colorKey)!.pixels.push([x, y])
+      }
+
+      for (const { color, pixels } of changesByColor.values()) {
+        this.ctx.fillStyle = this._getFillStyle(color)
+        for (const [x, y] of pixels) {
+          this.ctx.fillRect(
+            Math.floor(x * this.pixelSizeX),
+            Math.floor(y * this.pixelSizeY),
+            Math.ceil(this.pixelSizeX),
+            Math.ceil(this.pixelSizeY)
+          )
+        }
       }
 
       this.undoStack.push(undoChanges)
@@ -562,14 +645,14 @@ export class PixelEditor {
       const { x, y, color } = lastRedoAction
 
       const undoChange = {
-        x,
-        y,
-        color: [...this.pixelData[x][y]] as Color,
+        x, y,
+        color: this.pixelData[x][y].slice() as Color
       }
 
       this.pixelData[x][y] = [...color]
 
-      this.ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3]})`
+      this.pixelData[x][y] = color.slice() as Color
+      this.ctx.fillStyle = this._getFillStyle(color)
       this.ctx.fillRect(
         Math.floor(x * this.pixelSizeX),
         Math.floor(y * this.pixelSizeY),
@@ -580,6 +663,7 @@ export class PixelEditor {
       this.undoStack.push(undoChange)
     }
 
+    this.ctx.closePath()
     this._notifyPixelDataChange()
   }
 
@@ -765,42 +849,6 @@ export class PixelEditor {
     return this.pixelData
   }
 
-  // public resize(width: number, height: number): void {
-  //   this.pixelWidth = width
-  //   this.pixelHeight = height
-
-  //   this.pixelSizeX = this.canvas.width / this.pixelWidth
-  //   this.pixelSizeY = this.canvas.height / this.pixelHeight
-
-  //   const newPixelData: Color[][] = Array(this.pixelWidth)
-  //     .fill(null)
-  //     .map(() =>
-  //       Array(this.pixelHeight)
-  //         .fill(null)
-  //         .map(() => [255, 255, 255, 1] as Color)
-  //     )
-
-  //   for (let x = 0; x < Math.min(this.pixelWidth, this.pixelData.length); x++) {
-  //     for (
-  //       let y = 0;
-  //       y < Math.min(this.pixelHeight, this.pixelData[0].length);
-  //       y++
-  //     ) {
-  //       newPixelData[x][y] = [...this.pixelData[x][y]] as Color
-  //     }
-  //   }
-
-  //   this.pixelData = newPixelData
-
-  //   this._clearCanvas()
-  //   this.redrawCanvas()
-
-  //   this.undoStack = []
-  //   this.redoStack = []
-
-  //   this._notifyPixelDataChange()
-  // }
-
   public redrawCanvas(): void {
     for (let x = 0; x < this.pixelWidth; x++) {
       for (let y = 0; y < this.pixelHeight; y++) {
@@ -822,10 +870,7 @@ export class PixelEditor {
       'mousedown',
       this._handleMouseDown.bind(this)
     )
-    this.canvas.removeEventListener(
-      'mousemove',
-      this._handleMouseMove.bind(this)
-    )
+    this.canvas.removeEventListener('mousemove', this.throttledMouseMove)
     this.canvas.removeEventListener('mouseup', this._handleMouseUp.bind(this))
     this.canvas.removeEventListener(
       'mouseleave',
@@ -836,12 +881,11 @@ export class PixelEditor {
       'touchstart',
       this._handleTouchStart.bind(this)
     )
-    this.canvas.removeEventListener(
-      'touchmove',
-      this._handleTouchMove.bind(this)
-    )
+    this.canvas.removeEventListener('touchmove', this.throttledTouchMove)
     this.canvas.removeEventListener('touchend', this._handleTouchEnd.bind(this))
     this.previewCanvas?.remove()
     this.previewCanvas = null
+    this.throttledMouseMove.cancel()
+    this.throttledTouchMove.cancel()
   }
 }
