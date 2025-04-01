@@ -13,7 +13,7 @@ import { useNewCanvas } from './use-new-canvas'
 
 function NewPixelInputInner({ className }: { className?: string }) {
   const { data: session, isPending: isSessionPending } = useSession()
-  const { setStatus, startGeneration, reset, active } = useNewCanvas()
+  const { startGeneration, reset, active } = useNewCanvas()
   const [isPending, startTransition] = useTransition()
 
   const handleSubmit = useCallback(

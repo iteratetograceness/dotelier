@@ -22,18 +22,20 @@ function HtmlCanvasInner({ id, fileKey }: HtmlCanvasProps) {
   const url = getPublicPixelAsset(fileKey)
   const [error, setError] = useState<string>()
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const editorRef = useRef<PixelEditor>(null)
 
   useEffect(() => {
-    if (!canvasRef.current) return
+    if (!canvasRef.current || !previewCanvasRef.current) return
 
     const canvas = canvasRef.current
-    canvas.width = 1024
-    canvas.height = 1024
+    const previewCanvas = previewCanvasRef.current
+    canvas.width = DEFAULT_SIZE * ZOOM_FACTOR
+    canvas.height = DEFAULT_SIZE * ZOOM_FACTOR
+    previewCanvas.width = DEFAULT_SIZE * ZOOM_FACTOR
+    previewCanvas.height = DEFAULT_SIZE * ZOOM_FACTOR
 
-    const editor = new PixelEditor(canvas, {
-      onPixelDataChange,
-    })
+    const editor = new PixelEditor(canvas, previewCanvas)
 
     editorRef.current = editor
 
@@ -54,7 +56,14 @@ function HtmlCanvasInner({ id, fileKey }: HtmlCanvasProps) {
       <p className='text-sm text-shadow'>{error}</p>
     </div>
   ) : (
-    <canvas id={id} ref={canvasRef} className='size-full' />
+    <div className='relative size-full'>
+      <canvas id={id} ref={canvasRef} className='size-full' />
+      <canvas
+        id={`preview-canvas-${id}`}
+        ref={previewCanvasRef}
+        className='size-full pointer-events-none absolute inset-0'
+      />
+    </div>
   )
 }
 export const HtmlCanvas = memo(HtmlCanvasInner)
