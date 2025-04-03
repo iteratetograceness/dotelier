@@ -47,9 +47,10 @@ function CanvasInner({
       {/* Canvas */}
       <div
         className={cn(
-          'flex items-center justify-center sm:max-w-[500px] sm:h-[500px]',
+          'flex items-center justify-center',
           'border-[2px] border-shadow border-r-background border-b-background',
-          'w-full h-auto sm:h-full sm:w-auto aspect-square bg-white'
+          'aspect-square bg-white',
+          'w-full h-auto md:h-full md:w-auto '
         )}
       >
         {pixelVersion ? (
@@ -67,7 +68,7 @@ function CanvasInner({
       </div>
 
       {/* Controls */}
-      <div className='min-h-36 sm:min-h-auto min-w-auto sm:min-w-36 flex flex-col gap-3'>
+      <div className='min-h-36 md:min-h-auto min-w-auto md:min-w-36 flex flex-col gap-3'>
         <div className='flex gap-1 text-xs'>
           <Pill className='flex-1 truncate whitespace-nowrap' variant='dark'>
             {pixel.prompt}
@@ -78,12 +79,12 @@ function CanvasInner({
           </Pill>
         </div>
 
-        <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow'>
-          <div className='flex h-10 flex-wrap'>
+        <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow h-fit'>
+          <div className='flex flex-wrap md:max-w-[333px]'>
             <ColorPicker onChange={onColorChange} />
             <Button
               aria-label='Pen Tool'
-              className='h-10'
+              className='!h-10'
               iconOnly
               isPressed={activeTool === 'pen'}
               onClick={() => {
@@ -101,6 +102,7 @@ function CanvasInner({
             <Button
               aria-label='Fill Tool'
               iconOnly
+              className='!h-10'
               isPressed={activeTool === 'fill'}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool('fill')
@@ -117,6 +119,7 @@ function CanvasInner({
             <Button
               aria-label='Eraser Tool'
               iconOnly
+              className='!h-10'
               isPressed={activeTool === 'eraser'}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool('eraser')
@@ -133,6 +136,7 @@ function CanvasInner({
             <Button
               aria-label='Line Tool'
               iconOnly
+              className='!h-10'
               isPressed={activeTool === 'line'}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool('line')
@@ -148,7 +152,7 @@ function CanvasInner({
             </Button>
             <Button
               aria-label='Toggle Grid'
-              className='h-10'
+              className='!h-10'
               iconOnly
               onClick={() => {
                 editorRef.current?.getEditor()?.toggleGrid()
@@ -156,12 +160,10 @@ function CanvasInner({
             >
               <Image src='/editor/grid.png' alt='Grid' width={25} height={25} />
             </Button>
-          </div>
-
-          <div className='flex h-10'>
             <Button
               aria-label='Undo'
               iconOnly
+              className='!h-10'
               onClick={() => {
                 editorRef.current?.getEditor()?.undo()
               }}
@@ -176,6 +178,7 @@ function CanvasInner({
             <Button
               aria-label='Redo'
               iconOnly
+              className='!h-10'
               onClick={() => {
                 editorRef.current?.getEditor()?.redo()
               }}
@@ -189,6 +192,7 @@ function CanvasInner({
             </Button>
             <Button
               iconOnly
+              className='!h-10'
               aria-label='Clear'
               onClick={() => {
                 editorRef.current?.getEditor()?.clear()
@@ -201,22 +205,20 @@ function CanvasInner({
                 height={25}
               />
             </Button>
-            <DownloadButton icon />
+            <DownloadButton iconOnly className='!h-10' />
             <Button
               aria-label='Save'
               iconOnly
+              className='!h-10'
               onClick={() => {
                 // Save to database
               }}
             >
               <Image src='/editor/save.png' alt='Save' width={25} height={25} />
             </Button>
-          </div>
-
-          <div className='flex gap-0.5 h-10'>
             <Button
               aria-label='Reset'
-              className='w-20 !px-1'
+              className='w-20 !px-1 !h-10'
               onClick={() => {
                 if (pixelVersion) {
                   editorRef.current

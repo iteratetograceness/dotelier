@@ -23,9 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html className={tiny5.className} lang='en'>
-      <body className='flex flex-col relative size-screen'>
+      <body className='flex flex-col relative w-screen h-screen'>
         <Header />
-        <main className='flex-1'>{children}</main>
+        <main className='flex-1 flex flex-col md:items-center'>{children}</main>
         <Toaster />
         <Analytics />
         <ErrorHandler />

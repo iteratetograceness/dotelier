@@ -3,10 +3,10 @@ import { Button, ButtonProps } from '../button'
 
 // Popover: as svg OR as png
 
-export function DownloadButton(props: ButtonProps & { icon?: boolean }) {
+export function DownloadButton(props: ButtonProps) {
   return (
-    <Button iconOnly={props.icon} {...props}>
-      {props.icon ? (
+    <Button {...props}>
+      {props.iconOnly ? (
         <Image
           src='/editor/download.png'
           alt='Download'
