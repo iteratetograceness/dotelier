@@ -1,0 +1,49 @@
+.pixel-color-picker .react-colorful {
+    width: 100%;
+}
+
+.pixel-color-picker .react-colorful__saturation {
+    /* margin: 0.5rem 0; */
+    border-width: 2px;
+    border-right: 2px solid var(--background);
+    border-bottom: 2px solid var(--background);
+    border-top: 2px solid var(--shadow);
+    border-left: 2px solid var(--shadow);
+    border-radius: 0;
+}
+
+.pixel-color-picker .react-colorful__hue {
+    border-width: 2px;
+    border-right: 2px solid var(--background);
+    border-bottom: 2px solid var(--background);
+    border-top: 2px solid var(--shadow);
+    border-left: 2px solid var(--shadow);
+    border-radius: 0;
+    order: -1;
+}
+
+.pixel-color-picker .react-colorful__hue,
+.pixel-color-picker .react-colorful__alpha {
+    height: 1.5rem;
+    border-width: 2px;
+    border-right: 2px solid var(--background);
+    border-bottom: 2px solid var(--background);
+    border-top: 2px solid var(--shadow);
+    border-left: 2px solid var(--shadow);
+    border-radius: 0;
+}
+
+.pixel-color-picker .react-colorful__hue-pointer,
+.pixel-color-picker .react-colorful__alpha-pointer {
+    width: .75rem;
+    height: 1.5rem;
+    border: 2px solid var(--white);
+    border-radius: 0;
+}
+
+.pixel-color-picker .react-colorful__saturation-pointer {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--white);
+    border-radius: 0;
+}

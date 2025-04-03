@@ -1,9 +1,16 @@
+import { polar } from '@polar-sh/better-auth'
+import { Polar } from '@polar-sh/sdk'
 import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
-import { jwt } from 'better-auth/plugins'
+import { admin, jwt } from 'better-auth/plugins'
 import { getBaseUrl } from '../base-url'
 import { fastDb } from '../db/pg'
 import { redis } from '../redis'
+
+const client = new Polar({
+  accessToken: process.env.POLAR_ACCESS_TOKEN,
+  server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+})
 
 export const auth = betterAuth({
   appName: 'Dotelier Studio',
@@ -52,5 +59,19 @@ export const auth = betterAuth({
         },
       },
     }),
+    admin(),
+    polar({
+      client,
+      createCustomerOnSignUp: true,
+    }),
   ],
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 10 * 60,
+    },
+  },
+  advanced: {
+    cookiePrefix: 'dotelier',
+  },
 })

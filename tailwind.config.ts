@@ -28,6 +28,16 @@ export default {
         xs: '400px',
         custom: '1200px',
       },
+      skew: {
+        'hover-left': '1deg',
+        'hover-right': '-1deg',
+        'hover-middle': '0deg',
+      },
+      translate: {
+        'hover-left': '-0.5px',
+        'hover-right': '-0.5px',
+        'hover-middle': '1px',
+      },
     },
   },
   plugins: [

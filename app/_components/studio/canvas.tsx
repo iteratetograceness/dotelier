@@ -2,11 +2,12 @@
 
 import { cn } from '@/app/utils/classnames'
 import { getPublicPixelAsset } from '@/lib/ut/client'
-import { memo, use, useEffect, useRef, useState } from 'react'
-import { RgbaColorPicker } from 'react-colorful'
+import { memo, use, useCallback, useEffect, useRef, useState } from 'react'
+import { RgbaColor } from 'react-colorful'
 import { StudioPixel } from '.'
 import { Button } from '../button'
 import { Pill } from '../pill'
+import ColorPicker from './color-picker'
 import { sharedClasses } from './constants'
 import { DownloadButton } from './download-button'
 import { Color } from './editor/renderer'
@@ -29,12 +30,11 @@ function CanvasInner({
   const pixelVersion = use(versionPromise)
   const editorRef = useRef<HtmlCanvasRef>(null)
   const [activeTool, setActiveTool] = useState<ToolName>('pen')
-  const [rgbaColor, setRgbaColor] = useState({
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 1,
-  })
+
+  const onColorChange = useCallback((color: RgbaColor) => {
+    const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
+    editorRef.current?.getEditor()?.setColor(colorArray)
+  }, [])
 
   useEffect(() => {
     const editor = editorRef.current?.getEditor()
@@ -89,19 +89,8 @@ function CanvasInner({
         </div>
 
         {/* Color Picker */}
-        <RgbaColorPicker
-          color={rgbaColor}
-          onChange={(color) => {
-            const colorArray = [
-              color.r,
-              color.g,
-              color.b,
-              color.a * 255,
-            ] as Color
-            editorRef.current?.getEditor()?.setColor(colorArray)
-            setRgbaColor(color)
-          }}
-        />
+        <ColorPicker onChange={onColorChange} />
+
         {/* <HexColorInput /> */}
         <div className='flex flex-col w-full gap-0.5'>
           {/* TOOLS */}
