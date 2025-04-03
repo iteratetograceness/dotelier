@@ -2,6 +2,7 @@
 
 import { cn } from '@/app/utils/classnames'
 import { getPublicPixelAsset } from '@/lib/ut/client'
+import Image from 'next/image'
 import { memo, use, useCallback, useEffect, useRef, useState } from 'react'
 import { RgbaColor } from 'react-colorful'
 import { StudioPixel } from '.'
@@ -76,27 +77,13 @@ function CanvasInner({
               pixel.createdAt.toLocaleDateString()}
           </Pill>
         </div>
-        <div className='flex gap-1'>
-          <Button
-            aria-label='Toggle Grid'
-            iconOnly
-            onClick={() => {
-              editorRef.current?.getEditor()?.toggleGrid()
-            }}
-          >
-            <span>G</span>
-          </Button>
-        </div>
 
-        {/* Color Picker */}
-        <ColorPicker onChange={onColorChange} />
-
-        {/* <HexColorInput /> */}
-        <div className='flex flex-col w-full gap-0.5'>
-          {/* TOOLS */}
-          <div className='flex gap-0.5 h-10 sm:h-12 flex-wrap'>
+        <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow'>
+          <div className='flex h-10 flex-wrap'>
+            <ColorPicker onChange={onColorChange} />
             <Button
               aria-label='Pen Tool'
+              className='h-10'
               iconOnly
               isPressed={activeTool === 'pen'}
               onClick={() => {
@@ -104,18 +91,12 @@ function CanvasInner({
                 setActiveTool('pen')
               }}
             >
-              <span>P</span>
-            </Button>
-            <Button
-              aria-label='Eraser Tool'
-              iconOnly
-              isPressed={activeTool === 'eraser'}
-              onClick={() => {
-                editorRef.current?.getEditor()?.setTool('eraser')
-                setActiveTool('eraser')
-              }}
-            >
-              <span>E</span>
+              <Image
+                src='/editor/pen.png'
+                alt='Pen Tool'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
               aria-label='Fill Tool'
@@ -126,7 +107,28 @@ function CanvasInner({
                 setActiveTool('fill')
               }}
             >
-              <span>F</span>
+              <Image
+                src='/editor/fill.png'
+                alt='Fill Tool'
+                width={25}
+                height={25}
+              />
+            </Button>
+            <Button
+              aria-label='Eraser Tool'
+              iconOnly
+              isPressed={activeTool === 'eraser'}
+              onClick={() => {
+                editorRef.current?.getEditor()?.setTool('eraser')
+                setActiveTool('eraser')
+              }}
+            >
+              <Image
+                src='/editor/eraser.png'
+                alt='Eraser Tool'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
               aria-label='Line Tool'
@@ -137,12 +139,26 @@ function CanvasInner({
                 setActiveTool('line')
               }}
             >
-              <span>L</span>
+              <Image
+                src='/editor/line.png'
+                alt='Line Tool'
+                width={25}
+                height={25}
+              />
+            </Button>
+            <Button
+              aria-label='Toggle Grid'
+              className='h-10'
+              iconOnly
+              onClick={() => {
+                editorRef.current?.getEditor()?.toggleGrid()
+              }}
+            >
+              <Image src='/editor/grid.png' alt='Grid' width={25} height={25} />
             </Button>
           </div>
 
-          {/* UNDO/REDO/CLEAR/RESET */}
-          <div className='flex gap-0.5 h-10 sm:h-12'>
+          <div className='flex h-10'>
             <Button
               aria-label='Undo'
               iconOnly
@@ -150,7 +166,12 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.undo()
               }}
             >
-              <span>U</span>
+              <Image
+                src='/editor/arrow-left.png'
+                alt='Undo'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
               aria-label='Redo'
@@ -159,18 +180,43 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.redo()
               }}
             >
-              <span>R</span>
+              <Image
+                src='/editor/arrow-right.png'
+                alt='Redo'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
+              iconOnly
               aria-label='Clear'
               onClick={() => {
                 editorRef.current?.getEditor()?.clear()
               }}
             >
-              <span>Clear</span>
+              <Image
+                src='/editor/trash.png'
+                alt='Clear'
+                width={25}
+                height={25}
+              />
             </Button>
+            <DownloadButton icon />
+            <Button
+              aria-label='Save'
+              iconOnly
+              onClick={() => {
+                // Save to database
+              }}
+            >
+              <Image src='/editor/save.png' alt='Save' width={25} height={25} />
+            </Button>
+          </div>
+
+          <div className='flex gap-0.5 h-10'>
             <Button
               aria-label='Reset'
+              className='w-20 !px-1'
               onClick={() => {
                 if (pixelVersion) {
                   editorRef.current
@@ -179,20 +225,7 @@ function CanvasInner({
                 }
               }}
             >
-              <span>Reset</span>
-            </Button>
-          </div>
-          {/* DOWNLOAD/SAVE */}
-          <div className='flex gap-0.5 h-10 sm:h-12'>
-            <DownloadButton />
-            <Button
-              aria-label='Save'
-              iconOnly
-              onClick={() => {
-                // Save to database
-              }}
-            >
-              <span>S</span>
+              <span>reload</span>
             </Button>
           </div>
         </div>

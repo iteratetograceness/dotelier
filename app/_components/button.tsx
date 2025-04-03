@@ -10,7 +10,7 @@ const variants = {
 
 const base = `px-4 py-1 w-fit border`
 
-const icon = `!p-3 !aspect-square w-auto h-full flex items-center justify-center`
+const icon = `!p-1.5 !aspect-square w-auto h-full flex items-center justify-center`
 
 const animation = {
   primary: `
@@ -37,6 +37,9 @@ const pressed = {
   transition-[border-color]
   duration-75
   !bg-hover
+  [background-image:linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.2)_75%,rgba(0,0,0,0.2)),linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.2)_75%,rgba(0,0,0,0.2))]
+  [background-size:4px_4px]
+    [background-position:0_0,2px_2px]
 `,
   dark: `
   !border-foreground
@@ -45,6 +48,9 @@ const pressed = {
   transition-[border-color]
   duration-75
   !bg-dark-hover
+  [background-image:linear-gradient(45deg,rgba(0,0,0,0.15)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.15)_75%,rgba(0,0,0,0.15)),linear-gradient(45deg,rgba(0,0,0,0.15)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.15)_75%,rgba(0,0,0,0.15))]
+  [background-size:4px_4px]
+  [background-position:0_0,2px_2px]
 `,
 } as const
 
