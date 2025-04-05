@@ -2,11 +2,13 @@
 
 import { cn } from '@/app/utils/classnames'
 import { getPublicPixelAsset } from '@/lib/ut/client'
-import { memo, use, useEffect, useRef, useState } from 'react'
-import { RgbaColorPicker } from 'react-colorful'
+import Image from 'next/image'
+import { memo, use, useCallback, useEffect, useRef, useState } from 'react'
+import { RgbaColor } from 'react-colorful'
 import { StudioPixel } from '.'
 import { Button } from '../button'
 import { Pill } from '../pill'
+import ColorPicker from './color-picker'
 import { sharedClasses } from './constants'
 import { DownloadButton } from './download-button'
 import { Color } from './editor/renderer'
@@ -29,12 +31,11 @@ function CanvasInner({
   const pixelVersion = use(versionPromise)
   const editorRef = useRef<HtmlCanvasRef>(null)
   const [activeTool, setActiveTool] = useState<ToolName>('pen')
-  const [rgbaColor, setRgbaColor] = useState({
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 1,
-  })
+
+  const onColorChange = useCallback((color: RgbaColor) => {
+    const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
+    editorRef.current?.getEditor()?.setColor(colorArray)
+  }, [])
 
   useEffect(() => {
     const editor = editorRef.current?.getEditor()
@@ -46,9 +47,10 @@ function CanvasInner({
       {/* Canvas */}
       <div
         className={cn(
-          'flex items-center justify-center sm:max-w-[500px] sm:h-[500px]',
+          'flex items-center justify-center',
           'border-[2px] border-shadow border-r-background border-b-background',
-          'w-full h-auto sm:h-full sm:w-auto aspect-square bg-white'
+          'aspect-square bg-white',
+          'w-full h-auto md:h-full md:w-auto '
         )}
       >
         {pixelVersion ? (
@@ -66,7 +68,7 @@ function CanvasInner({
       </div>
 
       {/* Controls */}
-      <div className='min-h-36 sm:min-h-auto min-w-auto sm:min-w-36 flex flex-col gap-3'>
+      <div className='min-h-36 md:min-h-auto min-w-auto md:min-w-36 flex flex-col gap-3'>
         <div className='flex gap-1 text-xs'>
           <Pill className='flex-1 truncate whitespace-nowrap' variant='dark'>
             {pixel.prompt}
@@ -76,38 +78,13 @@ function CanvasInner({
               pixel.createdAt.toLocaleDateString()}
           </Pill>
         </div>
-        <div className='flex gap-1'>
-          <Button
-            aria-label='Toggle Grid'
-            iconOnly
-            onClick={() => {
-              editorRef.current?.getEditor()?.toggleGrid()
-            }}
-          >
-            <span>G</span>
-          </Button>
-        </div>
 
-        {/* Color Picker */}
-        <RgbaColorPicker
-          color={rgbaColor}
-          onChange={(color) => {
-            const colorArray = [
-              color.r,
-              color.g,
-              color.b,
-              color.a * 255,
-            ] as Color
-            editorRef.current?.getEditor()?.setColor(colorArray)
-            setRgbaColor(color)
-          }}
-        />
-        {/* <HexColorInput /> */}
-        <div className='flex flex-col w-full gap-0.5'>
-          {/* TOOLS */}
-          <div className='flex gap-0.5 h-10 sm:h-12 flex-wrap'>
+        <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow h-fit'>
+          <div className='flex flex-wrap md:max-w-[333px]'>
+            <ColorPicker onChange={onColorChange} />
             <Button
               aria-label='Pen Tool'
+              className='!h-10'
               iconOnly
               isPressed={activeTool === 'pen'}
               onClick={() => {
@@ -115,73 +92,133 @@ function CanvasInner({
                 setActiveTool('pen')
               }}
             >
-              <span>P</span>
-            </Button>
-            <Button
-              aria-label='Eraser Tool'
-              iconOnly
-              isPressed={activeTool === 'eraser'}
-              onClick={() => {
-                editorRef.current?.getEditor()?.setTool('eraser')
-                setActiveTool('eraser')
-              }}
-            >
-              <span>E</span>
+              <Image
+                src='/editor/pen.png'
+                alt='Pen Tool'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
               aria-label='Fill Tool'
               iconOnly
+              className='!h-10'
               isPressed={activeTool === 'fill'}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool('fill')
                 setActiveTool('fill')
               }}
             >
-              <span>F</span>
+              <Image
+                src='/editor/fill.png'
+                alt='Fill Tool'
+                width={25}
+                height={25}
+              />
+            </Button>
+            <Button
+              aria-label='Eraser Tool'
+              iconOnly
+              className='!h-10'
+              isPressed={activeTool === 'eraser'}
+              onClick={() => {
+                editorRef.current?.getEditor()?.setTool('eraser')
+                setActiveTool('eraser')
+              }}
+            >
+              <Image
+                src='/editor/eraser.png'
+                alt='Eraser Tool'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
               aria-label='Line Tool'
               iconOnly
+              className='!h-10'
               isPressed={activeTool === 'line'}
               onClick={() => {
                 editorRef.current?.getEditor()?.setTool('line')
                 setActiveTool('line')
               }}
             >
-              <span>L</span>
+              <Image
+                src='/editor/line.png'
+                alt='Line Tool'
+                width={25}
+                height={25}
+              />
             </Button>
-          </div>
-
-          {/* UNDO/REDO/CLEAR/RESET */}
-          <div className='flex gap-0.5 h-10 sm:h-12'>
+            <Button
+              aria-label='Toggle Grid'
+              className='!h-10'
+              iconOnly
+              onClick={() => {
+                editorRef.current?.getEditor()?.toggleGrid()
+              }}
+            >
+              <Image src='/editor/grid.png' alt='Grid' width={25} height={25} />
+            </Button>
             <Button
               aria-label='Undo'
               iconOnly
+              className='!h-10'
               onClick={() => {
                 editorRef.current?.getEditor()?.undo()
               }}
             >
-              <span>U</span>
+              <Image
+                src='/editor/arrow-left.png'
+                alt='Undo'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
               aria-label='Redo'
               iconOnly
+              className='!h-10'
               onClick={() => {
                 editorRef.current?.getEditor()?.redo()
               }}
             >
-              <span>R</span>
+              <Image
+                src='/editor/arrow-right.png'
+                alt='Redo'
+                width={25}
+                height={25}
+              />
             </Button>
             <Button
+              iconOnly
+              className='!h-10'
               aria-label='Clear'
               onClick={() => {
                 editorRef.current?.getEditor()?.clear()
               }}
             >
-              <span>Clear</span>
+              <Image
+                src='/editor/trash.png'
+                alt='Clear'
+                width={25}
+                height={25}
+              />
+            </Button>
+            <DownloadButton iconOnly className='!h-10' />
+            <Button
+              aria-label='Save'
+              iconOnly
+              className='!h-10'
+              onClick={() => {
+                // Save to database
+              }}
+            >
+              <Image src='/editor/save.png' alt='Save' width={25} height={25} />
             </Button>
             <Button
               aria-label='Reset'
+              className='w-20 !px-1 !h-10'
               onClick={() => {
                 if (pixelVersion) {
                   editorRef.current
@@ -190,20 +227,7 @@ function CanvasInner({
                 }
               }}
             >
-              <span>Reset</span>
-            </Button>
-          </div>
-          {/* DOWNLOAD/SAVE */}
-          <div className='flex gap-0.5 h-10 sm:h-12'>
-            <DownloadButton />
-            <Button
-              aria-label='Save'
-              iconOnly
-              onClick={() => {
-                // Save to database
-              }}
-            >
-              <span>S</span>
+              <span>reload</span>
             </Button>
           </div>
         </div>

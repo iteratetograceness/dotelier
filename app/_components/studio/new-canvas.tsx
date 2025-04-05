@@ -12,20 +12,13 @@ import { useNewCanvas } from './use-new-canvas'
 function NewCanvasInner() {
   return (
     <div className='flex flex-col items-center justify-center gap-16'>
-      <div
-        id='new-canvas'
-        className={cn(
-          sharedClasses
-          // 'h-[calc(100%-126px)]',
-          // 'sm:h-[450px]',
-        )}
-      >
+      <div id='new-canvas' className={sharedClasses}>
         {/* Blank Canvas */}
         <div
           className={cn(
             'flex items-center justify-center',
             'border-[2px] border-shadow border-r-background border-b-background',
-            'w-full h-auto sm:h-full sm:w-auto aspect-square bg-white'
+            'w-full h-auto md:h-full md:w-auto aspect-square bg-white'
           )}
         >
           <EmptyState />

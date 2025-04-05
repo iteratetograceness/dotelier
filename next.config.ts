@@ -23,12 +23,6 @@ const nextConfig: NextConfig = {
   experimental: {
     ppr: true,
   },
-  webpack: (config) => {
-    // config.externals.push({
-    //   sharp: 'commonjs sharp',
-    // })
-    return config
-  },
 }
 
 export default nextConfig

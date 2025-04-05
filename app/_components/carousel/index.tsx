@@ -146,7 +146,7 @@ export function Carousel({
     <div
       ref={scrollContainerRef}
       className={cn(
-        'flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 xs:gap-6 sm:gap-10',
+        'flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 xs:gap-6 md:gap-10',
         className
       )}
       style={{
@@ -192,8 +192,6 @@ export function CarouselItem({
   className?: string
 }) {
   return (
-    <div className={cn('carousel-item w-full h-full', className)}>
-      {children}
-    </div>
+    <div className={cn('carousel-item size-full', className)}>{children}</div>
   )
 }
