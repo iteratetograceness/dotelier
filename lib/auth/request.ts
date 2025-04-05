@@ -1,7 +1,6 @@
 'server-only'
 
-import { headers } from 'next/headers'
-import { auth } from '.'
+import { getSession } from './session'
 
 interface AuthResult {
   success: true
@@ -22,11 +21,7 @@ export async function authorizeRequest({
 }: {
   withJwt?: boolean
 } = {}): Promise<AuthResult | AuthError> {
-  const headersList = await headers()
-  const result = await auth.api.getSession({
-    headers: headersList,
-    asResponse: withJwt,
-  })
+  const result = await getSession(withJwt)
 
   if (!result) {
     return {

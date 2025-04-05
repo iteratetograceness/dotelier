@@ -1,12 +1,9 @@
-import { auth } from '@/lib/auth'
+import { getSession } from '@/lib/auth/session'
 import { getPixelsByOwner } from '@/lib/db/queries'
-import { headers } from 'next/headers'
 import { Studio } from '.'
 
 export async function StudioServer({ className }: { className?: string }) {
-  const data = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const data = await getSession()
 
   const pixels = data?.user
     ? await getPixelsByOwner({
