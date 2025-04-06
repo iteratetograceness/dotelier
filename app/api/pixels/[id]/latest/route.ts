@@ -21,5 +21,12 @@ export async function GET(
 
   const data = await getLatestPixelVersion(id)
 
+  if (!data) {
+    return NextResponse.json(
+      { error: ERROR_CODES.ICON_NOT_FOUND },
+      { status: 404 }
+    )
+  }
+
   return NextResponse.json(data)
 }

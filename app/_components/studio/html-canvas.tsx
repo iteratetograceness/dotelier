@@ -16,9 +16,10 @@ const ZOOM_FACTOR = 10
 interface HtmlCanvasProps {
   id: string
   fileKey: string
+  onHistoryChange: () => void
 }
 
-function HtmlCanvasInner({ id, fileKey }: HtmlCanvasProps) {
+function HtmlCanvasInner({ id, fileKey, onHistoryChange }: HtmlCanvasProps) {
   const url = getPublicPixelAsset(fileKey)
   const [error, setError] = useState<string>()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -35,7 +36,12 @@ function HtmlCanvasInner({ id, fileKey }: HtmlCanvasProps) {
     previewCanvas.width = DEFAULT_SIZE * ZOOM_FACTOR
     previewCanvas.height = DEFAULT_SIZE * ZOOM_FACTOR
 
-    const editor = new PixelEditor(canvas, previewCanvas)
+    const editor = new PixelEditor(
+      canvas,
+      previewCanvas,
+      undefined,
+      onHistoryChange
+    )
 
     editorRef.current = editor
 
@@ -77,6 +83,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
   id,
   ref,
   fileKey,
+  onHistoryChange,
 }: HtmlCanvasProps & { ref: Ref<HtmlCanvasRef> }) {
   const url = getPublicPixelAsset(fileKey)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -103,7 +110,12 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
     previewCanvas.width = DEFAULT_SIZE * ZOOM_FACTOR
     previewCanvas.height = DEFAULT_SIZE * ZOOM_FACTOR
 
-    const editor = new PixelEditor(canvas, previewCanvas)
+    const editor = new PixelEditor(
+      canvas,
+      previewCanvas,
+      undefined,
+      onHistoryChange
+    )
 
     editorRef.current = editor
 

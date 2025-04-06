@@ -65,14 +65,15 @@ export class PixelEditor {
   constructor(
     private canvas: HTMLCanvasElement,
     private previewCanvas: HTMLCanvasElement,
-    private gridSize: number = 32
+    private gridSize: number = 32,
+    private onHistoryChange?: () => void
   ) {
     this.pixelData = new Uint8ClampedArray(this.gridSize * this.gridSize * 4)
 
     this.renderer = new PixelRenderer(canvas, this.gridSize)
     this.previewRenderer = new PixelRenderer(previewCanvas, this.gridSize)
 
-    this.history = new HistoryManager(this.pixelData)
+    this.history = new HistoryManager(this.pixelData, this.onHistoryChange)
 
     this.toolManager = new ToolManager(
       this.renderer,
@@ -107,7 +108,7 @@ export class PixelEditor {
     return x >= 0 && y >= 0 && x < this.gridSize && y < this.gridSize
   }
 
-  private convertToSvg() {
+  public convertToSvg() {
     const svgParts: string[] = []
     const cellSize = 1
 
@@ -280,7 +281,6 @@ export class PixelEditor {
       link.click()
     } else {
       const svgContent = this.convertToSvg()
-      console.log(svgContent)
       const blob = new Blob([svgContent], { type: 'image/svg+xml' })
       const url = URL.createObjectURL(blob)
       link.href = url
@@ -293,5 +293,13 @@ export class PixelEditor {
 
   public destroy(): void {
     this.cleanupEvents()
+  }
+
+  public resetHistory(): void {
+    return this.history.resetHistory()
+  }
+
+  public hasUnsavedChanges(): boolean {
+    return this.canUndo()
   }
 }

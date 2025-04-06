@@ -84,7 +84,7 @@ async function _getExplorePagePixels(page = 1) {
 async function _getLatestPixelVersion(pixelId: string) {
   return fastDb
     .selectFrom('pixelVersion')
-    .select(['pixelVersion.id', 'pixelVersion.fileKey'])
+    .select(['pixelVersion.id', 'pixelVersion.fileKey', 'pixelVersion.version'])
     .where('pixelVersion.pixelId', '=', pixelId)
     .where('pixelVersion.isCurrent', '=', true)
     .executeTakeFirst()
@@ -126,13 +126,15 @@ async function _getPixelById(pixelId: string) {
 async function _insertPixelVersion({
   pixelId,
   fileKey,
+  version,
 }: {
   pixelId: string
   fileKey: string
+  version: number
 }) {
   const result = await fastDb
     .insertInto('pixelVersion')
-    .values({ pixelId, fileKey, isCurrent: true })
+    .values({ pixelId, fileKey, isCurrent: true, version })
     .returning('id')
     .executeTakeFirst()
   return result?.id

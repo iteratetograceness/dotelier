@@ -4,7 +4,14 @@ import { Cooper } from '@/app/icons/cooper'
 import { Louie } from '@/app/icons/louie'
 import { cn } from '@/app/utils/classnames'
 import { useSession } from '@/lib/auth/client'
-import { memo, Suspense, useCallback, useMemo, useTransition } from 'react'
+import {
+  memo,
+  Suspense,
+  useCallback,
+  useMemo,
+  useRef,
+  useTransition,
+} from 'react'
 import { SignInButton } from '../auth/sign-in-button'
 import { Button } from '../button'
 import { useNewCanvas } from './use-new-canvas'
@@ -13,6 +20,7 @@ function NewPixelInputInner({ className }: { className?: string }) {
   const { data: session } = useSession()
   const { startGeneration, reset } = useNewCanvas()
   const [isPending, startTransition] = useTransition()
+  const formRef = useRef<HTMLFormElement>(null)
 
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -20,7 +28,9 @@ function NewPixelInputInner({ className }: { className?: string }) {
       startTransition(async () => {
         const formData = new FormData(e.target as HTMLFormElement)
         const prompt = formData.get('prompt') as string
+        formRef.current?.reset()
         await startGeneration(prompt)
+        // formRef.current?.reset()
       })
     },
     [startGeneration]
@@ -55,6 +65,7 @@ function NewPixelInputInner({ className }: { className?: string }) {
       <form
         onSubmit={handleSubmit}
         className='flex flex-col gap-2.5 pixel-corners p-2 bg-black pixel-border-black'
+        ref={formRef}
       >
         <textarea
           aria-label='Prompt to generate pixel icon'

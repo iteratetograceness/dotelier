@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Children, useCallback, useEffect, useState } from 'react'
 import { Button } from '../button'
 import './index.css'
+import { useCarousel } from './use-carousel'
 
 const containerVariants = {
   hidden: {},
@@ -37,6 +38,7 @@ const slideVariants = {
 }
 
 export function Carousel({ children }: { children: React.ReactNode }) {
+  const { setCarousel } = useCarousel()
   const [emblaReady, setEmblaReady] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
@@ -96,6 +98,10 @@ export function Carousel({ children }: { children: React.ReactNode }) {
       emblaApi.off('reInit', onSelect)
     }
   }, [emblaApi, onSelect])
+
+  useEffect(() => {
+    if (emblaApi) setCarousel(emblaApi)
+  }, [emblaApi, setCarousel])
 
   return (
     <AnimatePresence>

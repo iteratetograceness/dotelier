@@ -1,11 +1,24 @@
 'use client'
 
-import { usePixelVersion } from '@/app/swr/use-pixel-version'
+import {
+  LatestPixelVersion,
+  usePixelVersion,
+} from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
 import { getPublicPixelAsset } from '@/lib/ut/client'
 import Image from 'next/image'
-import { memo, use, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  memo,
+  use,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from 'react'
 import { RgbaColor } from 'react-colorful'
+import { toast } from 'sonner'
 import { StudioPixel } from '..'
 import { Button } from '../../button'
 import { Pill } from '../../pill'
@@ -15,19 +28,14 @@ import { DownloadButton } from '../download-button'
 import { Color } from '../editor/renderer'
 import { ToolName } from '../editor/tool'
 import { HtmlCanvasRef, HtmlCanvasWithRef } from '../html-canvas'
+import { savePixel } from './save'
 
 function CanvasInner({
   pixel,
   versionPromise,
 }: {
   pixel: StudioPixel
-  versionPromise: Promise<
-    | {
-        id: string
-        fileKey: string
-      }
-    | undefined
-  >
+  versionPromise: Promise<LatestPixelVersion | undefined>
 }) {
   const initialData = use(versionPromise)
   const { data: pixelVersion } = usePixelVersion({
@@ -36,6 +44,8 @@ function CanvasInner({
   })
   const editorRef = useRef<HtmlCanvasRef>(null)
   const [activeTool, setActiveTool] = useState<ToolName>('pen')
+  const [isSaving, startTransition] = useTransition()
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const onColorChange = useCallback((color: RgbaColor) => {
     const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
@@ -45,6 +55,17 @@ function CanvasInner({
   useEffect(() => {
     const editor = editorRef.current?.getEditor()
     return () => editor?.destroy()
+  }, [])
+
+  const disableActions = useMemo(
+    () => isSaving || !pixelVersion,
+    [isSaving, pixelVersion]
+  )
+
+  const onHistoryChange = useCallback(() => {
+    const hasChanges = editorRef.current?.getEditor()?.hasUnsavedChanges()
+    console.log(hasChanges)
+    setHasUnsavedChanges(hasChanges || false)
   }, [])
 
   return (
@@ -58,11 +79,12 @@ function CanvasInner({
           'w-full h-auto md:h-full md:w-auto '
         )}
       >
-        {pixelVersion ? (
+        {pixelVersion?.fileKey ? (
           <HtmlCanvasWithRef
             id={pixel.id}
             fileKey={pixelVersion.fileKey}
             ref={editorRef}
+            onHistoryChange={onHistoryChange}
           />
         ) : (
           <div className='text-center text-light-shadow text-sm w-full leading-4 flex flex-col items-center justify-center gap-1'>
@@ -86,7 +108,7 @@ function CanvasInner({
 
         <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow h-fit'>
           <div className='flex flex-wrap md:max-w-[333px]'>
-            <ColorPicker onChange={onColorChange} disabled={!pixelVersion} />
+            <ColorPicker onChange={onColorChange} disabled={disableActions} />
             <Button
               aria-label='Pen Tool'
               className='!h-10'
@@ -96,7 +118,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('pen')
                 setActiveTool('pen')
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image
                 src='/editor/pen.png'
@@ -114,7 +136,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('fill')
                 setActiveTool('fill')
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image
                 src='/editor/fill.png'
@@ -132,7 +154,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('eraser')
                 setActiveTool('eraser')
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image
                 src='/editor/eraser.png'
@@ -150,7 +172,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('line')
                 setActiveTool('line')
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image
                 src='/editor/line.png'
@@ -166,7 +188,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.toggleGrid()
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image src='/editor/grid.png' alt='Grid' width={25} height={25} />
             </Button>
@@ -177,7 +199,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.undo()
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image
                 src='/editor/arrow-left.png'
@@ -193,7 +215,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.redo()
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image
                 src='/editor/arrow-right.png'
@@ -209,7 +231,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.clear()
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image
                 src='/editor/trash.png'
@@ -227,16 +249,38 @@ function CanvasInner({
                   as,
                 })
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             />
             <Button
               aria-label='Save'
               iconOnly
               className='!h-10'
               onClick={() => {
-                // TODO: save to database
+                startTransition(async () => {
+                  if (!pixelVersion) return
+
+                  const svgContent = editorRef.current
+                    ?.getEditor()
+                    ?.convertToSvg()
+
+                  if (!svgContent) {
+                    toast.error('Failed to save. Try again.')
+                    return
+                  }
+
+                  await savePixel({
+                    id: pixel.id,
+                    version: pixelVersion?.version,
+                    oldFileKey: pixelVersion?.fileKey,
+                    svgContent,
+                  })
+
+                  editorRef.current?.getEditor()?.resetHistory()
+
+                  toast.success('Saved!')
+                })
               }}
-              disabled={!pixelVersion}
+              disabled={disableActions}
             >
               <Image src='/editor/save.png' alt='Save' width={25} height={25} />
             </Button>
@@ -256,6 +300,12 @@ function CanvasInner({
             </Button>
           </div>
         </div>
+
+        {hasUnsavedChanges && (
+          <p className='bg-background pixel-corners text-center text-xs py-0.5'>
+            You have unsaved changes
+          </p>
+        )}
       </div>
     </div>
   )

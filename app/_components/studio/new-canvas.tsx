@@ -1,11 +1,13 @@
 'use client'
 
 import Easel from '@/app/icons/easel'
+import { revalidatePixelVersion } from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
 import { usePostProcessingStatus } from '@/app/utils/use-post-processing-status'
 import Image from 'next/image'
 import { memo } from 'react'
 import { Button } from '../button'
+import { useCarousel } from '../carousel/use-carousel'
 import RetroLoader from '../loader'
 import { Pill } from '../pill'
 import { sharedClasses } from './constants'
@@ -38,7 +40,8 @@ function NewCanvasInner() {
 export const NewCanvas = memo(NewCanvasInner)
 
 function NewCanvasControls() {
-  const { status, prompt, result, id, setStatus } = useNewCanvas()
+  const { carousel } = useCarousel()
+  const { status, prompt, result, id, setStatus, reset } = useNewCanvas()
   usePostProcessingStatus({ id, onChange: setStatus })
 
   return (
@@ -76,7 +79,7 @@ function NewCanvasControls() {
       </div>
 
       {/* Actions */}
-      <div className='flex gap-2 h-10'>
+      <div className='flex h-10'>
         <DownloadButton
           iconOnly
           disableSvg={status !== 'completed'}
@@ -93,8 +96,9 @@ function NewCanvasControls() {
           className='flex-1'
           disabled={status !== 'completed'}
           onClick={() => {
-            // void revalidatePixelVersion(id)
-            // move one slide over
+            void revalidatePixelVersion(id)
+            carousel?.scrollTo(1)
+            reset()
           }}
         >
           edit
@@ -182,8 +186,9 @@ function Result() {
       className='object-contain'
       src={result.images[0].url || '/'}
       alt='pixelated icon'
-      fill
       quality={100}
+      width={500}
+      height={500}
     />
   )
 }

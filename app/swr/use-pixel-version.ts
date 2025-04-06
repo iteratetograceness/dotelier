@@ -4,6 +4,7 @@ import { fetcher } from './shared'
 export interface LatestPixelVersion {
   id: string
   fileKey: string
+  version: number
 }
 
 export function usePixelVersion({
@@ -14,7 +15,7 @@ export function usePixelVersion({
   initialData?: LatestPixelVersion
 }) {
   const { data, mutate, isLoading } = useSWR<LatestPixelVersion | undefined>(
-    id ? `/api/pixel/${id}/latest` : null,
+    id ? `/api/pixels/${id}/latest` : null,
     fetcher,
     {
       fallbackData: initialData,
@@ -28,5 +29,5 @@ export function usePixelVersion({
 }
 
 export function revalidatePixelVersion(id: string) {
-  return mutate(`/api/pixel/${id}/latest`)
+  return mutate(`/api/pixels/${id}/latest`)
 }
