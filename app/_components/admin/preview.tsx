@@ -17,8 +17,9 @@ export function Preview() {
   const [images, setImages] = useState<PixelApiResponse['images']>()
   const [error, setError] = useState<string>()
   const [isGenerating, startGenerating] = useTransition()
-  const { latestUpdate, error: postProcessingError } =
-    usePostProcessingStatus(pixelId)
+  const { latestUpdate, error: postProcessingError } = usePostProcessingStatus({
+    id: pixelId,
+  })
 
   const testInference = async () => {
     if (duration > 0) setDuration(0)
@@ -31,7 +32,6 @@ export function Preview() {
     startGenerating(async () => {
       const output = await generatePixelIcon({
         prompt,
-        id,
       })
 
       if (!output.success) {

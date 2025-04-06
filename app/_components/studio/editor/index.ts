@@ -65,14 +65,15 @@ export class PixelEditor {
   constructor(
     private canvas: HTMLCanvasElement,
     private previewCanvas: HTMLCanvasElement,
-    private gridSize: number = 32
+    private gridSize: number = 32,
+    private onHistoryChange?: () => void
   ) {
     this.pixelData = new Uint8ClampedArray(this.gridSize * this.gridSize * 4)
 
     this.renderer = new PixelRenderer(canvas, this.gridSize)
     this.previewRenderer = new PixelRenderer(previewCanvas, this.gridSize)
 
-    this.history = new HistoryManager(this.pixelData)
+    this.history = new HistoryManager(this.pixelData, this.onHistoryChange)
 
     this.toolManager = new ToolManager(
       this.renderer,
@@ -105,6 +106,35 @@ export class PixelEditor {
 
   private isWithinBounds(x: number, y: number): boolean {
     return x >= 0 && y >= 0 && x < this.gridSize && y < this.gridSize
+  }
+
+  public convertToSvg() {
+    const svgParts: string[] = []
+    const cellSize = 1
+
+    svgParts.push(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${this.gridSize}" height="${this.gridSize}" shape-rendering="crispEdges">`
+    )
+
+    for (let y = 0; y < this.gridSize; y++) {
+      for (let x = 0; x < this.gridSize; x++) {
+        const i = (y * this.gridSize + x) * 4
+        const r = this.pixelData[i]
+        const g = this.pixelData[i + 1]
+        const b = this.pixelData[i + 2]
+        const a = this.pixelData[i + 3] / 255
+
+        if (a > 0) {
+          const fill = `rgba(${r},${g},${b},${a.toFixed(3)})`
+          svgParts.push(
+            `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${fill}" />`
+          )
+        }
+      }
+    }
+
+    svgParts.push(`</svg>`)
+    return svgParts.join('')
   }
 
   public setPixel(x: number, y: number, color: Color): void {
@@ -236,7 +266,40 @@ export class PixelEditor {
     })
   }
 
+  public async download({
+    fileName = 'my-pixel-icon',
+    as,
+  }: {
+    fileName?: string
+    as: 'svg' | 'png'
+  }): Promise<void> {
+    const link = document.createElement('a')
+    link.download = `${fileName}.${as}`
+
+    if (as === 'png') {
+      link.href = this.canvas.toDataURL('image/png')
+      link.click()
+    } else {
+      const svgContent = this.convertToSvg()
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      link.href = url
+      link.click()
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 100)
+    }
+  }
+
   public destroy(): void {
     this.cleanupEvents()
+  }
+
+  public resetHistory(): void {
+    return this.history.resetHistory()
+  }
+
+  public hasUnsavedChanges(): boolean {
+    return this.canUndo()
   }
 }

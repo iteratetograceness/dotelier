@@ -11,8 +11,15 @@ export class HistoryManager {
   private stack: Uint8ClampedArray[] = []
   private index: number = -1
   private tempSnapshot?: Uint8ClampedArray
+  private onChange?: () => void
 
-  constructor(private pixelData: Uint8ClampedArray) {}
+  constructor(private pixelData: Uint8ClampedArray, onChange?: () => void) {
+    this.onChange = onChange
+  }
+
+  private notifyChange() {
+    this.onChange?.()
+  }
 
   startAction() {
     this.stack = this.stack.slice(0, this.index + 1)
@@ -26,12 +33,14 @@ export class HistoryManager {
     this.index++
 
     this.tempSnapshot = undefined
+    this.notifyChange()
   }
 
   undo() {
     if (!this.canUndo()) return
     this.index--
     this.pixelData.set(this.stack[this.index])
+    this.notifyChange()
     return this.stack[this.index]
   }
 
@@ -39,6 +48,7 @@ export class HistoryManager {
     if (!this.canRedo()) return
     this.index++
     this.pixelData.set(this.stack[this.index])
+    this.notifyChange()
     return this.stack[this.index]
   }
 
@@ -48,5 +58,12 @@ export class HistoryManager {
 
   canRedo() {
     return this.index < this.stack.length - 1
+  }
+
+  resetHistory() {
+    this.stack = [new Uint8ClampedArray(this.pixelData)]
+    this.index = 0
+    this.tempSnapshot = undefined
+    this.notifyChange()
   }
 }

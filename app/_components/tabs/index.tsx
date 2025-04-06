@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/app/utils/classnames'
-import { signOut, useSession } from '@/lib/auth/client'
+import { signOut } from '@/lib/auth/client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -10,12 +10,12 @@ interface TabsProps {
     href: string
     label: string
   }[]
+  showSignOut: boolean // remove this later, profile menu
   className?: string
 }
 
-export function Tabs({ tabs, className }: TabsProps) {
+export function Tabs({ tabs, showSignOut, className }: TabsProps) {
   const pathname = usePathname()
-  const { data: session } = useSession()
 
   return (
     <div
@@ -58,7 +58,7 @@ export function Tabs({ tabs, className }: TabsProps) {
           </Link>
         )
       })}
-      {session && (
+      {showSignOut && (
         <button
           onClick={() => {
             signOut({

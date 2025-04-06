@@ -1,9 +1,10 @@
 'server-only'
 
+import { LatestPixelVersion } from '@/app/swr/use-pixel-version'
 import { PostProcessingStatus } from 'kysely-codegen'
 import { cache } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { fastDb } from './pg'
+import { fastDb, standardDb } from './pg'
 
 const PAGE_SIZE = 10
 
@@ -81,15 +82,17 @@ async function _getExplorePagePixels(page = 1) {
     .offset(offset)
     .execute()
 }
-async function _getLatestPixelVersion(pixelId: string) {
+async function _getLatestPixelVersion(
+  pixelId: string
+): Promise<LatestPixelVersion | undefined> {
   return fastDb
     .selectFrom('pixelVersion')
-    .select(['pixelVersion.id', 'pixelVersion.fileKey'])
+    .select(['pixelVersion.id', 'pixelVersion.fileKey', 'pixelVersion.version'])
     .where('pixelVersion.pixelId', '=', pixelId)
     .where('pixelVersion.isCurrent', '=', true)
     .executeTakeFirst()
 }
-async function _getPixelsByOwner({
+async function _getPixelIdsByOwner({
   page = 1,
   ownerId,
   limit = PAGE_SIZE,
@@ -102,13 +105,7 @@ async function _getPixelsByOwner({
 
   return fastDb
     .selectFrom('pixel')
-    .select([
-      'pixel.id',
-      'pixel.prompt',
-      'pixel.createdAt',
-      'pixel.updatedAt',
-      'pixel.showExplore',
-    ])
+    .select(['pixel.id'])
     .where('pixel.userId', '=', ownerId)
     .orderBy('pixel.createdAt', 'desc')
     .limit(limit)
@@ -132,22 +129,47 @@ async function _getPixelById(pixelId: string) {
 async function _insertPixelVersion({
   pixelId,
   fileKey,
+  version,
 }: {
   pixelId: string
   fileKey: string
+  version: number
 }) {
-  const result = await fastDb
-    .insertInto('pixelVersion')
-    .values({ pixelId, fileKey, isCurrent: true })
-    .returning('id')
-    .executeTakeFirst()
-  return result?.id
+  return standardDb.transaction().execute(async (tx) => {
+    const prevProw = await tx
+      .updateTable('pixelVersion')
+      .set({ isCurrent: false })
+      .where('pixelVersion.pixelId', '=', pixelId)
+      .returning('id')
+      .executeTakeFirstOrThrow()
+
+    const newRow = await tx
+      .insertInto('pixelVersion')
+      .values({ pixelId, fileKey, isCurrent: true, version })
+      .returning('id')
+      .executeTakeFirstOrThrow()
+
+    const updateRow = await tx
+      .updateTable('pixel')
+      .set({
+        updatedAt: new Date(),
+      })
+      .where('pixel.id', '=', pixelId)
+      .returning('id')
+      .executeTakeFirstOrThrow()
+
+    return {
+      prevPixelVersion: prevProw?.id,
+      pixelVersion: newRow?.id,
+      updateRow: updateRow?.id,
+    }
+  })
 }
 
 // PIXELS
 export const getExplorePagePixels = cache(_getExplorePagePixels)
 export const getLatestPixelVersion = cache(_getLatestPixelVersion)
-export const getPixelsByOwner = cache(_getPixelsByOwner)
+export const getPixelIdsByOwner = cache(_getPixelIdsByOwner)
 export const getPixelById = cache(_getPixelById)
 export const createPixel = _createPixel
 export const startPostProcessing = _startPostProcessing

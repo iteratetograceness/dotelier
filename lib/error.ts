@@ -22,7 +22,7 @@ export interface ErrorResponse {
 export function getError(code: ErrorCode) {
   switch (code) {
     case ERROR_CODES.UNAUTHORIZED:
-      return 'You must be signed in to view this page.'
+      return 'Unauthorized.'
     case ERROR_CODES.FAILED_TO_SIGN_IN:
       return 'Failed to sign in. Please try again.'
     case ERROR_CODES.ICON_NOT_FOUND:

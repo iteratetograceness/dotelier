@@ -1,6 +1,5 @@
 import { cn } from '@/app/utils/classnames'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
+import { getSession } from '@/lib/auth/session'
 import Image from 'next/image'
 
 /**
@@ -11,9 +10,7 @@ import Image from 'next/image'
  */
 
 export async function UserProfile({ className }: { className?: string }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const session = await getSession()
 
   if (!session) return null
 

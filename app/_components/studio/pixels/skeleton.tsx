@@ -1,14 +1,9 @@
 import { cn } from '@/app/utils/classnames'
 import Image from 'next/image'
-import { Studio } from '.'
-import { Button } from '../button'
-import { Pill } from '../pill'
-import { sharedClasses } from './constants'
-import { DownloadButton } from './download-button'
-
-export function StudioSkeleton({ className }: { className?: string }) {
-  return <Studio pixels={[]} className={className} />
-}
+import { Button } from '../../button'
+import { Pill } from '../../pill'
+import { sharedClasses } from '../constants'
+import { DownloadButton } from '../download-button'
 
 export function CanvasSkeleton() {
   return (

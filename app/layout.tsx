@@ -1,4 +1,3 @@
-import { warmupServer } from '@/lib/warm-up'
 import { Analytics } from '@vercel/analytics/react'
 import type { Metadata } from 'next'
 import { Tiny5 } from 'next/font/google'
@@ -22,11 +21,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  warmupServer()
-
   return (
     <html className={tiny5.className} lang='en'>
-      <body className='flex flex-col relative w-screen h-screen'>
+      <body className='flex flex-col relative w-screen h-screen overflow-x-hidden'>
         <Header />
         <main className='flex-1 flex flex-col md:items-center'>{children}</main>
         <Toaster />
