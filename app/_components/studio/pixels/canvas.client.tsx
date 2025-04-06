@@ -5,6 +5,7 @@ import {
   usePixelVersion,
 } from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
+import { Pixel } from '@/lib/db/types'
 import { getPublicPixelAsset } from '@/lib/ut/client'
 import Image from 'next/image'
 import {
@@ -19,7 +20,6 @@ import {
 } from 'react'
 import { RgbaColor } from 'react-colorful'
 import { toast } from 'sonner'
-import { StudioPixel } from '..'
 import { Button } from '../../button'
 import { Pill } from '../../pill'
 import ColorPicker from '../color-picker'
@@ -34,7 +34,7 @@ function CanvasInner({
   pixel,
   versionPromise,
 }: {
-  pixel: StudioPixel
+  pixel: Pick<Pixel, 'id' | 'prompt' | 'createdAt' | 'updatedAt'>
   versionPromise: Promise<LatestPixelVersion | undefined>
 }) {
   const initialData = use(versionPromise)
