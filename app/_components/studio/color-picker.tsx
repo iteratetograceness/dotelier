@@ -18,8 +18,10 @@ interface RgbaColor {
 
 export default function ColorPicker({
   onChange,
+  disabled,
 }: {
   onChange: (color: RgbaColor) => void
+  disabled: boolean
 }) {
   const [rgbaColor, setRgbaColor] = useState<RgbaColor>({
     r: 0,
@@ -39,6 +41,7 @@ export default function ColorPicker({
   return (
     <Popover>
       <PopoverTrigger
+        disabled={disabled}
         className='size-10 border-[2px] border-shadow border-r-background border-b-background'
         style={{
           backgroundColor: `rgba(${rgbaColor.r}, ${rgbaColor.g}, ${rgbaColor.b}, ${rgbaColor.a})`,
@@ -48,7 +51,6 @@ export default function ColorPicker({
         <PopoverContent
           avoidCollisions
           collisionPadding={40}
-          sideOffset={5}
           side='bottom'
           align='start'
           className='z-[100]'
@@ -57,7 +59,8 @@ export default function ColorPicker({
             className={cn(
               'pixel-color-picker',
               'flex flex-col gap-2',
-              'pixel-corners pixel-border-light-shadow p-2 bg-background'
+              ' p-2 bg-background',
+              'border border-r-light-shadow border-b-light-shadow border-highlight'
             )}
           >
             <RgbaColorPicker color={rgbaColor} onChange={changeColor} />

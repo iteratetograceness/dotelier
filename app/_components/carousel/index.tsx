@@ -1,197 +1,157 @@
 'use client'
 
-import { cn } from '@/app/utils/classnames'
+import useEmblaCarousel from 'embla-carousel-react'
+import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { AnimatePresence, motion } from 'motion/react'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Children, useCallback, useEffect, useState } from 'react'
+import { Button } from '../button'
+import './index.css'
 
-interface CarouselProps {
-  children: React.ReactNode
-  className?: string
-  enableVibration?: boolean
-  vibrationDuration?: number
-  onSlideChange?: (index: number) => void
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
 }
 
-export interface CarouselControl {
-  next: () => void
-  prev: () => void
-  goToSlide: (index: number) => void
-  currentIndex: number
-  totalItems: number
+const slideVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.35,
+      ease: 'easeOut',
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    transition: {
+      duration: 0.25,
+      ease: 'easeIn',
+    },
+  },
 }
 
-/**
- * ADD CONTROLS FOR ACCESSIBILITY
- *
- * When making CSS changes here, make sure to update the skeleton.tsx file
- * to match the new styles.
- */
-
-export function Carousel({
-  children,
-  className,
-  enableVibration = true,
-  vibrationDuration = 50,
-  onSlideChange,
-}: CarouselProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+export function Carousel({ children }: { children: React.ReactNode }) {
+  const [emblaReady, setEmblaReady] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [totalItems, setTotalItems] = useState(0)
-  const [isScrolling, setIsScrolling] = useState(false)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
 
-  const hasVibration =
-    typeof navigator !== 'undefined' && 'vibrate' in navigator
+  useEffect(() => {
+    const handle = requestAnimationFrame(() => {
+      setEmblaReady(true)
+    })
+    return () => cancelAnimationFrame(handle)
+  }, [])
 
-  const scrollToIndex = useCallback(
-    (index: number, immediate = false) => {
-      if (!scrollContainerRef.current) return
-
-      const targetIndex = Math.max(0, Math.min(index, totalItems - 1))
-
-      const items = Array.from(scrollContainerRef.current.children).filter(
-        (child) => child.classList.contains('carousel-item')
-      )
-
-      if (items[targetIndex]) {
-        if (enableVibration && hasVibration && targetIndex !== currentIndex) {
-          navigator.vibrate(vibrationDuration)
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      direction: 'rtl',
+      containScroll: false,
+      watchDrag: (_api, evt) => {
+        if (evt.target && (evt.target as Element).nodeName === 'CANVAS') {
+          return false
         }
-
-        items[targetIndex].scrollIntoView({
-          behavior: immediate ? 'auto' : 'smooth',
-          block: 'nearest',
-          inline: 'start',
-        })
-
-        setCurrentIndex(targetIndex)
-        onSlideChange?.(targetIndex)
-      }
+        return true
+      },
+      skipSnaps: true,
     },
     [
-      currentIndex,
-      enableVibration,
-      hasVibration,
-      onSlideChange,
-      totalItems,
-      vibrationDuration,
+      WheelGesturesPlugin({
+        forceWheelAxis: 'x',
+      }),
     ]
   )
 
-  useEffect(() => {
-    if (scrollContainerRef.current) {
-      setTotalItems(
-        Array.from(scrollContainerRef.current.children).filter((child) =>
-          child.classList.contains('carousel-item')
-        ).length
-      )
-    }
-  }, [children])
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return
+    setCurrentIndex(emblaApi.selectedScrollSnap())
+    const next = emblaApi.canScrollNext()
+    setCanScrollLeft(next)
+  }, [emblaApi])
 
-  const handleScroll = () => {
-    if (!scrollContainerRef.current || isScrolling) return
+  const scrollToRight = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev()
+  }, [emblaApi])
 
-    setIsScrolling(true)
+  const scrollToLeft = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext()
+  }, [emblaApi])
 
-    const container = scrollContainerRef.current
-    const scrollLeft = container.scrollLeft
-    const itemWidth = container.offsetWidth
-    const newIndex = Math.round(scrollLeft / itemWidth)
-
-    if (newIndex !== currentIndex) {
-      setCurrentIndex(newIndex)
-      onSlideChange?.(newIndex)
-
-      if (enableVibration && hasVibration) {
-        navigator.vibrate(vibrationDuration)
-      }
-    }
-
-    setTimeout(() => setIsScrolling(false), 150)
-  }
+  const scrollToNewCanvas = useCallback(() => {
+    if (emblaApi) emblaApi.scrollTo(0)
+  }, [emblaApi])
 
   useEffect(() => {
-    const resizeObserver = new ResizeObserver((entries) => {
-      const entry = entries[0]
-
-      if (entry) {
-        const newWidth = entry.contentRect.width
-        const newHeight = entry.contentRect.height
-
-        if (
-          !scrollContainerRef.current?.dataset.prevWidth ||
-          !scrollContainerRef.current?.dataset.prevHeight ||
-          newWidth !==
-            parseFloat(scrollContainerRef.current.dataset.prevWidth) ||
-          newHeight !==
-            parseFloat(scrollContainerRef.current.dataset.prevHeight)
-        ) {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.dataset.prevWidth = newWidth.toString()
-            scrollContainerRef.current.dataset.prevHeight = newHeight.toString()
-            scrollToIndex(currentIndex)
-          }
-        }
-      }
-    })
-
-    const container = scrollContainerRef.current
-    if (container) {
-      resizeObserver.observe(container)
+    if (!emblaApi) return
+    onSelect()
+    emblaApi.on('select', onSelect)
+    emblaApi.on('reInit', onSelect)
+    return () => {
+      emblaApi.off('select', onSelect)
+      emblaApi.off('reInit', onSelect)
     }
-
-    return () => resizeObserver.disconnect()
-  }, [currentIndex, scrollToIndex])
+  }, [emblaApi, onSelect])
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className={cn(
-        'flex w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-4 xs:gap-6 md:gap-10',
-        className
-      )}
-      style={{
-        scrollbarWidth: 'none', // Firefox
-        msOverflowStyle: 'none', // IE/Edge
-        WebkitOverflowScrolling: 'touch',
-        paddingLeft: '50%',
-        paddingRight: '50%',
-        direction: 'rtl',
-        scrollBehavior: 'smooth',
-        scrollSnapStop: 'always',
-      }}
-      onScroll={handleScroll}
-    >
-      <AnimatePresence mode='popLayout'>
-        {React.Children.map(children, (child, index) => (
-          <motion.div
-            key={index}
-            id={`carousel-item-${index}`}
-            className='flex-none snap-center snap-always overflow-hidden'
-            style={{
-              direction: 'ltr',
-            }}
-            initial={{ opacity: 0, filter: 'blur(2px)', x: -10 * index }}
-            animate={{ opacity: 1, filter: 'blur(0px)', x: 0 }}
-            exit={{ opacity: 0, filter: 'blur(2px)', x: -10 * index }}
-            transition={{ duration: 0.3, delay: 0.1 * index + 0.4 }}
-            data-is-current={index === currentIndex}
+    <AnimatePresence>
+      {emblaReady ? (
+        <motion.section
+          initial={{ opacity: 0, filter: 'blur(2px)', scale: 0.99 }}
+          animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+          exit={{ opacity: 0, filter: 'blur(2px)', scale: 0.99 }}
+          transition={{
+            opacity: { duration: 0.4, ease: 'easeOut' },
+            filter: { duration: 0.4, ease: 'easeOut' },
+            scale: { type: 'spring', stiffness: 250, damping: 22 },
+          }}
+          className='embla w-screen m-auto'
+          dir='rtl'
+        >
+          <div
+            className='flex w-full items-center justify-center pb-4'
+            dir='ltr'
           >
-            {child}
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
-  )
-}
-
-export function CarouselItem({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div className={cn('carousel-item size-full', className)}>{children}</div>
+            <Button disabled={!canScrollLeft} onClick={scrollToLeft}>
+              {'<'}
+            </Button>
+            <Button
+              aria-label='Go to new canvas'
+              onClick={scrollToNewCanvas}
+              disabled={currentIndex === 0}
+            >
+              +
+            </Button>
+            <Button onClick={scrollToRight} disabled={currentIndex === 0}>
+              {'>'}
+            </Button>
+          </div>
+          <div className='embla__viewport overflow-hidden' ref={emblaRef}>
+            <motion.div
+              variants={containerVariants}
+              initial='hidden'
+              animate='visible'
+              exit='hidden'
+              className='embla__container flex max-w-full'
+            >
+              {Children.map(children, (child, index) => (
+                <motion.div
+                  className='embla__slide'
+                  dir='ltr'
+                  key={index}
+                  variants={slideVariants}
+                >
+                  {child}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </motion.section>
+      ) : null}
+    </AnimatePresence>
   )
 }

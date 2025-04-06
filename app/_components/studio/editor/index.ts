@@ -107,6 +107,35 @@ export class PixelEditor {
     return x >= 0 && y >= 0 && x < this.gridSize && y < this.gridSize
   }
 
+  private convertToSvg() {
+    const svgParts: string[] = []
+    const cellSize = 1
+
+    svgParts.push(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${this.gridSize}" height="${this.gridSize}" shape-rendering="crispEdges">`
+    )
+
+    for (let y = 0; y < this.gridSize; y++) {
+      for (let x = 0; x < this.gridSize; x++) {
+        const i = (y * this.gridSize + x) * 4
+        const r = this.pixelData[i]
+        const g = this.pixelData[i + 1]
+        const b = this.pixelData[i + 2]
+        const a = this.pixelData[i + 3] / 255
+
+        if (a > 0) {
+          const fill = `rgba(${r},${g},${b},${a.toFixed(3)})`
+          svgParts.push(
+            `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${fill}" />`
+          )
+        }
+      }
+    }
+
+    svgParts.push(`</svg>`)
+    return svgParts.join('')
+  }
+
   public setPixel(x: number, y: number, color: Color): void {
     if (this.isWithinBounds(x, y)) {
       const i = (y * this.gridSize + x) * 4
@@ -234,6 +263,32 @@ export class PixelEditor {
 
       svgImage.src = svgUrl
     })
+  }
+
+  public async download({
+    fileName = 'my-pixel-icon',
+    as,
+  }: {
+    fileName?: string
+    as: 'svg' | 'png'
+  }): Promise<void> {
+    const link = document.createElement('a')
+    link.download = `${fileName}.${as}`
+
+    if (as === 'png') {
+      link.href = this.canvas.toDataURL('image/png')
+      link.click()
+    } else {
+      const svgContent = this.convertToSvg()
+      console.log(svgContent)
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+      const url = URL.createObjectURL(blob)
+      link.href = url
+      link.click()
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 100)
+    }
   }
 
   public destroy(): void {

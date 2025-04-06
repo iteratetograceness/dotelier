@@ -71,7 +71,4 @@ export const auth = betterAuth({
       maxAge: 10 * 60,
     },
   },
-  advanced: {
-    cookiePrefix: 'dotelier',
-  },
 })

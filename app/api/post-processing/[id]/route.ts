@@ -1,3 +1,5 @@
+import { authorizeRequest } from '@/lib/auth/request'
+import { ERROR_CODES } from '@/lib/error'
 import { Client } from '@neondatabase/serverless'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -7,7 +9,14 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
+  const [{ id }, authorized] = await Promise.all([params, authorizeRequest()])
+
+  if (!authorized.success) {
+    return NextResponse.json(
+      { error: ERROR_CODES.UNAUTHORIZED },
+      { status: 401 }
+    )
+  }
 
   if (!id || Array.isArray(id)) {
     return NextResponse.json({ error: 'Invalid pixel ID' }, { status: 400 })
@@ -17,8 +26,18 @@ export async function GET(
 
   const stream = new ReadableStream({
     async start(controller) {
+      let isControllerClosed = false
+
       const sendEvent = (data: unknown) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+        if (!isControllerClosed) {
+          try {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+            )
+          } catch {
+            isControllerClosed = true
+          }
+        }
       }
 
       try {
@@ -30,15 +49,20 @@ export async function GET(
 
         const heartbeatInterval = setInterval(async () => {
           try {
-            await pgClient.query('SELECT 1')
-            sendEvent({ type: 'heartbeat', timestamp: Date.now() })
+            if (!isControllerClosed) {
+              await pgClient.query('SELECT 1')
+              sendEvent({ type: 'heartbeat', timestamp: Date.now() })
+            }
           } catch (error) {
+            isControllerClosed = true
             await cleanUp({ pgClient, heartbeatInterval, id })
             controller.error(error)
           }
         }, 30000)
 
         pgClient.on('notification', (notification) => {
+          if (isControllerClosed) return
+
           try {
             const payload = JSON.parse(notification.payload || '{}')
             sendEvent({
@@ -51,6 +75,7 @@ export async function GET(
               payload.status === 'background_removal_failed' ||
               payload.status === 'convert_to_svg_failed'
             ) {
+              isControllerClosed = true
               void cleanUp({ pgClient, heartbeatInterval, id })
               controller.close()
             }
@@ -60,14 +85,20 @@ export async function GET(
               message: 'Error parsing notification payload',
               error: String(error),
             })
+            isControllerClosed = true
             controller.close()
           }
         })
 
         req.signal.addEventListener('abort', async () => {
+          isControllerClosed = true
           try {
             await cleanUp({ pgClient, heartbeatInterval, id })
-            controller.close()
+            try {
+              controller.close()
+            } catch {
+              // Controller might already be closed
+            }
           } catch (error) {
             console.error('Error cleaning up connection:', error)
           }
@@ -84,6 +115,7 @@ export async function GET(
           message: 'Failed to setup notification listener',
           error: String(error),
         })
+        isControllerClosed = true
         controller.close()
       }
     },

@@ -21,7 +21,10 @@ export async function authorizeRequest({
 }: {
   withJwt?: boolean
 } = {}): Promise<AuthResult | AuthError> {
-  const result = await getSession(withJwt)
+  const result = await getSession({
+    asResponse: withJwt,
+    disableCookieCache: withJwt,
+  })
 
   if (!result) {
     return {

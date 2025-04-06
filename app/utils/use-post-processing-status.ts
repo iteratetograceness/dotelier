@@ -1,5 +1,6 @@
 import { PostProcessingStatus } from '@/lib/constants'
 import { useEffect, useMemo, useState } from 'react'
+import { revalidatePixelVersion } from '../swr/use-pixel-version'
 
 interface Payload {
   operation: 'INSERT' | 'UPDATE'
@@ -16,21 +17,29 @@ interface StatusUpdate {
   timestamp?: number
 }
 
-export function usePostProcessingStatus(pixelId?: string) {
+export function usePostProcessingStatus({
+  id,
+  onChange,
+}: {
+  id?: string
+  onChange?: (
+    status: 'error' | 'completed' | 'idle' | 'generating' | 'post-processing'
+  ) => void
+}) {
   const [updates, setUpdates] = useState<StatusUpdate[]>([])
   const [latestUpdate, setLatestUpdate] = useState<Payload>()
   const [error, setError] = useState<string>()
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
-    if (!pixelId) return
+    if (!id) return
 
     setUpdates([])
     setLatestUpdate(undefined)
     setError(undefined)
     setConnected(false)
 
-    const eventSource = new EventSource(`/api/post-processing/${pixelId}`)
+    const eventSource = new EventSource(`/api/post-processing/${id}`)
 
     eventSource.onmessage = (event) => {
       try {
@@ -42,7 +51,9 @@ export function usePostProcessingStatus(pixelId?: string) {
         } else if (data.type === 'update' && data.payload) {
           setLatestUpdate(data.payload)
           if (data.payload.status === 'completed') {
+            onChange?.(data.payload.status)
             eventSource.close()
+            void revalidatePixelVersion(id)
           }
         } else if (data.type === 'error') {
           setError(data.message || 'Unknown error')
@@ -64,7 +75,7 @@ export function usePostProcessingStatus(pixelId?: string) {
       setConnected(false)
       eventSource.close()
     }
-  }, [pixelId])
+  }, [id, onChange])
 
   const isCompleted = useMemo(() => {
     return updates.some(

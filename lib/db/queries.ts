@@ -89,7 +89,7 @@ async function _getLatestPixelVersion(pixelId: string) {
     .where('pixelVersion.isCurrent', '=', true)
     .executeTakeFirst()
 }
-async function _getPixelsByOwner({
+async function _getPixelIdsByOwner({
   page = 1,
   ownerId,
   limit = PAGE_SIZE,
@@ -102,13 +102,7 @@ async function _getPixelsByOwner({
 
   return fastDb
     .selectFrom('pixel')
-    .select([
-      'pixel.id',
-      'pixel.prompt',
-      'pixel.createdAt',
-      'pixel.updatedAt',
-      'pixel.showExplore',
-    ])
+    .select(['pixel.id'])
     .where('pixel.userId', '=', ownerId)
     .orderBy('pixel.createdAt', 'desc')
     .limit(limit)
@@ -147,7 +141,7 @@ async function _insertPixelVersion({
 // PIXELS
 export const getExplorePagePixels = cache(_getExplorePagePixels)
 export const getLatestPixelVersion = cache(_getLatestPixelVersion)
-export const getPixelsByOwner = cache(_getPixelsByOwner)
+export const getPixelIdsByOwner = cache(_getPixelIdsByOwner)
 export const getPixelById = cache(_getPixelById)
 export const createPixel = _createPixel
 export const startPostProcessing = _startPostProcessing

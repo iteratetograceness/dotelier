@@ -1,19 +1,20 @@
 'use client'
 
+import { usePixelVersion } from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
 import { getPublicPixelAsset } from '@/lib/ut/client'
 import Image from 'next/image'
 import { memo, use, useCallback, useEffect, useRef, useState } from 'react'
 import { RgbaColor } from 'react-colorful'
-import { StudioPixel } from '.'
-import { Button } from '../button'
-import { Pill } from '../pill'
-import ColorPicker from './color-picker'
-import { sharedClasses } from './constants'
-import { DownloadButton } from './download-button'
-import { Color } from './editor/renderer'
-import { ToolName } from './editor/tool'
-import { HtmlCanvasRef, HtmlCanvasWithRef } from './html-canvas'
+import { StudioPixel } from '..'
+import { Button } from '../../button'
+import { Pill } from '../../pill'
+import ColorPicker from '../color-picker'
+import { sharedClasses } from '../constants'
+import { DownloadButton } from '../download-button'
+import { Color } from '../editor/renderer'
+import { ToolName } from '../editor/tool'
+import { HtmlCanvasRef, HtmlCanvasWithRef } from '../html-canvas'
 
 function CanvasInner({
   pixel,
@@ -28,7 +29,11 @@ function CanvasInner({
     | undefined
   >
 }) {
-  const pixelVersion = use(versionPromise)
+  const initialData = use(versionPromise)
+  const { data: pixelVersion } = usePixelVersion({
+    id: pixel.id,
+    initialData,
+  })
   const editorRef = useRef<HtmlCanvasRef>(null)
   const [activeTool, setActiveTool] = useState<ToolName>('pen')
 
@@ -61,8 +66,8 @@ function CanvasInner({
           />
         ) : (
           <div className='text-center text-light-shadow text-sm w-full leading-4 flex flex-col items-center justify-center gap-1'>
-            {/* Add icon */}
-            <p>Failed to load pixel</p>
+            {/* WIP */}
+            <p>Prepping your icon </p>
           </div>
         )}
       </div>
@@ -81,7 +86,7 @@ function CanvasInner({
 
         <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow h-fit'>
           <div className='flex flex-wrap md:max-w-[333px]'>
-            <ColorPicker onChange={onColorChange} />
+            <ColorPicker onChange={onColorChange} disabled={!pixelVersion} />
             <Button
               aria-label='Pen Tool'
               className='!h-10'
@@ -91,6 +96,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('pen')
                 setActiveTool('pen')
               }}
+              disabled={!pixelVersion}
             >
               <Image
                 src='/editor/pen.png'
@@ -108,6 +114,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('fill')
                 setActiveTool('fill')
               }}
+              disabled={!pixelVersion}
             >
               <Image
                 src='/editor/fill.png'
@@ -125,6 +132,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('eraser')
                 setActiveTool('eraser')
               }}
+              disabled={!pixelVersion}
             >
               <Image
                 src='/editor/eraser.png'
@@ -142,6 +150,7 @@ function CanvasInner({
                 editorRef.current?.getEditor()?.setTool('line')
                 setActiveTool('line')
               }}
+              disabled={!pixelVersion}
             >
               <Image
                 src='/editor/line.png'
@@ -157,6 +166,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.toggleGrid()
               }}
+              disabled={!pixelVersion}
             >
               <Image src='/editor/grid.png' alt='Grid' width={25} height={25} />
             </Button>
@@ -167,6 +177,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.undo()
               }}
+              disabled={!pixelVersion}
             >
               <Image
                 src='/editor/arrow-left.png'
@@ -182,6 +193,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.redo()
               }}
+              disabled={!pixelVersion}
             >
               <Image
                 src='/editor/arrow-right.png'
@@ -197,6 +209,7 @@ function CanvasInner({
               onClick={() => {
                 editorRef.current?.getEditor()?.clear()
               }}
+              disabled={!pixelVersion}
             >
               <Image
                 src='/editor/trash.png'
@@ -205,14 +218,25 @@ function CanvasInner({
                 height={25}
               />
             </Button>
-            <DownloadButton iconOnly className='!h-10' />
+            <DownloadButton
+              iconOnly
+              className='!h-10'
+              onDownload={(as) => {
+                editorRef.current?.getEditor()?.download({
+                  fileName: pixel.prompt,
+                  as,
+                })
+              }}
+              disabled={!pixelVersion}
+            />
             <Button
               aria-label='Save'
               iconOnly
               className='!h-10'
               onClick={() => {
-                // Save to database
+                // TODO: save to database
               }}
+              disabled={!pixelVersion}
             >
               <Image src='/editor/save.png' alt='Save' width={25} height={25} />
             </Button>
@@ -226,6 +250,7 @@ function CanvasInner({
                     ?.loadSVG(getPublicPixelAsset(pixelVersion.fileKey))
                 }
               }}
+              disabled={!pixelVersion}
             >
               <span>reload</span>
             </Button>
