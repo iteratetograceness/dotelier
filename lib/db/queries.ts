@@ -129,19 +129,21 @@ async function _getPixelById(pixelId: string) {
 async function _insertPixelVersion({
   pixelId,
   fileKey,
-  version,
+  version = 0,
 }: {
   pixelId: string
   fileKey: string
-  version: number
+  version?: number
 }) {
   return standardDb.transaction().execute(async (tx) => {
-    const prevProw = await tx
-      .updateTable('pixelVersion')
-      .set({ isCurrent: false })
-      .where('pixelVersion.pixelId', '=', pixelId)
-      .returning('id')
-      .executeTakeFirstOrThrow()
+    const prevProw = version
+      ? await tx
+          .updateTable('pixelVersion')
+          .set({ isCurrent: false })
+          .where('pixelVersion.pixelId', '=', pixelId)
+          .returning('id')
+          .executeTakeFirstOrThrow()
+      : undefined
 
     const newRow = await tx
       .insertInto('pixelVersion')
