@@ -64,9 +64,12 @@ function CanvasInner({
 
   const onHistoryChange = useCallback(() => {
     const hasChanges = editorRef.current?.getEditor()?.hasUnsavedChanges()
-    console.log(hasChanges)
     setHasUnsavedChanges(hasChanges || false)
   }, [])
+
+  if (pixel.id && initialData?.fileKey) {
+    console.log(initialData?.fileKey, getPublicPixelAsset(initialData.fileKey))
+  }
 
   return (
     <div id={`canvas-${pixel.id}`} className={cn(sharedClasses, 'h-fit')}>

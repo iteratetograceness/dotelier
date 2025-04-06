@@ -1,3 +1,4 @@
+import { LatestPixelVersion } from '@/app/swr/use-pixel-version'
 import { getPixelById } from '@/lib/db/queries'
 import { Canvas } from './canvas.client'
 
@@ -6,13 +7,7 @@ export async function PixelCanvas({
   versionPromise,
 }: {
   id: string
-  versionPromise: Promise<
-    | {
-        id: string
-        fileKey: string
-      }
-    | undefined
-  >
+  versionPromise: Promise<LatestPixelVersion | undefined>
 }) {
   const pixel = await getPixelById(id)
   if (!pixel) return
