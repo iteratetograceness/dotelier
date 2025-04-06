@@ -7,6 +7,7 @@ interface AuthResult {
   user: {
     id: string
     email: string
+    role?: string | null
   }
   jwt?: string
 }
@@ -41,6 +42,7 @@ export async function authorizeRequest({
       user: {
         id: body.user.id,
         email: body.user.email,
+        role: body.user.role,
       },
       jwt,
     }
@@ -51,6 +53,7 @@ export async function authorizeRequest({
     user: {
       id: result.user.id,
       email: result.user.email,
+      role: result.user.role,
     },
   }
 }

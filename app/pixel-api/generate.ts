@@ -4,7 +4,6 @@ import { authorizeRequest } from '@/lib/auth/request'
 import { PIXEL_API_URL } from '@/lib/constants'
 import { createPixel, startPostProcessing } from '@/lib/db/queries'
 import { ERROR_CODES, ErrorCode } from '@/lib/error'
-import { isAdmin } from '@/lib/is-admin'
 import { headers } from 'next/headers'
 import { after } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
@@ -57,7 +56,7 @@ export async function generatePixelIcon({
     }
 
     userId = authResult.user.id
-    bypassCredits = isAdmin(authResult.user.email)
+    bypassCredits = Boolean(authResult.user.role === 'admin')
 
     if (!bypassCredits) {
       const hasCredits = await credits.decrement(userId)

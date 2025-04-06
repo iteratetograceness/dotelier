@@ -24,7 +24,7 @@ export function getError(code: ErrorCode) {
     case ERROR_CODES.UNAUTHORIZED:
       return 'Unauthorized.'
     case ERROR_CODES.FAILED_TO_SIGN_IN:
-      return 'Failed to sign in. Please try again.'
+      return 'Failed to sign in.'
     case ERROR_CODES.ICON_NOT_FOUND:
       return 'Icon not found.'
     case ERROR_CODES.UNEXPECTED_ERROR:

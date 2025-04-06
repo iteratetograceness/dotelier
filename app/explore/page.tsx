@@ -1,5 +1,8 @@
-import { Explorer } from '../_components/explore'
-
-export default function Explore(props: { searchParams: Promise<{ p: string | null }> }) {
-  return <Explorer searchParams={props.searchParams} />
+export default function Explore() {
+  return (
+    <div className='size-full flex items-center justify-center'>
+      <p>Bye This Is Not Ready</p>
+    </div>
+  )
+  // return <Explorer searchParams={props.searchParams} />
 }
