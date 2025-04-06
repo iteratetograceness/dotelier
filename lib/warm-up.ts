@@ -1,15 +1,8 @@
 import { headers } from 'next/headers'
 import { WARM_PIXEL_API_URL } from './constants'
 
-let isWarm = false
-
 export async function warmupServer() {
   if (process.env.NODE_ENV === 'development') return
-
-  if (isWarm) {
-    console.log('Server is already warm')
-    return
-  }
 
   try {
     console.log('Warming up server...')
@@ -21,8 +14,7 @@ export async function warmupServer() {
       },
     })
 
-    if (res.ok) isWarm = true
-    else {
+    if (!res.ok) {
       const data = await res.text()
       throw new Error(data)
     }
