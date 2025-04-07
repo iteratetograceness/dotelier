@@ -4,6 +4,7 @@ import { authorizeRequest } from '@/lib/auth/request'
 import { PIXEL_API_URL } from '@/lib/constants'
 import { createPixel, startPostProcessing } from '@/lib/db/queries'
 import { ERROR_CODES, ErrorCode } from '@/lib/error'
+import { revalidateTag } from 'next/cache'
 import { headers } from 'next/headers'
 import { after } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
@@ -114,6 +115,9 @@ export async function generatePixelIcon({
         await postProcessingPromise
       })
     )
+
+    revalidateTag(`getLatestPixelIds:${userId}`)
+    revalidateTag(`pixel:${id}`)
 
     return {
       result: parsedData.data,
