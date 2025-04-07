@@ -5,7 +5,7 @@ import {
   PopoverPortal,
   PopoverTrigger,
 } from '@radix-ui/react-popover'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { HexColorInput, RgbaColorPicker } from 'react-colorful'
 import './color-picker.css'
 
@@ -17,25 +17,19 @@ interface RgbaColor {
 }
 
 export default function ColorPicker({
-  onChange,
   disabled,
+  setRgbaColor,
+  rgbaColor,
 }: {
-  onChange: (color: RgbaColor) => void
   disabled: boolean
+  rgbaColor: RgbaColor
+  setRgbaColor: (color: RgbaColor) => void
 }) {
-  const [rgbaColor, setRgbaColor] = useState<RgbaColor>({
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 1,
-  })
-
   const changeColor = useCallback(
     (color: RgbaColor) => {
       setRgbaColor(color)
-      onChange(color)
     },
-    [onChange]
+    [setRgbaColor]
   )
 
   return (

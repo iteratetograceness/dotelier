@@ -7,6 +7,7 @@ import {
 import { cn } from '@/app/utils/classnames'
 import { Pixel } from '@/lib/db/types'
 import { getPublicPixelAsset } from '@/lib/ut/client'
+import { track } from '@vercel/analytics/react'
 import Image from 'next/image'
 import {
   memo,
@@ -21,8 +22,9 @@ import {
 import { RgbaColor } from 'react-colorful'
 import { toast } from 'sonner'
 import { Button } from '../../button'
+import { openEyeDropper } from '../../eye-dropper'
 import { Pill } from '../../pill'
-import ColorPicker from '../color-picker'
+import ColorPicker, { hexToRgba } from '../color-picker'
 import { sharedClasses } from '../constants'
 import { DownloadButton } from '../download-button'
 import { Color } from '../editor/renderer'
@@ -46,11 +48,42 @@ function CanvasInner({
   const [activeTool, setActiveTool] = useState<ToolName>('pen')
   const [isSaving, startTransition] = useTransition()
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [rgbaColor, setRgbaColor] = useState<RgbaColor>({
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 1,
+  })
+  const [isEyeDropperActive, startEyeDropper] = useTransition()
 
   const onColorChange = useCallback((color: RgbaColor) => {
     const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
+    setRgbaColor(color)
     editorRef.current?.getEditor()?.setColor(colorArray)
   }, [])
+
+  const onEyeDropperClick = useCallback(() => {
+    startEyeDropper(async () => {
+      const canvas = editorRef.current?.getCanvas()
+      if (!canvas) {
+        toast.error("We're having some trouble with the eyedropper tool!")
+        return
+      }
+
+      try {
+        const result = await openEyeDropper(canvas)
+        const hex = result?.sRGBHex
+        if (!hex) throw new Error('No HEX returned')
+        const rgba = hexToRgba(hex)
+        onColorChange(rgba)
+      } catch (error) {
+        toast.error("We're having some trouble with the eyedropper tool!")
+        track('eye-dropper-error', {
+          error: JSON.stringify(error),
+        })
+      }
+    })
+  }, [onColorChange])
 
   useEffect(() => {
     const editor = editorRef.current?.getEditor()
@@ -58,18 +91,14 @@ function CanvasInner({
   }, [])
 
   const disableActions = useMemo(
-    () => isSaving || !pixelVersion,
-    [isSaving, pixelVersion]
+    () => isSaving || !pixelVersion || isEyeDropperActive,
+    [isSaving, pixelVersion, isEyeDropperActive]
   )
 
   const onHistoryChange = useCallback(() => {
     const hasChanges = editorRef.current?.getEditor()?.hasUnsavedChanges()
     setHasUnsavedChanges(hasChanges || false)
   }, [])
-
-  if (pixel.id && initialData?.fileKey) {
-    console.log(initialData?.fileKey, getPublicPixelAsset(initialData.fileKey))
-  }
 
   return (
     <div id={`canvas-${pixel.id}`} className={cn(sharedClasses, 'h-fit')}>
@@ -111,7 +140,11 @@ function CanvasInner({
 
         <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow h-fit'>
           <div className='flex flex-wrap md:max-w-[333px]'>
-            <ColorPicker onChange={onColorChange} disabled={disableActions} />
+            <ColorPicker
+              setRgbaColor={onColorChange}
+              rgbaColor={rgbaColor}
+              disabled={disableActions}
+            />
             <Button
               aria-label='Pen Tool'
               className='!h-10'
@@ -180,6 +213,20 @@ function CanvasInner({
               <Image
                 src='/editor/line.png'
                 alt='Line Tool'
+                width={25}
+                height={25}
+              />
+            </Button>
+            <Button
+              aria-label='Eye Dropper Tool'
+              iconOnly
+              className='!h-10'
+              onClick={onEyeDropperClick}
+              disabled={disableActions}
+            >
+              <Image
+                src='/editor/eye-dropper.png'
+                alt='Eye Dropper Tool'
                 width={25}
                 height={25}
               />
