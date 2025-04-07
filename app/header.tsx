@@ -3,8 +3,9 @@ import { Tabs } from './_components/tabs'
 import { UserProfile } from './_components/user/profile.server'
 
 const tabs = [
-  { href: '/', label: 'Studio', isActive: true },
+  { href: '/', label: 'Home', isActive: true },
   { href: '/explore', label: 'Explore' },
+  { href: '/collection', label: 'Collection' },
 ]
 
 export function Header() {

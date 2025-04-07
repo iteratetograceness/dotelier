@@ -4,5 +4,4 @@ export default function Explore() {
       <p>Bye This Is Not Ready</p>
     </div>
   )
-  // return <Explorer searchParams={props.searchParams} />
 }

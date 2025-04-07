@@ -7,7 +7,7 @@ export default function AdminPage() {
       <h1 className='text-2xl'>super secret admin page</h1>
       <HomeButton />
       <div className='flex flex-col gap-4'>
-        <h2>Test Inference</h2>
+        <h2>playground</h2>
         <Preview />
       </div>
     </main>

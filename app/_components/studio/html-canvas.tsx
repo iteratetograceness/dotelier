@@ -19,61 +19,6 @@ interface HtmlCanvasProps {
   onHistoryChange: () => void
 }
 
-function HtmlCanvasInner({ id, fileKey, onHistoryChange }: HtmlCanvasProps) {
-  const url = getPublicPixelAsset(fileKey)
-  const [error, setError] = useState<string>()
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
-  const editorRef = useRef<PixelEditor>(null)
-
-  useEffect(() => {
-    if (!canvasRef.current || !previewCanvasRef.current) return
-
-    const canvas = canvasRef.current
-    const previewCanvas = previewCanvasRef.current
-    canvas.width = DEFAULT_SIZE * ZOOM_FACTOR
-    canvas.height = DEFAULT_SIZE * ZOOM_FACTOR
-    previewCanvas.width = DEFAULT_SIZE * ZOOM_FACTOR
-    previewCanvas.height = DEFAULT_SIZE * ZOOM_FACTOR
-
-    const editor = new PixelEditor(
-      canvas,
-      previewCanvas,
-      undefined,
-      onHistoryChange
-    )
-
-    editorRef.current = editor
-
-    if (url) {
-      editor.loadSVG(url).catch((error) => {
-        setError(error.message)
-      })
-    }
-
-    return () => {
-      editorRef.current?.destroy()
-      editorRef.current = null
-    }
-  }, [url])
-
-  return error ? (
-    <div className='size-full flex items-center justify-center'>
-      <p className='text-sm text-shadow'>{error}</p>
-    </div>
-  ) : (
-    <div className='relative size-full'>
-      <canvas id={id} ref={canvasRef} className='size-full' />
-      <canvas
-        id={`preview-canvas-${id}`}
-        ref={previewCanvasRef}
-        className='size-full pointer-events-none absolute inset-0'
-      />
-    </div>
-  )
-}
-export const HtmlCanvas = memo(HtmlCanvasInner)
-
 export interface HtmlCanvasRef {
   getEditor: () => PixelEditor | null
   getCanvas: () => HTMLCanvasElement | null

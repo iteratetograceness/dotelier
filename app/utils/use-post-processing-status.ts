@@ -1,4 +1,5 @@
 import { PostProcessingStatus } from '@/lib/constants'
+import { track } from '@vercel/analytics/react'
 import { useEffect, useMemo, useState } from 'react'
 import { revalidatePixelVersion } from '../swr/use-pixel-version'
 
@@ -59,7 +60,10 @@ export function usePostProcessingStatus({
           setError(data.message || 'Unknown error')
         }
       } catch (error) {
-        console.error('Error parsing SSE message:', error)
+        // Track but silently fail:
+        track('post-processing-status-error', {
+          error: JSON.stringify(error),
+        })
       }
     }
 

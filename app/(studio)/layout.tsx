@@ -17,7 +17,7 @@ export default async function StudioLayout({
   const pixelIds = data?.user
     ? await getPixelIdsByOwner({
         ownerId: data.user.id,
-        limit: 4,
+        limit: 3,
       })
     : []
 
