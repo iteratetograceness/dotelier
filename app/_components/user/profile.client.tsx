@@ -20,9 +20,9 @@ export function UserProfile() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <AnimatePresence>
-          <motion.div
+      <AnimatePresence>
+        <DropdownMenuTrigger asChild>
+          <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -35,9 +35,9 @@ export function UserProfile() {
               width={50}
               height={50}
             />
-          </motion.div>
-        </AnimatePresence>
-      </DropdownMenuTrigger>
+          </motion.button>
+        </DropdownMenuTrigger>
+      </AnimatePresence>
       <DropdownMenuPortal>
         <DropdownMenuContent
           align='end'

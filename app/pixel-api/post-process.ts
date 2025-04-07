@@ -7,6 +7,7 @@ import {
 import { replicate } from '@/lib/replicate'
 import { getPublicPixelAsset } from '@/lib/ut/client'
 import { uploadApi } from '@/lib/ut/server'
+import { revalidateTag } from 'next/cache'
 import { after } from 'next/server'
 import { z } from 'zod'
 
@@ -183,6 +184,7 @@ export async function postProcessPixelIcon({
       ])
     })
 
+    revalidateTag(`pixel:${pixelId}`)
     return { success: true }
   } catch (error) {
     console.error('[postProcessPixelIcon] Error: ', error)

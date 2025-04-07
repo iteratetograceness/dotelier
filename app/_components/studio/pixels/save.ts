@@ -4,6 +4,7 @@ import { authorizeRequest } from '@/lib/auth/request'
 import { insertPixelVersion } from '@/lib/db/queries'
 import { ERROR_CODES } from '@/lib/error'
 import { uploadApi } from '@/lib/ut/server'
+import { revalidateTag } from 'next/cache'
 import { after } from 'next/server'
 
 export async function savePixel({
@@ -66,6 +67,8 @@ export async function savePixel({
     console.log(
       `[savePixel] Pixel ${id} updated. From ${oldFileKey} to ${newFileKey}`
     )
+
+    revalidateTag(`pixel:${id}`)
 
     return { success: true, fileKey: newFileKey }
   } catch (error) {

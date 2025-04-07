@@ -2,6 +2,7 @@
 
 import { LatestPixelVersion } from '@/app/swr/use-pixel-version'
 import { PostProcessingStatus } from 'kysely-codegen'
+import { unstable_cacheTag } from 'next/cache'
 import { cache } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { fastDb, standardDb } from './pg'
@@ -85,6 +86,8 @@ async function _getExplorePagePixels(page = 1) {
 async function _getLatestPixelVersion(
   pixelId: string
 ): Promise<LatestPixelVersion | undefined> {
+  'use cache'
+  unstable_cacheTag(`pixel:${pixelId}`)
   return fastDb
     .selectFrom('pixelVersion')
     .select(['pixelVersion.id', 'pixelVersion.fileKey', 'pixelVersion.version'])
@@ -112,7 +115,14 @@ async function _getPixelIdsByOwner({
     .offset(offset)
     .execute()
 }
+async function _getLatestPixelIds(ownerId: string) {
+  'use cache'
+  unstable_cacheTag(`getLatestPixelIds:${ownerId}`)
+  return _getPixelIdsByOwner({ ownerId, limit: 3 })
+}
 async function _getPixelById(pixelId: string) {
+  'use cache'
+  unstable_cacheTag(`pixel:${pixelId}`)
   return fastDb
     .selectFrom('pixel')
     .select([
@@ -172,6 +182,7 @@ async function _insertPixelVersion({
 export const getExplorePagePixels = cache(_getExplorePagePixels)
 export const getLatestPixelVersion = cache(_getLatestPixelVersion)
 export const getPixelIdsByOwner = cache(_getPixelIdsByOwner)
+export const getLatestPixelIds = cache(_getLatestPixelIds)
 export const getPixelById = cache(_getPixelById)
 export const createPixel = _createPixel
 export const startPostProcessing = _startPostProcessing
