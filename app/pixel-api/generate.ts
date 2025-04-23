@@ -1,7 +1,6 @@
 'use server'
 
 import { authorizeRequest } from '@/lib/auth/request'
-import { PIXEL_API_URL } from '@/lib/constants'
 import { createPixel, startPostProcessing } from '@/lib/db/queries'
 import { ERROR_CODES, ErrorCode } from '@/lib/error'
 import { revalidateTag } from 'next/cache'
@@ -72,7 +71,7 @@ export async function generatePixelIcon({
       throw new Error('Failed to save pixel')
     }
 
-    const response = await fetch(PIXEL_API_URL, {
+    const response = await fetch(process.env.PIXEL_API_ENDPOINT!, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${process.env.MODAL_AUTH_TOKEN}`,
