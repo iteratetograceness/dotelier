@@ -10,7 +10,8 @@
     "lint": "next lint",
     "generate-types": "kysely-codegen --dialect postgres",
     "knip": "knip",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "debug": "next build --experimental-debug-memory-usage"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",

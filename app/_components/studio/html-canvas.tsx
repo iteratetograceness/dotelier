@@ -74,7 +74,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
       editorRef.current?.destroy()
       editorRef.current = null
     }
-  }, [url])
+  }, [onHistoryChange, url])
 
   return error ? (
     <div className='size-full flex items-center justify-center'>

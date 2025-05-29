@@ -1,8 +1,10 @@
+import { adminClient } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 import { getBaseUrl } from '../base-url'
 
 const authClient = createAuthClient({
   baseURL: getBaseUrl(),
+  plugins: [adminClient()],
 })
 
 export const signInWithGoogle = ({
