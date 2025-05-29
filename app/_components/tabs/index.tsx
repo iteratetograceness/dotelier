@@ -1,14 +1,12 @@
 'use client'
 
 import { cn } from '@/app/utils/classnames'
+import { NAV_LINKS } from '@/lib/constants'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 interface TabsProps {
-  tabs: {
-    href: string
-    label: string
-  }[]
+  tabs: typeof NAV_LINKS
   className?: string
 }
 
@@ -18,12 +16,12 @@ export function Tabs({ tabs, className }: TabsProps) {
   return (
     <div
       className={cn(
-        'flex items-center justify-center w-full relative gap-1',
+        'flex items-center justify-center w-full relative gap-1 select-none',
         // Highlight bar
         'after:absolute before:absolute',
-        'after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:bg-highlight after:z-20',
+        'after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-highlight after:z-20',
         // Background bar
-        'before:bottom-[2.5px] before:left-0 before:right-0 before:h-[3px] before:bg-background before:z-10',
+        'before:bottom-[1px] before:left-0 before:right-0 before:h-[3px] before:bg-background before:z-10',
         className
       )}
     >
@@ -35,7 +33,7 @@ export function Tabs({ tabs, className }: TabsProps) {
             key={tab.href}
             href={tab.href}
             className={cn(
-              'relative group h-[42px] focus-within:outline-none',
+              'relative group h-[42px] focus-within:outline-hidden',
               // Black right drop shadow
               'after:shadow-[2.5px_0_0_var(--foreground)] after:absolute after:top-3.5 after:right-0 after:h-[calc(100%-14px)] after:w-[2.5px]',
               'before:w-full before:-bottom-[6px] before:h-[6px] before:bg-background before:absolute before:z-40 before:left-0',

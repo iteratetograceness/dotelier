@@ -242,9 +242,16 @@ function SVGDebugView({ svgUrl, onError }: DebugViewProps) {
     }
 
     image.src = svgUrl
+
+    return () => {
+      if (svgUrl) URL.revokeObjectURL(svgUrl)
+    }
   }, [svgUrl, settings, onError])
 
-  useEffect(() => processImage(), [processImage])
+  useEffect(() => {
+    const cleanup = processImage()
+    return cleanup
+  }, [processImage])
 
   useEffect(() => {
     if (!debugCanvasRef.current || !svgUrl) return
@@ -361,7 +368,7 @@ function SVGDebugView({ svgUrl, onError }: DebugViewProps) {
   return (
     <div className='flex flex-col gap-4 p-4 bg-gray-100 rounded-lg'>
       {/* Settings Panel */}
-      <div className='bg-white p-4 rounded-lg shadow'>
+      <div className='bg-white p-4 rounded-lg shadow-sm'>
         <h3 className='font-medium mb-3'>Settings</h3>
         <div className='grid grid-cols-4 gap-4 mb-4'>
           {/* Grid Size */}
@@ -479,7 +486,7 @@ function SVGDebugView({ svgUrl, onError }: DebugViewProps) {
 
       {/* Debug Info */}
       {settings.showDebugInfo && (
-        <div className='bg-white p-4 rounded-lg shadow mb-4 flex gap-8 justify-center text-sm text-gray-600'>
+        <div className='bg-white p-4 rounded-lg shadow-sm mb-4 flex gap-8 justify-center text-sm text-gray-600'>
           <div className='flex gap-2 items-center'>
             <div className='flex flex-col items-center'>
               <span>{debugInfo.colorFrequency.size} total colors</span>
@@ -491,7 +498,7 @@ function SVGDebugView({ svgUrl, onError }: DebugViewProps) {
 
       {/* Locked Coordinates */}
       {lockedCoord && (
-        <div className='bg-white p-4 rounded-lg shadow mb-4 flex gap-8 text-sm text-gray-600'>
+        <div className='bg-white p-4 rounded-lg shadow-sm mb-4 flex gap-8 text-sm text-gray-600'>
           <div className='flex gap-2 items-center'>
             <div className='flex gap-8'>
               <div className='flex flex-col gap-2'>
@@ -627,7 +634,7 @@ export function SVGDebugViewWrapper() {
     <div className='flex flex-col gap-4'>
       {!svgUrl ? (
         <div
-          className='border-2 border-dashed border-gray-300 rounded-lg p-8 text-center'
+          className='border-3 border-dashed border-gray-300 rounded-lg p-8 text-center'
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
         >
@@ -640,7 +647,7 @@ export function SVGDebugViewWrapper() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className='px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600'
+            className='px-4 py-2 bg-blue-500 text-white rounded-sm hover:bg-blue-600'
           >
             Upload SVG
           </button>
@@ -653,7 +660,7 @@ export function SVGDebugViewWrapper() {
           <div className='flex justify-between items-center'>
             <div className='text-sm'>
               Loaded SVG URL:{' '}
-              <code className='bg-gray-100 px-2 py-1 rounded'>{svgUrl}</code>
+              <code className='bg-gray-100 px-2 py-1 rounded-sm'>{svgUrl}</code>
             </div>
             <button
               onClick={() => {
@@ -661,7 +668,7 @@ export function SVGDebugViewWrapper() {
                 setSvgUrl(null)
                 setError(null)
               }}
-              className='px-3 py-1 bg-gray-200 rounded hover:bg-gray-300'
+              className='px-3 py-1 bg-gray-200 rounded-sm hover:bg-gray-300'
             >
               Clear
             </button>

@@ -3,7 +3,6 @@
 }
 
 .pixel-color-picker .react-colorful__saturation {
-    /* margin: 0.5rem 0; */
     border-width: 2px;
     border-right: 2px solid var(--background);
     border-bottom: 2px solid var(--background);

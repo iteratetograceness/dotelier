@@ -3,6 +3,7 @@ import { Popover } from 'radix-ui'
 import { useCallback } from 'react'
 import { HexColorInput, RgbaColorPicker } from 'react-colorful'
 import './color-picker.css'
+import { TooltipWrapper } from './pixels/canvas.client'
 
 interface RgbaColor {
   r: number
@@ -29,20 +30,22 @@ export default function ColorPicker({
 
   return (
     <Popover.Root>
-      <Popover.Trigger
-        disabled={disabled}
-        className='size-10 border-[2px] border-shadow border-r-background border-b-background'
-        style={{
-          backgroundColor: `rgba(${rgbaColor.r}, ${rgbaColor.g}, ${rgbaColor.b}, ${rgbaColor.a})`,
-        }}
-      />
+      <TooltipWrapper content='Tool Color'>
+        <Popover.Trigger
+          disabled={disabled}
+          className='size-10 border-3 border-shadow border-r-background border-b-background'
+          style={{
+            backgroundColor: `rgba(${rgbaColor.r}, ${rgbaColor.g}, ${rgbaColor.b}, ${rgbaColor.a})`,
+          }}
+        />
+      </TooltipWrapper>
       <Popover.Portal>
         <Popover.Content
           avoidCollisions
           collisionPadding={40}
           side='bottom'
           align='start'
-          className='z-[100]'
+          className='z-100'
         >
           <div
             className={cn(
@@ -57,8 +60,8 @@ export default function ColorPicker({
               <span className='absolute left-2 text-foreground'>#</span>
               <HexColorInput
                 className={cn(
-                  'px-1 border-[2px] border-shadow border-r-background border-b-background',
-                  'active:outline-none focus:outline-none pl-6'
+                  'px-1 border-3 border-shadow border-r-background border-b-background',
+                  'active:outline-hidden focus:outline-hidden pl-6'
                 )}
                 color={rgbaToHex(
                   rgbaColor.r,

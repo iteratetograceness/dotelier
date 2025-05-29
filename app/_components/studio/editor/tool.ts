@@ -26,7 +26,7 @@ const MAX_TOOL_SIZE = 4
 
 export class ToolManager {
   private tool: Tool
-  private toolSize: number = 2
+  private toolSize: number = 1
 
   constructor(
     private renderer: PixelRenderer,
@@ -112,12 +112,10 @@ abstract class BaseTool implements Tool {
       return
     }
 
-    // For sizes > 1, draw a square centered on the pixel
-    const offset = Math.floor(size / 2)
     for (let dy = 0; dy < size; dy++) {
       for (let dx = 0; dx < size; dx++) {
-        const px = x - offset + dx
-        const py = y - offset + dy
+        const px = x + dx
+        const py = y + dy
         if (this.isOutOfBounds(px, py)) continue
         const i = (py * this.gridSize + px) * 4
         this.pixelData[i + 0] = rgba[0]
@@ -296,8 +294,7 @@ class LineTool extends BasePreviewTool {
     const start = new Point(this.startX, this.startY)
     const end = new Point(x, y)
     const points = line(start, end)
-    const lighterColor = [color[0], color[1], color[2], color[3] / 2]
-
+    const lighterColor: Color = [color[0], color[1], color[2], color[3] / 2]
     const size = Math.max(1, Math.min(this.toolSize || 1, MAX_TOOL_SIZE))
     const filteredPoints = points.filter((_, index) => index % size === 0)
 
@@ -306,13 +303,11 @@ class LineTool extends BasePreviewTool {
         for (let dx = 0; dx < size; dx++) {
           const px = point.x + dx
           const py = point.y + dy
-          if (px < 0 || py < 0 || px >= this.gridSize || py >= this.gridSize)
-            continue
-          this.previewRenderer.drawPixel(px, py, lighterColor as Color)
+          if (this.isOutOfBounds(px, py)) continue
+          this.previewRenderer.drawPixel(px, py, lighterColor)
         }
       }
     }
-    // this.previewRenderer.drawPixels(points, lighterColor as Color)
   }
 
   protected commit(x: number, y: number, color: Color) {

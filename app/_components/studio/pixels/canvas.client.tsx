@@ -10,7 +10,6 @@ import { track } from '@vercel/analytics/react'
 import Image from 'next/image'
 import { Tooltip } from 'radix-ui'
 import {
-  memo,
   use,
   useCallback,
   useEffect,
@@ -32,7 +31,7 @@ import { ToolName } from '../editor/tool'
 import { HtmlCanvasRef, HtmlCanvasWithRef } from '../html-canvas'
 import { savePixel } from './save'
 
-function CanvasInner({
+export function Canvas({
   pixel,
   versionPromise,
 }: {
@@ -106,7 +105,7 @@ function CanvasInner({
       <div
         className={cn(
           'flex items-center justify-center',
-          'border-[2px] border-shadow border-r-background border-b-background',
+          'border-3 border-shadow border-r-background border-b-background',
           'aspect-square bg-white',
           'w-full h-auto md:h-full md:w-auto '
         )}
@@ -127,7 +126,7 @@ function CanvasInner({
       </div>
 
       {/* Controls */}
-      <div className='min-h-36 md:min-h-auto min-w-auto md:min-w-36 flex flex-col gap-3'>
+      <div className='min-h-36 md:min-h-auto min-w-auto md:min-w-36 flex flex-col gap-3 select-none'>
         <div className='flex gap-1 text-xs'>
           <Pill className='flex-1 truncate whitespace-nowrap' variant='dark'>
             {pixel.prompt}
@@ -138,7 +137,7 @@ function CanvasInner({
           </Pill>
         </div>
 
-        <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow h-fit'>
+        <div className='flex flex-col w-full p-2 border-3 border-white border-r-shadow border-b-shadow h-fit'>
           <div className='grid grid-cols-6 w-fit'>
             <Tooltip.Provider>
               <ColorPicker
@@ -146,16 +145,20 @@ function CanvasInner({
                 rgbaColor={rgbaColor}
                 disabled={disableActions}
               />
-              <input
-                defaultValue={1}
-                className='w-10'
-                type='number'
-                onChange={(e) => {
-                  editorRef.current
-                    ?.getEditor()
-                    ?.setToolSize(Number(e.target.value))
-                }}
-              />
+              <TooltipWrapper content='Tool Size'>
+                <input
+                  defaultValue={1}
+                  min={1}
+                  max={10}
+                  className='w-10'
+                  type='number'
+                  onChange={(e) => {
+                    editorRef.current
+                      ?.getEditor()
+                      ?.setToolSize(Number(e.target.value))
+                  }}
+                />
+              </TooltipWrapper>
               <TooltipWrapper content='Pen'>
                 <Button
                   aria-label='Pen Tool'
@@ -403,7 +406,7 @@ function CanvasInner({
   )
 }
 
-function TooltipWrapper({
+export function TooltipWrapper({
   children,
   content,
 }: {
@@ -412,7 +415,7 @@ function TooltipWrapper({
 }) {
   return (
     <Tooltip.Provider>
-      <Tooltip.Root>
+      <Tooltip.Root delayDuration={500}>
         <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content
@@ -427,5 +430,3 @@ function TooltipWrapper({
     </Tooltip.Provider>
   )
 }
-
-export const Canvas = memo(CanvasInner)

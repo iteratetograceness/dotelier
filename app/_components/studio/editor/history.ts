@@ -1,3 +1,5 @@
+const MAX_HISTORY_LENGTH = 50
+
 export class HistoryManager {
   private stack: Uint8ClampedArray[] = []
   private index: number = -1
@@ -21,7 +23,12 @@ export class HistoryManager {
     if (!this.tempSnapshot) return
 
     this.stack.push(new Uint8ClampedArray(this.pixelData))
-    this.index++
+
+    if (this.stack.length > MAX_HISTORY_LENGTH) {
+      this.stack.shift()
+    } else {
+      this.index++
+    }
 
     this.tempSnapshot = undefined
     this.notifyChange()

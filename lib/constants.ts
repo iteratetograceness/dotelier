@@ -8,3 +8,9 @@ export enum PostProcessingStatus {
 }
 
 export const FREE_CREDITS = 1
+
+export const NAV_LINKS = [
+  { href: '/', label: 'Home', isActive: true },
+  { href: '/explore', label: 'Explore' },
+  { href: '/studio', label: 'Studio' },
+] as const

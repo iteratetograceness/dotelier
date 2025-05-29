@@ -2,7 +2,8 @@
 
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
-import { AnimatePresence, motion } from 'motion/react'
+import { LazyMotion, domAnimation } from 'motion/react'
+import * as m from 'motion/react-m'
 import { Children, useCallback, useEffect, useState } from 'react'
 import { Button } from '../button'
 import './index.css'
@@ -27,28 +28,12 @@ const slideVariants = {
       ease: 'easeOut',
     },
   },
-  exit: {
-    opacity: 0,
-    y: -10,
-    transition: {
-      duration: 0.25,
-      ease: 'easeIn',
-    },
-  },
 }
 
 export function Carousel({ children }: { children: React.ReactNode }) {
   const { setCarousel } = useCarousel()
-  const [emblaReady, setEmblaReady] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
-
-  useEffect(() => {
-    const handle = requestAnimationFrame(() => {
-      setEmblaReady(true)
-    })
-    return () => cancelAnimationFrame(handle)
-  }, [])
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     {
@@ -104,60 +89,53 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   }, [emblaApi, setCarousel])
 
   return (
-    <AnimatePresence>
-      {emblaReady ? (
-        <motion.section
-          initial={{ opacity: 0, filter: 'blur(2px)', scale: 0.99 }}
-          animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
-          exit={{ opacity: 0, filter: 'blur(2px)', scale: 0.99 }}
-          transition={{
-            opacity: { duration: 0.4, ease: 'easeOut' },
-            filter: { duration: 0.4, ease: 'easeOut' },
-            scale: { type: 'spring', stiffness: 250, damping: 22 },
-          }}
-          className='embla w-screen m-auto'
-          dir='rtl'
+    <section
+      // initial={{ opacity: 0, filter: 'blur(2px)', scale: 0.99 }}
+      // animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+      // transition={{
+      //   opacity: { duration: 0.4, ease: 'easeOut' },
+      //   filter: { duration: 0.4, ease: 'easeOut' },
+      //   scale: { type: 'spring', stiffness: 250, damping: 22 },
+      // }}
+      className='embla w-screen m-auto'
+      dir='rtl'
+    >
+      <div className='flex w-full items-center justify-center pb-4' dir='ltr'>
+        <Button disabled={!canScrollLeft} onClick={scrollToLeft}>
+          {'<'}
+        </Button>
+        <Button
+          aria-label='Go to new canvas'
+          onClick={scrollToNewCanvas}
+          disabled={currentIndex === 0}
         >
-          <div
-            className='flex w-full items-center justify-center pb-4'
-            dir='ltr'
+          +
+        </Button>
+        <Button onClick={scrollToRight} disabled={currentIndex === 0}>
+          {'>'}
+        </Button>
+      </div>
+      <div className='embla__viewport overflow-hidden' ref={emblaRef}>
+        <LazyMotion features={domAnimation}>
+          <m.div
+            variants={containerVariants}
+            initial='hidden'
+            animate='visible'
+            className='embla__container flex max-w-full'
           >
-            <Button disabled={!canScrollLeft} onClick={scrollToLeft}>
-              {'<'}
-            </Button>
-            <Button
-              aria-label='Go to new canvas'
-              onClick={scrollToNewCanvas}
-              disabled={currentIndex === 0}
-            >
-              +
-            </Button>
-            <Button onClick={scrollToRight} disabled={currentIndex === 0}>
-              {'>'}
-            </Button>
-          </div>
-          <div className='embla__viewport overflow-hidden' ref={emblaRef}>
-            <motion.div
-              variants={containerVariants}
-              initial='hidden'
-              animate='visible'
-              exit='hidden'
-              className='embla__container flex max-w-full'
-            >
-              {Children.map(children, (child, index) => (
-                <motion.div
-                  className='embla__slide'
-                  dir='ltr'
-                  key={index}
-                  variants={slideVariants}
-                >
-                  {child}
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </motion.section>
-      ) : null}
-    </AnimatePresence>
+            {Children.map(children, (child, index) => (
+              <m.div
+                className='embla__slide'
+                dir='ltr'
+                key={index}
+                variants={slideVariants}
+              >
+                {child}
+              </m.div>
+            ))}
+          </m.div>
+        </LazyMotion>
+      </div>
+    </section>
   )
 }

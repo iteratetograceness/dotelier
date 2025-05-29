@@ -4,8 +4,8 @@ import { cn } from '../utils/classnames'
 
 const variants = {
   primary:
-    'bg-background text-accent hover:bg-hover border-r-light-shadow border-b-light-shadow border-highlight [text-shadow:_1px_1px_0_var(--medium)]',
-  dark: 'bg-accent text-medium hover:bg-dark-hover border-r-foreground border-b-foreground border-light-shadow [text-shadow:_1px_1px_0_var(--foreground)]',
+    'bg-background text-accent border hover:bg-hover border-r-light-shadow border-b-light-shadow border-highlight [text-shadow:1px_1px_0_var(--medium)]',
+  dark: 'bg-accent text-medium border hover:bg-dark-hover border-r-foreground border-b-foreground border-light-shadow [text-shadow:1px_1px_0_var(--foreground)]',
 } as const
 
 const base = `px-4 py-1 w-fit border-3 focus-within:outline-hidden` // TODO: Custom focus styling
@@ -31,39 +31,39 @@ const animation = {
 
 const pressed = {
   primary: `
-  !border-light-shadow
-  !border-r-highlight
-  !border-b-highlight
+  border-light-shadow!
+  border-r-highlight!
+  border-b-highlight!
   transition-[border-color]
   duration-75
-  !bg-hover
-  [background-image:linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.2)_75%,rgba(0,0,0,0.2)),linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.2)_75%,rgba(0,0,0,0.2))]
-  [background-size:4px_4px]
-    [background-position:0_0,2px_2px]
+  bg-hover!
+  bg-[linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.2)_75%,rgba(0,0,0,0.2)),linear-gradient(45deg,rgba(0,0,0,0.2)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.2)_75%,rgba(0,0,0,0.2))]
+  bg-size-[4px_4px]
+    bg-position-[0_0,2px_2px]
 `,
   dark: `
-  !border-foreground
-  !border-r-light-shadow
-  !border-b-light-shadow
+  border-foreground!
+  border-r-light-shadow!
+  border-b-light-shadow!
   transition-[border-color]
   duration-75
-  !bg-dark-hover
-  [background-image:linear-gradient(45deg,rgba(0,0,0,0.15)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.15)_75%,rgba(0,0,0,0.15)),linear-gradient(45deg,rgba(0,0,0,0.15)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.15)_75%,rgba(0,0,0,0.15))]
-  [background-size:4px_4px]
-  [background-position:0_0,2px_2px]
+  bg-dark-hover!
+  bg-[linear-gradient(45deg,rgba(0,0,0,0.15)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.15)_75%,rgba(0,0,0,0.15)),linear-gradient(45deg,rgba(0,0,0,0.15)_25%,transparent_25%,transparent_75%,rgba(0,0,0,0.15)_75%,rgba(0,0,0,0.15))]
+  bg-size-[4px_4px]
+  bg-position-[0_0,2px_2px]
 `,
 } as const
 
 const disabled = {
   primary: `
-  !bg-hover
+  bg-hover!
   text-medium
-  [text-shadow:_1px_1px_0_var(--white)]
+  [text-shadow:1px_1px_0_var(--white)]
 `,
   dark: `
-  !bg-dark-hover
-  !text-highlight
-  [text-shadow:_1px_1px_0_var(--light-shadow)]
+  bg-dark-hover!
+  text-highlight!
+  [text-shadow:1px_1px_0_var(--light-shadow)]
 `,
 } as const
 

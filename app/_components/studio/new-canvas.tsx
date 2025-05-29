@@ -23,7 +23,7 @@ function NewCanvasInner() {
         <div
           className={cn(
             'flex items-center justify-center relative',
-            'border-[2px] border-shadow border-r-background border-b-background',
+            'border-3 border-shadow border-r-background border-b-background',
             'w-full h-auto md:h-full md:w-auto aspect-square bg-white'
           )}
         >
@@ -45,7 +45,7 @@ function NewCanvasControls() {
   usePostProcessingStatus({ id, onChange: setStatus })
 
   return (
-    <div className='flex flex-col gap-3 justify-between'>
+    <div className='flex flex-col gap-3 justify-between select-none'>
       {/* Status */}
       <div className='flex gap-1 items-center text-xs'>
         <Pill variant='dark'>status</Pill>
@@ -91,6 +91,7 @@ function NewCanvasControls() {
               console.log('svg download')
             }
           }}
+          disabled={status !== 'completed'}
         />
         <Button
           className='flex-1'
@@ -128,7 +129,7 @@ function Output() {
 
 function EmptyState() {
   return (
-    <div className='flex flex-col items-center justify-center size-full aspect-square'>
+    <div className='flex flex-col items-center justify-center size-full aspect-square select-none'>
       <div className='flex items-center justify-center'>
         <Easel width={120} height={120} />
       </div>

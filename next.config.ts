@@ -23,13 +23,7 @@ const nextConfig: NextConfig = {
   experimental: {
     ppr: true,
     dynamicIO: true,
-    webpackMemoryOptimizations: true,
-  },
-  webpack: (config, { dev }) => {
-    if (!dev) {
-      config.cache = false
-    }
-    return config
+    reactCompiler: true,
   },
 }
 

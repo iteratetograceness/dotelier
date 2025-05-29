@@ -87,6 +87,8 @@ export class PixelEditor {
     this.toolManager.setTool(this.tool)
 
     this.setupEvents()
+    this.renderer.startRenderLoop()
+    this.previewRenderer.startRenderLoop()
   }
 
   private setupEvents(): void {
@@ -209,72 +211,7 @@ export class PixelEditor {
     this.renderer.toggleGrid()
   }
 
-  public async loadSVG(svgUrl: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const svgImage = new Image()
-      svgImage.crossOrigin = 'anonymous'
-
-      svgImage.onload = () => {
-        this.pixelData.fill(0)
-        this.renderer.clear()
-        this.previewRenderer.clear()
-
-        const tempCanvas = document.createElement('canvas')
-        const svgPixelSize = svgImage.width / this.gridSize
-
-        tempCanvas.width = svgImage.width
-        tempCanvas.height = svgImage.height
-
-        const tempCtx = tempCanvas.getContext('2d', {
-          willReadFrequently: true,
-        })
-
-        if (!tempCtx) {
-          reject(new Error('Failed to get temporary canvas context'))
-          return
-        }
-
-        tempCtx.drawImage(svgImage, 0, 0)
-
-        const offset = Math.floor((this.gridSize - 32) / 2)
-
-        for (let x = 0; x < 32; x++) {
-          for (let y = 0; y < 32; y++) {
-            const sourceX = Math.floor(x * svgPixelSize + svgPixelSize / 2)
-            const sourceY = Math.floor(y * svgPixelSize + svgPixelSize / 2)
-            const pixel = tempCtx.getImageData(sourceX, sourceY, 1, 1).data
-
-            if (pixel[3] > 10) {
-              const color: Color = [pixel[0], pixel[1], pixel[2], pixel[3]]
-
-              const targetX = offset + x
-              const targetY = offset + y
-
-              if (this.isWithinBounds(targetX, targetY)) {
-                this.setPixel(targetX, targetY, color)
-              }
-            }
-          }
-        }
-
-        this.renderer.pixelData = this.pixelData
-        requestAnimationFrame(this.renderer.renderLoop)
-        this.history.startAction()
-        this.history.endAction()
-
-        resolve()
-      }
-
-      svgImage.onerror = () => {
-        reject(new Error('Failed to load image'))
-      }
-
-      svgImage.src = svgUrl
-    })
-  }
-
   public async loadSVG2(svgUrl: string): Promise<void> {
-    console.log('> loadSVG2', svgUrl)
     return new Promise((resolve, reject) => {
       const svgImage = new Image()
       svgImage.crossOrigin = 'anonymous'
@@ -341,11 +278,14 @@ export class PixelEditor {
         }
 
         this.renderer.pixelData = this.pixelData
-        requestAnimationFrame(this.renderer.renderLoop)
+        this.renderer.startRenderLoop()
         this.history.startAction()
         this.history.endAction()
 
         resolve()
+
+        svgImage.src = ''
+        tempCanvas.remove()
       }
 
       svgImage.onerror = () => {
@@ -383,6 +323,8 @@ export class PixelEditor {
 
   public destroy(): void {
     this.cleanupEvents()
+    this.renderer.destroy()
+    this.previewRenderer.destroy()
   }
 
   public resetHistory(): void {

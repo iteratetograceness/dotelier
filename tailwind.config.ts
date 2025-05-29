@@ -1,6 +1,3 @@
-import type { Config } from 'tailwindcss'
-import { PluginAPI } from 'tailwindcss/types/config'
-
 export default {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -41,7 +38,8 @@ export default {
     },
   },
   plugins: [
-    function ({ addComponents }: PluginAPI) {
+    // @ts-expect-error - v4 migration
+    function ({ addComponents }) {
       addComponents({
         '.pixel-corners': {
           clipPath:
@@ -111,4 +109,4 @@ export default {
       addComponents(colorUtilities)
     },
   ],
-} satisfies Config
+}

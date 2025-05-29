@@ -6,12 +6,13 @@ export class PixelRenderer {
   private ctx: CanvasRenderingContext2D
   private gridSize: number
   private gridItemSize: number
-  private _pixelData!: Uint8ClampedArray
+  private _pixelData?: Uint8ClampedArray
 
   private offscreen: HTMLCanvasElement
   private offCtx: CanvasRenderingContext2D
   private needsRedraw = false
   private showGrid = true
+  private animationFrameId?: number
 
   constructor(private canvas: HTMLCanvasElement, private _gridSize: number) {
     const ctx = canvas.getContext('2d')
@@ -35,7 +36,7 @@ export class PixelRenderer {
     this.markDirty()
   }
 
-  public get pixelData() {
+  public get pixelData(): Uint8ClampedArray | undefined {
     return this._pixelData
   }
 
@@ -47,12 +48,30 @@ export class PixelRenderer {
     this.markDirty()
   }
 
+  public startRenderLoop() {
+    if (this.animationFrameId) return
+    this.renderLoop()
+  }
+
+  public stopRenderLoop() {
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId)
+      this.animationFrameId = undefined
+    }
+  }
+
   public renderLoop = () => {
     if (this.needsRedraw) {
       this.needsRedraw = false
-      this.redraw(this.pixelData)
+      if (this.pixelData) this.redraw(this.pixelData)
     }
-    requestAnimationFrame(this.renderLoop)
+    this.animationFrameId = requestAnimationFrame(this.renderLoop)
+  }
+
+  public destroy() {
+    this.stopRenderLoop()
+    this.clear()
+    this._pixelData = undefined
   }
 
   private getFillStyle(color: Color) {
