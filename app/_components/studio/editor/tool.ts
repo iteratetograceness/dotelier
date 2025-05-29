@@ -1,27 +1,6 @@
 import { Color, PixelRenderer } from './renderer'
 import { line, Point } from './shapes'
 
-export enum PixelEditorTool {
-  Pen = 0,
-  Eraser = 1,
-  Fill = 2,
-  Line = 3,
-  Circle = 4,
-}
-
-interface ToolMeta {
-  atomic: boolean
-  showPreview: boolean
-}
-
-export const ToolMeta: Record<PixelEditorTool, ToolMeta> = {
-  [PixelEditorTool.Pen]: { atomic: false, showPreview: false },
-  [PixelEditorTool.Eraser]: { atomic: false, showPreview: false },
-  [PixelEditorTool.Fill]: { atomic: true, showPreview: false },
-  [PixelEditorTool.Line]: { atomic: true, showPreview: true },
-  [PixelEditorTool.Circle]: { atomic: true, showPreview: false },
-}
-
 export class ToolManager {
   private tool: Tool
 
@@ -122,7 +101,7 @@ class PenTool extends BaseTool {
   onUp() {}
 }
 
-export class EraserTool extends BaseTool {
+class EraserTool extends BaseTool {
   showPreview = false
   atomic = false
 
@@ -137,55 +116,55 @@ export class EraserTool extends BaseTool {
   onUp() {}
 }
 
-export class FillTool extends BaseTool {
-  showPreview = false
-  atomic = true
+class FillTool extends BaseTool {
+   showPreview = false
+   atomic = true
 
-  onDown(e: MouseEvent | TouchEvent, color: Color) {
-    const coords = this.renderer.getPixelCoords(e)
-    if (!coords) return
-    const [x, y] = coords
+   onDown(e: MouseEvent | TouchEvent, color: Color) {
+     const coords = this.renderer.getPixelCoords(e)
+     if (!coords) return
+     const [x, y] = coords
 
-    const targetColor = this.getPixel(x, y)
-    if (!targetColor) return
-    if (this.colorsEqual(targetColor, color)) return
+     const targetColor = this.getPixel(x, y)
+     if (!targetColor) return
+     if (this.colorsEqual(targetColor, color)) return
 
-    this.floodFill(x, y, targetColor, color)
-  }
+     this.floodFill(x, y, targetColor, color)
+   }
 
-  onMove() {}
+   onMove() {}
 
-  onUp() {}
+   onUp() {}
 
-  private floodFill(
-    x: number,
-    y: number,
-    targetColor: Color,
-    fillColor: Color
-  ) {
-    const queue: Array<{ x: number; y: number }> = [{ x, y }]
+   private floodFill(
+     x: number,
+     y: number,
+     targetColor: Color,
+     fillColor: Color
+   ) {
+     const queue: Array<{ x: number; y: number }> = [{ x, y }]
 
-    while (queue.length) {
-      const { x, y } = queue.shift()!
-      if (this.isOutOfBounds(x, y)) continue
+     while (queue.length) {
+       const { x, y } = queue.shift()!
+       if (this.isOutOfBounds(x, y)) continue
 
-      const prevColor = this.getPixel(x, y)
-      if (!prevColor) continue
-      if (!this.colorsEqual(prevColor, targetColor)) continue
+       const prevColor = this.getPixel(x, y)
+       if (!prevColor) continue
+       if (!this.colorsEqual(prevColor, targetColor)) continue
 
-      this.setPixel(x, y, fillColor)
+       this.setPixel(x, y, fillColor)
 
-      queue.push({ x: x + 1, y })
-      queue.push({ x: x - 1, y })
-      queue.push({ x, y: y + 1 })
-      queue.push({ x, y: y - 1 })
-    }
-  }
+       queue.push({ x: x + 1, y })
+       queue.push({ x: x - 1, y })
+       queue.push({ x, y: y + 1 })
+       queue.push({ x, y: y - 1 })
+     }
+   }
 
-  private colorsEqual(a: Color, b: Color): boolean {
-    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]
-  }
-}
+   private colorsEqual(a: Color, b: Color): boolean {
+     return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]
+   }
+ }
 
 abstract class BasePreviewTool extends BaseTool {
   protected startX = 0
@@ -250,7 +229,7 @@ class LineTool extends BasePreviewTool {
   }
 }
 
-export const ToolRegistry = {
+const ToolRegistry = {
   pen: PenTool,
   line: LineTool,
   eraser: EraserTool,

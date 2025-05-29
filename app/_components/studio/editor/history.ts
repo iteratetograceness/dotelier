@@ -1,12 +1,3 @@
-import { Color } from './renderer'
-
-export interface PixelChange {
-  x: number
-  y: number
-  prevColor: Color
-  newColor: Color
-}
-
 export class HistoryManager {
   private stack: Uint8ClampedArray[] = []
   private index: number = -1

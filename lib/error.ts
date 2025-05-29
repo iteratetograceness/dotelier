@@ -15,9 +15,6 @@ export const ERROR_CODES = {
 }
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
-export interface ErrorResponse {
-  error: ErrorCode
-}
 
 export function getError(code: ErrorCode) {
   switch (code) {

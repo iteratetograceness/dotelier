@@ -81,7 +81,7 @@ interface BaseProps {
 export type ButtonProps = BaseProps &
   React.ButtonHTMLAttributes<HTMLButtonElement>
 
-export type ButtonLinkProps = BaseProps & ComponentProps<typeof Link>
+type ButtonLinkProps = BaseProps & ComponentProps<typeof Link>
 
 export function Button({
   children,

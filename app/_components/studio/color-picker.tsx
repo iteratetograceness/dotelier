@@ -85,7 +85,7 @@ export default function ColorPicker({
   )
 }
 
-export function rgbaToHex(r: number, g: number, b: number, a: number): string {
+function rgbaToHex(r: number, g: number, b: number, a: number): string {
   const toHex = (n: number) => {
     const hex = Math.round(n).toString(16)
     return hex.length === 1 ? '0' + hex : hex
