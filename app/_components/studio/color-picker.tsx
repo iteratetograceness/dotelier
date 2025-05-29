@@ -1,10 +1,5 @@
 import { cn } from '@/app/utils/classnames'
-import {
-  Popover,
-  PopoverContent,
-  PopoverPortal,
-  PopoverTrigger,
-} from '@radix-ui/react-popover'
+import { Popover } from 'radix-ui'
 import { useCallback } from 'react'
 import { HexColorInput, RgbaColorPicker } from 'react-colorful'
 import './color-picker.css'
@@ -33,16 +28,16 @@ export default function ColorPicker({
   )
 
   return (
-    <Popover>
-      <PopoverTrigger
+    <Popover.Root>
+      <Popover.Trigger
         disabled={disabled}
         className='size-10 border-[2px] border-shadow border-r-background border-b-background'
         style={{
           backgroundColor: `rgba(${rgbaColor.r}, ${rgbaColor.g}, ${rgbaColor.b}, ${rgbaColor.a})`,
         }}
       />
-      <PopoverPortal>
-        <PopoverContent
+      <Popover.Portal>
+        <Popover.Content
           avoidCollisions
           collisionPadding={40}
           side='bottom'
@@ -79,9 +74,9 @@ export default function ColorPicker({
               />
             </div>
           </div>
-        </PopoverContent>
-      </PopoverPortal>
-    </Popover>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }
 

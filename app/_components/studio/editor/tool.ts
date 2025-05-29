@@ -1,8 +1,32 @@
 import { Color, PixelRenderer } from './renderer'
 import { line, Point } from './shapes'
 
+export enum PixelEditorTool {
+  Pen = 0,
+  Eraser = 1,
+  Fill = 2,
+  Line = 3,
+  Circle = 4,
+}
+
+interface ToolMeta {
+  atomic: boolean
+  showPreview: boolean
+}
+
+export const ToolMeta: Record<PixelEditorTool, ToolMeta> = {
+  [PixelEditorTool.Pen]: { atomic: false, showPreview: false },
+  [PixelEditorTool.Eraser]: { atomic: false, showPreview: false },
+  [PixelEditorTool.Fill]: { atomic: true, showPreview: false },
+  [PixelEditorTool.Line]: { atomic: true, showPreview: true },
+  [PixelEditorTool.Circle]: { atomic: true, showPreview: false },
+}
+
+const MAX_TOOL_SIZE = 4
+
 export class ToolManager {
   private tool: Tool
+  private toolSize: number = 2
 
   constructor(
     private renderer: PixelRenderer,
@@ -10,17 +34,39 @@ export class ToolManager {
     private gridSize: number,
     private previewRenderer: PixelRenderer
   ) {
-    this.tool = new PenTool(this.renderer, this.pixelData, this.gridSize)
+    this.tool = new PenTool(
+      this.renderer,
+      this.pixelData,
+      this.gridSize,
+      this.toolSize,
+      this.previewRenderer
+    )
   }
 
   public setTool(tool: ToolName) {
     const ToolClass = ToolRegistry[tool]
-    this.tool = new ToolClass(
-      this.renderer,
-      this.pixelData,
-      this.gridSize,
-      this.previewRenderer
-    )
+    if (tool === 'line') {
+      this.tool = new ToolClass(
+        this.renderer,
+        this.pixelData,
+        this.gridSize,
+        this.toolSize,
+        this.previewRenderer
+      )
+    } else {
+      this.tool = new ToolClass(
+        this.renderer,
+        this.pixelData,
+        this.gridSize,
+        this.toolSize,
+        this.previewRenderer
+      )
+    }
+  }
+
+  public setToolSize(size: number) {
+    this.toolSize = Math.min(Math.max(size, 1), MAX_TOOL_SIZE)
+    this.tool.updateToolSize(this.toolSize)
   }
 
   public get currentTool(): Tool {
@@ -34,6 +80,7 @@ interface Tool {
   onUp: (e: MouseEvent | TouchEvent, color: Color) => void
   showPreview: boolean
   atomic: boolean
+  updateToolSize: (size: number) => void
 }
 
 abstract class BaseTool implements Tool {
@@ -43,7 +90,9 @@ abstract class BaseTool implements Tool {
   constructor(
     protected renderer: PixelRenderer,
     protected pixelData: Uint8ClampedArray,
-    protected gridSize: number
+    protected gridSize: number,
+    protected toolSize: number = 1,
+    protected previewRenderer: PixelRenderer
   ) {}
 
   abstract onDown(e: MouseEvent | TouchEvent, color: Color): void
@@ -51,12 +100,32 @@ abstract class BaseTool implements Tool {
   abstract onUp(e: MouseEvent | TouchEvent, color: Color): void
 
   protected setPixel(x: number, y: number, rgba: Color) {
-    if (this.isOutOfBounds(x, y)) return
-    const i = (y * this.gridSize + x) * 4
-    this.pixelData[i + 0] = rgba[0]
-    this.pixelData[i + 1] = rgba[1]
-    this.pixelData[i + 2] = rgba[2]
-    this.pixelData[i + 3] = rgba[3]
+    const size = Math.max(1, Math.min(this.toolSize || 1, MAX_TOOL_SIZE))
+
+    if (size === 1) {
+      if (this.isOutOfBounds(x, y)) return
+      const i = (y * this.gridSize + x) * 4
+      this.pixelData[i + 0] = rgba[0]
+      this.pixelData[i + 1] = rgba[1]
+      this.pixelData[i + 2] = rgba[2]
+      this.pixelData[i + 3] = rgba[3]
+      return
+    }
+
+    // For sizes > 1, draw a square centered on the pixel
+    const offset = Math.floor(size / 2)
+    for (let dy = 0; dy < size; dy++) {
+      for (let dx = 0; dx < size; dx++) {
+        const px = x - offset + dx
+        const py = y - offset + dy
+        if (this.isOutOfBounds(px, py)) continue
+        const i = (py * this.gridSize + px) * 4
+        this.pixelData[i + 0] = rgba[0]
+        this.pixelData[i + 1] = rgba[1]
+        this.pixelData[i + 2] = rgba[2]
+        this.pixelData[i + 3] = rgba[3]
+      }
+    }
   }
 
   protected setPixels(points: { x: number; y: number }[], rgba: Color) {
@@ -84,6 +153,10 @@ abstract class BaseTool implements Tool {
   protected isOutOfBounds(x: number, y: number): boolean {
     return x < 0 || y < 0 || x >= this.gridSize || y >= this.gridSize
   }
+
+  public updateToolSize(size: number) {
+    this.toolSize = size
+  }
 }
 
 class PenTool extends BaseTool {
@@ -101,7 +174,7 @@ class PenTool extends BaseTool {
   onUp() {}
 }
 
-class EraserTool extends BaseTool {
+export class EraserTool extends BaseTool {
   showPreview = false
   atomic = false
 
@@ -116,55 +189,60 @@ class EraserTool extends BaseTool {
   onUp() {}
 }
 
-class FillTool extends BaseTool {
-   showPreview = false
-   atomic = true
+export class FillTool extends BaseTool {
+  showPreview = false
+  atomic = true
 
-   onDown(e: MouseEvent | TouchEvent, color: Color) {
-     const coords = this.renderer.getPixelCoords(e)
-     if (!coords) return
-     const [x, y] = coords
+  onDown(e: MouseEvent | TouchEvent, color: Color) {
+    const coords = this.renderer.getPixelCoords(e)
+    if (!coords) return
+    const [x, y] = coords
 
-     const targetColor = this.getPixel(x, y)
-     if (!targetColor) return
-     if (this.colorsEqual(targetColor, color)) return
+    const targetColor = this.getPixel(x, y)
+    if (!targetColor) return
+    if (this.colorsEqual(targetColor, color)) return
 
-     this.floodFill(x, y, targetColor, color)
-   }
+    this.floodFill(x, y, targetColor, color)
+  }
 
-   onMove() {}
+  onMove() {}
 
-   onUp() {}
+  onUp() {}
 
-   private floodFill(
-     x: number,
-     y: number,
-     targetColor: Color,
-     fillColor: Color
-   ) {
-     const queue: Array<{ x: number; y: number }> = [{ x, y }]
+  private floodFill(
+    x: number,
+    y: number,
+    targetColor: Color,
+    fillColor: Color
+  ) {
+    const queue: Array<{ x: number; y: number }> = [{ x, y }]
 
-     while (queue.length) {
-       const { x, y } = queue.shift()!
-       if (this.isOutOfBounds(x, y)) continue
+    while (queue.length) {
+      const { x, y } = queue.shift()!
+      if (this.isOutOfBounds(x, y)) continue
 
-       const prevColor = this.getPixel(x, y)
-       if (!prevColor) continue
-       if (!this.colorsEqual(prevColor, targetColor)) continue
+      const prevColor = this.getPixel(x, y)
+      if (!prevColor) continue
+      if (!this.colorsEqual(prevColor, targetColor)) continue
 
-       this.setPixel(x, y, fillColor)
+      // Always fill one pixel at a time for flood fill
+      const i = (y * this.gridSize + x) * 4
+      this.pixelData[i + 0] = fillColor[0]
+      this.pixelData[i + 1] = fillColor[1]
+      this.pixelData[i + 2] = fillColor[2]
+      this.pixelData[i + 3] = fillColor[3]
 
-       queue.push({ x: x + 1, y })
-       queue.push({ x: x - 1, y })
-       queue.push({ x, y: y + 1 })
-       queue.push({ x, y: y - 1 })
-     }
-   }
+      queue.push({ x: x + 1, y })
+      queue.push({ x: x - 1, y })
+      queue.push({ x, y: y + 1 })
+      queue.push({ x, y: y - 1 })
+    }
+  }
 
-   private colorsEqual(a: Color, b: Color): boolean {
-     return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]
-   }
- }
+  private colorsEqual(a: Color, b: Color): boolean {
+    return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3]
+  }
+}
 
 abstract class BasePreviewTool extends BaseTool {
   protected startX = 0
@@ -175,9 +253,10 @@ abstract class BasePreviewTool extends BaseTool {
     renderer: PixelRenderer,
     pixelData: Uint8ClampedArray,
     gridSize: number,
-    protected previewRenderer: PixelRenderer
+    toolSize: number,
+    previewRenderer: PixelRenderer
   ) {
-    super(renderer, pixelData, gridSize)
+    super(renderer, pixelData, gridSize, toolSize, previewRenderer)
   }
 
   onDown(e: MouseEvent | TouchEvent) {
@@ -218,18 +297,35 @@ class LineTool extends BasePreviewTool {
     const end = new Point(x, y)
     const points = line(start, end)
     const lighterColor = [color[0], color[1], color[2], color[3] / 2]
-    this.previewRenderer.drawPixels(points, lighterColor as Color)
+
+    const size = Math.max(1, Math.min(this.toolSize || 1, MAX_TOOL_SIZE))
+    const filteredPoints = points.filter((_, index) => index % size === 0)
+
+    for (const point of filteredPoints) {
+      for (let dy = 0; dy < size; dy++) {
+        for (let dx = 0; dx < size; dx++) {
+          const px = point.x + dx
+          const py = point.y + dy
+          if (px < 0 || py < 0 || px >= this.gridSize || py >= this.gridSize)
+            continue
+          this.previewRenderer.drawPixel(px, py, lighterColor as Color)
+        }
+      }
+    }
+    // this.previewRenderer.drawPixels(points, lighterColor as Color)
   }
 
   protected commit(x: number, y: number, color: Color) {
     const start = new Point(this.startX, this.startY)
     const end = new Point(x, y)
     const points = line(start, end)
-    this.setPixels(points, color)
+    const size = Math.max(1, Math.min(this.toolSize || 1, MAX_TOOL_SIZE))
+    const filteredPoints = points.filter((_, index) => index % size === 0)
+    this.setPixels(filteredPoints, color)
   }
 }
 
-const ToolRegistry = {
+export const ToolRegistry = {
   pen: PenTool,
   line: LineTool,
   eraser: EraserTool,

@@ -4,7 +4,7 @@ import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
 import { admin, jwt } from 'better-auth/plugins'
 import { getBaseUrl } from '../base-url'
-import { fastDb } from '../db/pg'
+import { db } from '../db/pg'
 import { redis } from '../redis'
 
 const client = new Polar({
@@ -16,7 +16,7 @@ export const auth = betterAuth({
   appName: 'Dotelier Studio',
   baseUrl: getBaseUrl(),
   database: {
-    db: fastDb,
+    db,
     type: 'postgres',
   },
   secondaryStorage: {

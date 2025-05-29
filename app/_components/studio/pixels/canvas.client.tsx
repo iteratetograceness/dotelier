@@ -6,9 +6,9 @@ import {
 } from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
 import { Pixel } from '@/lib/db/types'
-import { getPublicPixelAsset } from '@/lib/ut/client'
 import { track } from '@vercel/analytics/react'
 import Image from 'next/image'
+import { Tooltip } from 'radix-ui'
 import {
   memo,
   use,
@@ -139,215 +139,255 @@ function CanvasInner({
         </div>
 
         <div className='flex flex-col w-full p-2 border border-white border-r-shadow border-b-shadow h-fit'>
-          <div className='flex flex-wrap md:max-w-[333px]'>
-            <ColorPicker
-              setRgbaColor={onColorChange}
-              rgbaColor={rgbaColor}
-              disabled={disableActions}
-            />
-            <Button
-              aria-label='Pen Tool'
-              className='!h-10'
-              iconOnly
-              isPressed={activeTool === 'pen'}
-              onClick={() => {
-                editorRef.current?.getEditor()?.setTool('pen')
-                setActiveTool('pen')
-              }}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/pen.png'
-                alt='Pen Tool'
-                width={25}
-                height={25}
+          <div className='grid grid-cols-6 w-fit'>
+            <Tooltip.Provider>
+              <ColorPicker
+                setRgbaColor={onColorChange}
+                rgbaColor={rgbaColor}
+                disabled={disableActions}
               />
-            </Button>
-            <Button
-              aria-label='Fill Tool'
-              iconOnly
-              className='!h-10'
-              isPressed={activeTool === 'fill'}
-              onClick={() => {
-                editorRef.current?.getEditor()?.setTool('fill')
-                setActiveTool('fill')
-              }}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/fill.png'
-                alt='Fill Tool'
-                width={25}
-                height={25}
-              />
-            </Button>
-            <Button
-              aria-label='Eraser Tool'
-              iconOnly
-              className='!h-10'
-              isPressed={activeTool === 'eraser'}
-              onClick={() => {
-                editorRef.current?.getEditor()?.setTool('eraser')
-                setActiveTool('eraser')
-              }}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/eraser.png'
-                alt='Eraser Tool'
-                width={25}
-                height={25}
-              />
-            </Button>
-            <Button
-              aria-label='Line Tool'
-              iconOnly
-              className='!h-10'
-              isPressed={activeTool === 'line'}
-              onClick={() => {
-                editorRef.current?.getEditor()?.setTool('line')
-                setActiveTool('line')
-              }}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/line.png'
-                alt='Line Tool'
-                width={25}
-                height={25}
-              />
-            </Button>
-            <Button
-              aria-label='Eye Dropper Tool'
-              iconOnly
-              className='!h-10'
-              onClick={onEyeDropperClick}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/eye-dropper.png'
-                alt='Eye Dropper Tool'
-                width={25}
-                height={25}
-              />
-            </Button>
-            <Button
-              aria-label='Toggle Grid'
-              className='!h-10'
-              iconOnly
-              onClick={() => {
-                editorRef.current?.getEditor()?.toggleGrid()
-              }}
-              disabled={disableActions}
-            >
-              <Image src='/editor/grid.png' alt='Grid' width={25} height={25} />
-            </Button>
-            <Button
-              aria-label='Undo'
-              iconOnly
-              className='!h-10'
-              onClick={() => {
-                editorRef.current?.getEditor()?.undo()
-              }}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/arrow-left.png'
-                alt='Undo'
-                width={25}
-                height={25}
-              />
-            </Button>
-            <Button
-              aria-label='Redo'
-              iconOnly
-              className='!h-10'
-              onClick={() => {
-                editorRef.current?.getEditor()?.redo()
-              }}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/arrow-right.png'
-                alt='Redo'
-                width={25}
-                height={25}
-              />
-            </Button>
-            <Button
-              iconOnly
-              className='!h-10'
-              aria-label='Clear'
-              onClick={() => {
-                editorRef.current?.getEditor()?.clear()
-              }}
-              disabled={disableActions}
-            >
-              <Image
-                src='/editor/trash.png'
-                alt='Clear'
-                width={25}
-                height={25}
-              />
-            </Button>
-            <DownloadButton
-              iconOnly
-              className='!h-10'
-              onDownload={(as) => {
-                editorRef.current?.getEditor()?.download({
-                  fileName: pixel.prompt,
-                  as,
-                })
-              }}
-              disabled={disableActions}
-            />
-            <Button
-              aria-label='Save'
-              iconOnly
-              className='!h-10'
-              onClick={() => {
-                startTransition(async () => {
-                  if (!pixelVersion) return
-
-                  const svgContent = editorRef.current
-                    ?.getEditor()
-                    ?.convertToSvg()
-
-                  if (!svgContent) {
-                    toast.error('Failed to save. Try again.')
-                    return
-                  }
-
-                  await savePixel({
-                    id: pixel.id,
-                    version: pixelVersion?.version,
-                    oldFileKey: pixelVersion?.fileKey,
-                    svgContent,
-                  })
-
-                  editorRef.current?.getEditor()?.resetHistory()
-
-                  toast.success('Saved!')
-                })
-              }}
-              disabled={disableActions}
-            >
-              <Image src='/editor/save.png' alt='Save' width={25} height={25} />
-            </Button>
-            <Button
-              aria-label='Reset'
-              className='w-20 !px-1 !h-10'
-              onClick={() => {
-                if (pixelVersion) {
+              <input
+                defaultValue={1}
+                className='w-10'
+                type='number'
+                onChange={(e) => {
                   editorRef.current
                     ?.getEditor()
-                    ?.loadSVG(getPublicPixelAsset(pixelVersion.fileKey))
-                }
-              }}
-              disabled={!pixelVersion}
-            >
-              <span>reload</span>
-            </Button>
+                    ?.setToolSize(Number(e.target.value))
+                }}
+              />
+              <TooltipWrapper content='Pen'>
+                <Button
+                  aria-label='Pen Tool'
+                  className='h-10!'
+                  iconOnly
+                  isPressed={activeTool === 'pen'}
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.setTool('pen')
+                    setActiveTool('pen')
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/pen.png'
+                    alt='Pen Tool'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Fill'>
+                <Button
+                  aria-label='Fill Tool'
+                  iconOnly
+                  className='h-10!'
+                  isPressed={activeTool === 'fill'}
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.setTool('fill')
+                    setActiveTool('fill')
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/fill.png'
+                    alt='Fill Tool'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Eraser'>
+                <Button
+                  aria-label='Eraser Tool'
+                  iconOnly
+                  className='h-10!'
+                  isPressed={activeTool === 'eraser'}
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.setTool('eraser')
+                    setActiveTool('eraser')
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/eraser.png'
+                    alt='Eraser Tool'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Line'>
+                <Button
+                  aria-label='Line Tool'
+                  iconOnly
+                  className='h-10!'
+                  isPressed={activeTool === 'line'}
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.setTool('line')
+                    setActiveTool('line')
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/line.png'
+                    alt='Line Tool'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Eyedropper'>
+                <Button
+                  aria-label='Eyedropper Tool'
+                  iconOnly
+                  className='h-10!'
+                  onClick={onEyeDropperClick}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/eye-dropper.png'
+                    alt='Eye Dropper Tool'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Grid'>
+                <Button
+                  aria-label='Toggle Grid'
+                  className='h-10!'
+                  iconOnly
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.toggleGrid()
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/grid.png'
+                    alt='Grid'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Undo'>
+                <Button
+                  aria-label='Undo'
+                  iconOnly
+                  className='h-10!'
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.undo()
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/arrow-left.png'
+                    alt='Undo'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Redo'>
+                <Button
+                  aria-label='Redo'
+                  iconOnly
+                  className='h-10!'
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.redo()
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/arrow-right.png'
+                    alt='Redo'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Clear'>
+                <Button
+                  iconOnly
+                  className='h-10!'
+                  aria-label='Clear'
+                  onClick={() => {
+                    editorRef.current?.getEditor()?.clear()
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/trash.png'
+                    alt='Clear'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+              <TooltipWrapper content='Download'>
+                <DownloadButton
+                  iconOnly
+                  className='h-10!'
+                  onDownload={(as) => {
+                    editorRef.current?.getEditor()?.download({
+                      fileName: pixel.prompt,
+                      as,
+                    })
+                  }}
+                  disabled={disableActions}
+                />
+              </TooltipWrapper>
+              <TooltipWrapper content='Save'>
+                <Button
+                  aria-label='Save'
+                  iconOnly
+                  className='h-10!'
+                  onClick={() => {
+                    startTransition(async () => {
+                      if (!pixelVersion) return
+
+                      const svgContent = editorRef.current
+                        ?.getEditor()
+                        ?.convertToSvg()
+
+                      if (!svgContent) {
+                        toast.error('Failed to save. Try again.')
+                        return
+                      }
+
+                      await savePixel({
+                        id: pixel.id,
+                        version: pixelVersion?.version,
+                        oldFileKey: pixelVersion?.fileKey,
+                        svgContent,
+                      })
+
+                      editorRef.current?.getEditor()?.resetHistory()
+
+                      toast.success('Saved!')
+                    })
+                  }}
+                  disabled={disableActions}
+                >
+                  <Image
+                    src='/editor/save.png'
+                    alt='Save'
+                    width={25}
+                    height={25}
+                    className={cn(disableActions && 'opacity-50')}
+                  />
+                </Button>
+              </TooltipWrapper>
+            </Tooltip.Provider>
           </div>
         </div>
 
@@ -356,8 +396,35 @@ function CanvasInner({
             You have unsaved changes
           </p>
         )}
+
+        {/* Note about how we convert the SVG onto the canvas so there may be a few pixels that are off/aren't rendered 1:1 / 100% accurate */}
       </div>
     </div>
+  )
+}
+
+function TooltipWrapper({
+  children,
+  content,
+}: {
+  children: React.ReactNode
+  content: React.ReactNode
+}) {
+  return (
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            className='bg-dark-hover text-highlight px-2'
+            sideOffset={0}
+            side='bottom'
+          >
+            {content}
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
   )
 }
 

@@ -1,12 +1,8 @@
 'use client'
 
-import {
-  Popover,
-  PopoverContent,
-  PopoverPortal,
-  PopoverTrigger,
-} from '@radix-ui/react-popover'
+import { cn } from '@/app/utils/classnames'
 import Image from 'next/image'
+import { Popover } from 'radix-ui'
 import { Button, ButtonProps } from '../button'
 
 type DownloadButtonProps = ButtonProps & {
@@ -19,8 +15,8 @@ export function DownloadButton(props: DownloadButtonProps) {
   const { onDownload, disablePng = false, disableSvg = false, ...rest } = props
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <Popover.Root>
+      <Popover.Trigger asChild>
         <Button {...rest}>
           {props.iconOnly ? (
             <Image
@@ -28,14 +24,15 @@ export function DownloadButton(props: DownloadButtonProps) {
               alt='Download'
               width={25}
               height={25}
+              className={cn(props.disabled && 'opacity-50')}
             />
           ) : (
             'download'
           )}
         </Button>
-      </PopoverTrigger>
-      <PopoverPortal>
-        <PopoverContent
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
           className='flex flex-col w-36 text-xs'
           align='start'
           side='bottom'
@@ -54,8 +51,8 @@ export function DownloadButton(props: DownloadButtonProps) {
           >
             As SVG
           </Button>
-        </PopoverContent>
-      </PopoverPortal>
-    </Popover>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }

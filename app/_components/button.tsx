@@ -8,9 +8,9 @@ const variants = {
   dark: 'bg-accent text-medium hover:bg-dark-hover border-r-foreground border-b-foreground border-light-shadow [text-shadow:_1px_1px_0_var(--foreground)]',
 } as const
 
-const base = `px-4 py-1 w-fit border focus-within:outline-none` // TODO: Custom focus styling
+const base = `px-4 py-1 w-fit border-3 focus-within:outline-hidden` // TODO: Custom focus styling
 
-const icon = `!p-1.5 !aspect-square w-auto h-full flex items-center justify-center`
+const icon = `p-1.5! aspect-square! w-auto h-full flex items-center justify-center`
 
 const animation = {
   primary: `
@@ -57,13 +57,11 @@ const pressed = {
 const disabled = {
   primary: `
   !bg-hover
-  cursor-not-allowed
   text-medium
   [text-shadow:_1px_1px_0_var(--white)]
 `,
   dark: `
   !bg-dark-hover
-  cursor-not-allowed
   !text-highlight
   [text-shadow:_1px_1px_0_var(--light-shadow)]
 `,
@@ -81,7 +79,7 @@ interface BaseProps {
 export type ButtonProps = BaseProps &
   React.ButtonHTMLAttributes<HTMLButtonElement>
 
-type ButtonLinkProps = BaseProps & ComponentProps<typeof Link>
+export type ButtonLinkProps = BaseProps & ComponentProps<typeof Link>
 
 export function Button({
   children,

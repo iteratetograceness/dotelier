@@ -1,8 +1,11 @@
 import { HistoryManager } from './history'
+import { getQuantizer } from './quant'
 import { Color, PixelRenderer } from './renderer'
 import { ToolManager, ToolName } from './tool'
+import { analyzeGridCell, findDominantColor } from './utils'
 
-export const DEFAULT_SIZE = 32
+export const DEFAULT_SIZE = 36
+export const GRID_ITEM_SIZE = 10
 
 export class PixelEditor {
   private pixelData: Uint8ClampedArray
@@ -65,7 +68,7 @@ export class PixelEditor {
   constructor(
     private canvas: HTMLCanvasElement,
     private previewCanvas: HTMLCanvasElement,
-    private gridSize: number = 32,
+    private gridSize: number = DEFAULT_SIZE,
     private onHistoryChange?: () => void
   ) {
     this.pixelData = new Uint8ClampedArray(this.gridSize * this.gridSize * 4)
@@ -176,6 +179,10 @@ export class PixelEditor {
     this.toolManager.setTool(tool)
   }
 
+  public setToolSize(size: number): void {
+    this.toolManager.setToolSize(size)
+  }
+
   public undo(): void {
     const snapshot = this.history.undo()
     if (!snapshot) return
@@ -245,6 +252,89 @@ export class PixelEditor {
 
               if (this.isWithinBounds(targetX, targetY)) {
                 this.setPixel(targetX, targetY, color)
+              }
+            }
+          }
+        }
+
+        this.renderer.pixelData = this.pixelData
+        requestAnimationFrame(this.renderer.renderLoop)
+        this.history.startAction()
+        this.history.endAction()
+
+        resolve()
+      }
+
+      svgImage.onerror = () => {
+        reject(new Error('Failed to load image'))
+      }
+
+      svgImage.src = svgUrl
+    })
+  }
+
+  public async loadSVG2(svgUrl: string): Promise<void> {
+    console.log('> loadSVG2', svgUrl)
+    return new Promise((resolve, reject) => {
+      const svgImage = new Image()
+      svgImage.crossOrigin = 'anonymous'
+
+      svgImage.onload = () => {
+        this.pixelData.fill(0)
+        this.renderer.clear()
+        this.previewRenderer.clear()
+
+        const resizeResolution = 792
+        svgImage.width = resizeResolution
+        svgImage.height = resizeResolution
+
+        const tempCanvas = document.createElement('canvas')
+        tempCanvas.width = resizeResolution
+        tempCanvas.height = resizeResolution
+
+        const tempCtx = tempCanvas.getContext('2d', {
+          willReadFrequently: true,
+        })
+
+        if (!tempCtx) {
+          reject(new Error('Failed to get temporary canvas context'))
+          return
+        }
+
+        tempCtx.drawImage(svgImage, 0, 0, resizeResolution, resizeResolution)
+
+        const q = getQuantizer()
+        q.sample(tempCanvas)
+        const quantized = q.reduce(tempCanvas)
+
+        const quantizedImageData = tempCtx.createImageData(
+          resizeResolution,
+          resizeResolution
+        )
+        quantizedImageData.data.set(quantized)
+        tempCtx.putImageData(quantizedImageData, 0, 0)
+
+        const svgPixelSize = resizeResolution / this.gridSize
+
+        for (let x = 0; x < this.gridSize; x++) {
+          for (let y = 0; y < this.gridSize; y++) {
+            const { filledPixels, totalPixels, colorMap } = analyzeGridCell({
+              width: resizeResolution,
+              startX: x * svgPixelSize,
+              startY: y * svgPixelSize,
+              regionSize: svgPixelSize,
+              alphaThreshold: 200,
+              quantizedData: quantized,
+            })
+
+            const filledPercentage = (filledPixels / totalPixels) * 100
+            if (filledPercentage < 61) continue
+
+            const dominantColor = findDominantColor(colorMap)
+
+            if (dominantColor) {
+              if (this.isWithinBounds(x, y)) {
+                this.setPixel(x, y, dominantColor)
               }
             }
           }

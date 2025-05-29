@@ -9,9 +9,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { DEFAULT_SIZE, PixelEditor } from './editor'
-
-const ZOOM_FACTOR = 10
+import { DEFAULT_SIZE, GRID_ITEM_SIZE, PixelEditor } from './editor'
 
 interface HtmlCanvasProps {
   id: string
@@ -50,10 +48,11 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
 
     const canvas = canvasRef.current
     const previewCanvas = previewCanvasRef.current
-    canvas.width = DEFAULT_SIZE * ZOOM_FACTOR
-    canvas.height = DEFAULT_SIZE * ZOOM_FACTOR
-    previewCanvas.width = DEFAULT_SIZE * ZOOM_FACTOR
-    previewCanvas.height = DEFAULT_SIZE * ZOOM_FACTOR
+    const size = DEFAULT_SIZE * GRID_ITEM_SIZE
+    canvas.width = size
+    canvas.height = size
+    previewCanvas.width = size
+    previewCanvas.height = size
 
     const editor = new PixelEditor(
       canvas,
@@ -65,7 +64,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
     editorRef.current = editor
 
     if (url) {
-      editor.loadSVG(url).catch((error) => {
+      editor.loadSVG2(url).catch((error) => {
         setError(error.message)
       })
     }

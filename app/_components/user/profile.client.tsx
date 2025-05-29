@@ -1,17 +1,10 @@
 'use client'
 
 import { signOut, useSession } from '@/lib/auth/client'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuTrigger,
-} from '@radix-ui/react-dropdown-menu'
 import { AnimatePresence, motion } from 'motion/react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { DropdownMenu } from 'radix-ui'
 import { Button } from '../button'
 
 export function UserProfile() {
@@ -21,9 +14,9 @@ export function UserProfile() {
   if (!session) return null
 
   return (
-    <DropdownMenu>
+    <DropdownMenu.Root>
       <AnimatePresence>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenu.Trigger asChild>
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -38,26 +31,26 @@ export function UserProfile() {
               height={50}
             />
           </motion.button>
-        </DropdownMenuTrigger>
+        </DropdownMenu.Trigger>
       </AnimatePresence>
-      <DropdownMenuPortal>
-        <DropdownMenuContent
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
           align='end'
-          className='flex flex-col pixel-corners pixel-border-foreground bg-background p-4 z-[100] w-56 gap-2'
+          className='flex flex-col pixel-corners pixel-border-foreground bg-background p-4 z-100 w-56 gap-2'
         >
           <div className='flex flex-col'>
-            <DropdownMenuLabel asChild>
+            <DropdownMenu.Label asChild>
               <p className='whitespace-nowrap truncate w-full text-lg leading-5'>
                 {session.user.name}
               </p>
-            </DropdownMenuLabel>
-            <DropdownMenuLabel asChild>
+            </DropdownMenu.Label>
+            <DropdownMenu.Label asChild>
               <p className='whitespace-nowrap truncate w-full text-xs text-light-shadow'>
                 {session.user.email}
               </p>
-            </DropdownMenuLabel>
+            </DropdownMenu.Label>
           </div>
-          <DropdownMenuItem asChild textValue='Sign Out'>
+          <DropdownMenu.Item asChild textValue='Sign Out'>
             <Button
               className='w-full'
               onClick={() => {
@@ -73,9 +66,9 @@ export function UserProfile() {
             >
               Sign Out
             </Button>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
-    </DropdownMenu>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   )
 }

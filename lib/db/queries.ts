@@ -5,7 +5,7 @@ import { PostProcessingStatus } from 'kysely-codegen'
 import { unstable_cacheTag } from 'next/cache'
 import { cache } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { fastDb, standardDb } from './pg'
+import { db } from './pg'
 
 const PAGE_SIZE = 10
 
@@ -18,7 +18,7 @@ const _createPixel = async ({
   prompt: string
   pixelId?: string
 }) => {
-  const result = await fastDb
+  const result = await db
     .insertInto('pixel')
     .values({
       userId,
@@ -37,7 +37,7 @@ const _startPostProcessing = async ({
   pixelId: string
   fileKey: string
 }) => {
-  const result = await fastDb
+  const result = await db
     .insertInto('postProcessing')
     .values({ pixelId, pngOriginalFileKey: fileKey })
     .returning('id')
@@ -64,7 +64,7 @@ const _updatePostProcessingStatus = async ({
     errorMessage,
     completedAt,
   }
-  const result = await fastDb
+  const result = await db
     .updateTable('postProcessing')
     .set(newData)
     .where('postProcessing.pixelId', '=', pixelId)
@@ -74,7 +74,7 @@ const _updatePostProcessingStatus = async ({
 }
 async function _getExplorePagePixels(page = 1) {
   const offset = (page - 1) * PAGE_SIZE
-  return fastDb
+  return db
     .selectFrom('pixel')
     .select(['pixel.id', 'pixel.prompt'])
     .where('pixel.showExplore', '=', true)
@@ -88,7 +88,7 @@ async function _getLatestPixelVersion(
 ): Promise<LatestPixelVersion | undefined> {
   'use cache'
   unstable_cacheTag(`pixel:${pixelId}`)
-  return fastDb
+  return db
     .selectFrom('pixelVersion')
     .select(['pixelVersion.id', 'pixelVersion.fileKey', 'pixelVersion.version'])
     .where('pixelVersion.pixelId', '=', pixelId)
@@ -106,7 +106,7 @@ async function _getPixelIdsByOwner({
 }) {
   const offset = (page - 1) * limit
 
-  return fastDb
+  return db
     .selectFrom('pixel')
     .select(['pixel.id'])
     .where('pixel.userId', '=', ownerId)
@@ -123,7 +123,7 @@ async function _getLatestPixelIds(ownerId: string) {
 async function _getPixelById(pixelId: string) {
   'use cache'
   unstable_cacheTag(`pixel:${pixelId}`)
-  return fastDb
+  return db
     .selectFrom('pixel')
     .select([
       'pixel.id',
@@ -145,7 +145,7 @@ async function _insertPixelVersion({
   fileKey: string
   version?: number
 }) {
-  return standardDb.transaction().execute(async (tx) => {
+  return db.transaction().execute(async (tx) => {
     const prevProw = version
       ? await tx
           .updateTable('pixelVersion')
