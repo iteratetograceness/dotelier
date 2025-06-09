@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "prebuild": "pnpm generate-types",
+    "prebuild": "bun generate-types",
     "start": "next start",
     "lint": "next lint",
     "generate-types": "kysely-codegen --dialect postgres",
@@ -46,6 +46,10 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@happy-dom/global-registrator": "^17.6.3",
+    "@playwright/test": "^1.52.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/bun": "^1.2.15",
     "@types/node": "^20.17.52",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
@@ -57,6 +61,5 @@
     "pg": "^8.16.0",
     "postcss-load-config": "^6.0.1",
     "typescript": "^5.8.3"
-  },
-  "packageManager": "pnpm@9.4.0+sha512.f549b8a52c9d2b8536762f99c0722205efc5af913e77835dbccc3b0b0b2ca9e7dc8022b78062c17291c48e88749c70ce88eb5a74f1fa8c4bf5e18bb46c8bd83a"
+  }
 }

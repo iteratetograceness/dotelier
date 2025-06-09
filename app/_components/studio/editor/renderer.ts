@@ -20,12 +20,12 @@ export class PixelRenderer {
     this.ctx = ctx
 
     this.gridSize = _gridSize
-    this.gridItemSize = this.canvas.height / this.gridSize
+    this.gridItemSize = this.canvas.height / _gridSize
     this.canvas.style.imageRendering = 'pixelated'
 
     this.offscreen = document.createElement('canvas')
-    this.offscreen.width = this.gridSize
-    this.offscreen.height = this.gridSize
+    this.offscreen.width = _gridSize
+    this.offscreen.height = _gridSize
     const offCtx = this.offscreen.getContext('2d')
     if (!offCtx) throw new Error('Failed to get offscreen context')
     this.offCtx = offCtx
@@ -166,5 +166,9 @@ export class PixelRenderer {
 
     if (x < 0 || y < 0 || x >= this.gridSize || y >= this.gridSize) return null
     return [x, y]
+  }
+
+  public getCleanDataURL(): string {
+    return this.offscreen.toDataURL('image/png')
   }
 }

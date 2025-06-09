@@ -307,7 +307,7 @@ export class PixelEditor {
     link.download = `${fileName}.${as}`
 
     if (as === 'png') {
-      link.href = this.canvas.toDataURL('image/png')
+      link.href = this.renderer.getCleanDataURL()
       link.click()
     } else {
       const svgContent = this.convertToSvg()

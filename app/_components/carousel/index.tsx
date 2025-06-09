@@ -1,5 +1,6 @@
 'use client'
 
+import { useSession } from '@/lib/auth/client'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { LazyMotion, domAnimation } from 'motion/react'
@@ -34,6 +35,7 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   const { setCarousel } = useCarousel()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const { data: session } = useSession()
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     {
@@ -58,8 +60,9 @@ export function Carousel({ children }: { children: React.ReactNode }) {
     if (!emblaApi) return
     setCurrentIndex(emblaApi.selectedScrollSnap())
     const next = emblaApi.canScrollNext()
-    setCanScrollLeft(next)
-  }, [emblaApi])
+    const isLoggedIn = Boolean(session?.user)
+    setCanScrollLeft(next && isLoggedIn)
+  }, [emblaApi, session])
 
   const scrollToRight = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev()
@@ -89,17 +92,7 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   }, [emblaApi, setCarousel])
 
   return (
-    <section
-      // initial={{ opacity: 0, filter: 'blur(2px)', scale: 0.99 }}
-      // animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
-      // transition={{
-      //   opacity: { duration: 0.4, ease: 'easeOut' },
-      //   filter: { duration: 0.4, ease: 'easeOut' },
-      //   scale: { type: 'spring', stiffness: 250, damping: 22 },
-      // }}
-      className='embla w-screen m-auto'
-      dir='rtl'
-    >
+    <section className='embla w-screen m-auto' dir='rtl'>
       <div className='flex w-full items-center justify-center pb-4' dir='ltr'>
         <Button disabled={!canScrollLeft} onClick={scrollToLeft}>
           {'<'}

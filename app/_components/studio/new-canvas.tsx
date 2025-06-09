@@ -5,7 +5,6 @@ import { revalidatePixelVersion } from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
 import { usePostProcessingStatus } from '@/app/utils/use-post-processing-status'
 import Image from 'next/image'
-import { memo } from 'react'
 import { Button } from '../button'
 import { useCarousel } from '../carousel/use-carousel'
 import RetroLoader from '../loader'
@@ -15,7 +14,7 @@ import { DownloadButton } from './download-button'
 import { NewPixelInput } from './input'
 import { useNewCanvas } from './use-new-canvas'
 
-function NewCanvasInner() {
+export function NewCanvas() {
   return (
     <div className='flex flex-col items-center justify-center gap-16'>
       <div id='new-canvas' className={sharedClasses}>
@@ -36,8 +35,6 @@ function NewCanvasInner() {
     </div>
   )
 }
-
-export const NewCanvas = memo(NewCanvasInner)
 
 function NewCanvasControls() {
   const { carousel } = useCarousel()

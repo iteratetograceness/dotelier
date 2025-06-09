@@ -16,6 +16,7 @@ export function SignInButton({
 }) {
   return (
     <Button
+      data-testid='sign-in-cta'
       onClick={() => signInWithGoogle()}
       className={className}
       variant={variant}

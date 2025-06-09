@@ -129,7 +129,7 @@ function CTA({
   return (
     <SignInButton
       className='w-full'
-      text='sign in to create a pixel icon'
+      text='sign in to create an icon'
       variant='dark'
       type='button'
     />
