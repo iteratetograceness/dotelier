@@ -72,3 +72,11 @@ Requires:
 - `UPSTASH_REDIS_*`: Session storage
 - `UPLOADTHING_*`: File uploads
 - `REPLICATE_API_TOKEN`: AI processing
+
+## To-do's
+
+- [ ] Explore page
+- [ ] My collection page
+- [ ] Full page editor
+- [ ] Explain conversion to canvas is not 1:1
+- [ ] Better pen size logic

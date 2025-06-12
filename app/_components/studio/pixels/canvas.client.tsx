@@ -25,10 +25,12 @@ import { openEyeDropper } from '../../eye-dropper'
 import { Pill } from '../../pill'
 import ColorPicker, { hexToRgba } from '../color-picker'
 import { sharedClasses } from '../constants'
+import { GrooveDivider } from '../divider'
 import { DownloadButton } from '../download-button'
 import { Color } from '../editor/renderer'
 import { ToolName } from '../editor/tool'
 import { HtmlCanvasRef, HtmlCanvasWithRef } from '../html-canvas'
+import { PenSize } from '../pen-size'
 import { savePixel } from './save'
 
 export function Canvas({
@@ -137,32 +139,26 @@ export function Canvas({
           </Pill>
         </div>
 
-        <div className='flex flex-col w-full p-2 border-3 border-white border-r-shadow border-b-shadow h-fit'>
-          <div className='grid grid-cols-6 w-fit'>
-            <Tooltip.Provider>
+        <div className='flex flex-col w-full p-2 border-3 border-white border-r-shadow border-b-shadow h-fit gap-2'>
+          <Tooltip.Provider>
+            <div className='flex flex-wrap w-fit'>
               <ColorPicker
                 setRgbaColor={onColorChange}
                 rgbaColor={rgbaColor}
                 disabled={disableActions}
               />
               <TooltipWrapper content='Tool Size'>
-                <input
-                  defaultValue={1}
-                  min={1}
-                  max={10}
-                  className='w-10'
-                  type='number'
-                  onChange={(e) => {
-                    editorRef.current
-                      ?.getEditor()
-                      ?.setToolSize(Number(e.target.value))
-                  }}
+                <PenSize
+                  className='size-11! flex items-center justify-center'
+                  onChange={(size: number) =>
+                    editorRef.current?.getEditor()?.setToolSize(size)
+                  }
                 />
               </TooltipWrapper>
               <TooltipWrapper content='Pen'>
                 <Button
                   aria-label='Pen Tool'
-                  className='h-10!'
+                  className='size-11!'
                   iconOnly
                   isPressed={activeTool === 'pen'}
                   onClick={() => {
@@ -184,7 +180,7 @@ export function Canvas({
                 <Button
                   aria-label='Fill Tool'
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   isPressed={activeTool === 'fill'}
                   onClick={() => {
                     editorRef.current?.getEditor()?.setTool('fill')
@@ -205,7 +201,7 @@ export function Canvas({
                 <Button
                   aria-label='Eraser Tool'
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   isPressed={activeTool === 'eraser'}
                   onClick={() => {
                     editorRef.current?.getEditor()?.setTool('eraser')
@@ -226,7 +222,7 @@ export function Canvas({
                 <Button
                   aria-label='Line Tool'
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   isPressed={activeTool === 'line'}
                   onClick={() => {
                     editorRef.current?.getEditor()?.setTool('line')
@@ -247,7 +243,7 @@ export function Canvas({
                 <Button
                   aria-label='Eyedropper Tool'
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   onClick={onEyeDropperClick}
                   disabled={disableActions}
                 >
@@ -263,7 +259,7 @@ export function Canvas({
               <TooltipWrapper content='Grid'>
                 <Button
                   aria-label='Toggle Grid'
-                  className='h-10!'
+                  className='size-11!'
                   iconOnly
                   onClick={() => {
                     editorRef.current?.getEditor()?.toggleGrid()
@@ -279,15 +275,20 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
+            </div>
+            <GrooveDivider className='w-full' />
+            <div className='flex flex-wrap'>
               <TooltipWrapper content='Undo'>
                 <Button
                   aria-label='Undo'
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   onClick={() => {
                     editorRef.current?.getEditor()?.undo()
                   }}
-                  disabled={disableActions}
+                  disabled={
+                    disableActions || !editorRef.current?.getEditor()?.canUndo()
+                  }
                 >
                   <Image
                     src='/editor/arrow-left.png'
@@ -302,11 +303,13 @@ export function Canvas({
                 <Button
                   aria-label='Redo'
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   onClick={() => {
                     editorRef.current?.getEditor()?.redo()
                   }}
-                  disabled={disableActions}
+                  disabled={
+                    disableActions || !editorRef.current?.getEditor()?.canRedo()
+                  }
                 >
                   <Image
                     src='/editor/arrow-right.png'
@@ -320,7 +323,7 @@ export function Canvas({
               <TooltipWrapper content='Clear'>
                 <Button
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   aria-label='Clear'
                   onClick={() => {
                     editorRef.current?.getEditor()?.clear()
@@ -339,7 +342,7 @@ export function Canvas({
               <TooltipWrapper content='Download'>
                 <DownloadButton
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   onDownload={(as) => {
                     editorRef.current?.getEditor()?.download({
                       fileName: pixel.prompt,
@@ -353,7 +356,7 @@ export function Canvas({
                 <Button
                   aria-label='Save'
                   iconOnly
-                  className='h-10!'
+                  className='size-11!'
                   onClick={() => {
                     startTransition(async () => {
                       if (!pixelVersion) return
@@ -390,8 +393,8 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
-            </Tooltip.Provider>
-          </div>
+            </div>
+          </Tooltip.Provider>
         </div>
 
         {hasUnsavedChanges && (
@@ -399,8 +402,6 @@ export function Canvas({
             You have unsaved changes
           </p>
         )}
-
-        {/* Note about how we convert the SVG onto the canvas so there may be a few pixels that are off/aren't rendered 1:1 / 100% accurate */}
       </div>
     </div>
   )

@@ -31,7 +31,7 @@ export function NewCanvas() {
         {/* Controls */}
         <NewCanvasControls />
       </div>
-      <NewPixelInput />
+      <NewPixelInput className='mb-10' />
     </div>
   )
 }

@@ -31,9 +31,9 @@ const animation = {
 
 const pressed = {
   primary: `
-  border-light-shadow!
-  border-r-highlight!
-  border-b-highlight!
+  border-shadow!
+  border-r-medium!
+  border-b-medium!
   transition-[border-color]
   duration-75
   bg-hover!

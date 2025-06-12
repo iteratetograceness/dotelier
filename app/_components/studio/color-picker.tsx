@@ -33,7 +33,7 @@ export default function ColorPicker({
       <TooltipWrapper content='Tool Color'>
         <Popover.Trigger
           disabled={disabled}
-          className='size-10 border-3 border-shadow border-r-background border-b-background'
+          className='size-11 border-3 border-shadow border-r-background border-b-background'
           style={{
             backgroundColor: `rgba(${rgbaColor.r}, ${rgbaColor.g}, ${rgbaColor.b}, ${rgbaColor.a})`,
           }}
