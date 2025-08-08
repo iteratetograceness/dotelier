@@ -3,14 +3,14 @@
 import { useSession } from '@/lib/auth/client'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
-import { LazyMotion, domAnimation } from 'motion/react'
+import { LazyMotion, Variants, domAnimation } from 'motion/react'
 import * as m from 'motion/react-m'
 import { Children, useCallback, useEffect, useState } from 'react'
 import { Button } from '../button'
 import './index.css'
 import { useCarousel } from './use-carousel'
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -19,7 +19,7 @@ const containerVariants = {
   },
 }
 
-const slideVariants = {
+const slideVariants: Variants = {
   hidden: { opacity: 0, y: 10 },
   visible: {
     opacity: 1,
