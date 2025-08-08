@@ -1,4 +1,4 @@
-import { polar } from '@polar-sh/better-auth'
+import { polar, portal, usage } from '@polar-sh/better-auth'
 import { Polar } from '@polar-sh/sdk'
 import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
@@ -63,6 +63,7 @@ export const auth = betterAuth({
     polar({
       client,
       createCustomerOnSignUp: true,
+      use: [portal(), usage()],
     }),
   ],
   session: {
