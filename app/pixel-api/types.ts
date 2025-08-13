@@ -4,13 +4,13 @@ export const PixelApiResponseSchema = z.object({
   images: z.array(
     z.object({
       base64: z.string({
-        description: 'The base64 representation of initial PNG generation',
+        message: 'The base64 representation of initial PNG generation',
       }),
       url: z.string({
-        description: 'The URL of the initial PNG upload',
+        message: 'The URL of the initial PNG upload',
       }),
       fileKey: z.string({
-        description: 'The file key to the initial PNG upload',
+        message: 'The file key to the initial PNG upload',
       }),
     })
   ),
