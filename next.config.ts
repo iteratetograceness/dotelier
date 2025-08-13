@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     ppr: true,
-    dynamicIO: true,
+    cacheComponents: true,
     reactCompiler: true,
   },
 }

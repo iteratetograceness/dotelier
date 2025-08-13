@@ -1,7 +1,8 @@
 'server-only'
 
 import { LatestPixelVersion } from '@/app/swr/use-pixel-version'
-import { PostProcessingStatus } from 'kysely-codegen'
+import { SelectExpression } from 'kysely'
+import { DB, PostProcessingStatus } from 'kysely-codegen'
 import { unstable_cacheTag } from 'next/cache'
 import { cache } from 'react'
 import { v4 as uuidv4 } from 'uuid'
@@ -95,20 +96,24 @@ async function _getLatestPixelVersion(
     .where('pixelVersion.isCurrent', '=', true)
     .executeTakeFirst()
 }
-async function _getPixelIdsByOwner({
+async function _getPixelsMetadataByOwner({
   page = 1,
   ownerId,
   limit = PAGE_SIZE,
+  withPrompt = false,
 }: {
   page?: number
   ownerId: string
   limit?: number
+  withPrompt?: boolean
 }) {
   const offset = (page - 1) * limit
+  const select: SelectExpression<DB, 'pixel'>[] = ['pixel.id']
+  if (withPrompt) select.push('pixel.prompt')
 
   return db
     .selectFrom('pixel')
-    .select(['pixel.id'])
+    .select(select)
     .where('pixel.userId', '=', ownerId)
     .orderBy('pixel.createdAt', 'desc')
     .limit(limit)
@@ -118,7 +123,7 @@ async function _getPixelIdsByOwner({
 async function _getLatestPixelIds(ownerId: string) {
   'use cache'
   unstable_cacheTag(`getLatestPixelIds:${ownerId}`)
-  return _getPixelIdsByOwner({ ownerId, limit: 3 })
+  return _getPixelsMetadataByOwner({ ownerId, limit: 3 })
 }
 async function _getPixelById(pixelId: string) {
   'use cache'
@@ -181,7 +186,7 @@ async function _insertPixelVersion({
 // PIXELS
 export const getExplorePagePixels = cache(_getExplorePagePixels)
 export const getLatestPixelVersion = cache(_getLatestPixelVersion)
-export const getPixelIdsByOwner = cache(_getPixelIdsByOwner)
+export const getPixelsMetadataByOwner = cache(_getPixelsMetadataByOwner)
 export const getLatestPixelIds = cache(_getLatestPixelIds)
 export const getPixelById = cache(_getPixelById)
 export const createPixel = _createPixel

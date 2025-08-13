@@ -19,9 +19,9 @@ export function usePixelVersion({
     fetcher,
     {
       fallbackData: initialData,
-      revalidateIfStale: false,
-      revalidateOnMount: false,
-      revalidateOnFocus: false,
+      revalidateIfStale: initialData ? false : true,
+      revalidateOnMount: initialData ? false : true,
+      revalidateOnFocus: initialData ? false : true,
     }
   )
 
