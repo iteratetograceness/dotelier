@@ -10,7 +10,7 @@ type PenSizeProps = Omit<ButtonProps, 'onChange'> & {
   onChange: (size: number) => void
 }
 
-export function PenSize(props: PenSizeProps) {
+export function PenSize({ onChange, ...props }: PenSizeProps) {
   const [size, setSize] = useState(1)
 
   return (
@@ -29,7 +29,7 @@ export function PenSize(props: PenSizeProps) {
               key={s}
               onClick={() => {
                 setSize(s)
-                props.onChange(s)
+                onChange(s)
               }}
               className='w-full'
               disabled={size === s}
