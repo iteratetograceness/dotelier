@@ -5,7 +5,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 export function GridItem(pixel: Pick<Pixel, 'id' | 'prompt'>) {
-  const { data, isLoading } = usePixelVersion({ id: pixel.id })
+  const { data } = usePixelVersion({ id: pixel.id })
+
+  // loading state
 
   return (
     <Link
