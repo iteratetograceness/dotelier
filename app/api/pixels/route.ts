@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
   const pageParam = searchParams.get('page')
   const page = pageParam ? Number(pageParam) : 1
 
-  const pixels = await getPixelsMetadataByOwner({
+  const result = await getPixelsMetadataByOwner({
     ownerId: authorization.user.id,
     page,
     withPrompt: true,
     limit: 20,
   })
 
-  return NextResponse.json(pixels)
+  return NextResponse.json(result)
 }

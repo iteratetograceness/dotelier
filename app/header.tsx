@@ -9,7 +9,9 @@ export function Header() {
       <div className='w-full bg-foreground h-16 flex items-center justify-between relative pr-3 pl-4'>
         <h1 className='text-background text-2xl'>dotelier studio</h1>
         <div className='hidden md:block absolute -bottom-1 -left-4 -right-3 mx-auto w-full'>
-          <Tabs tabs={NAV_LINKS} />
+          <Suspense fallback={<div className='h-[42px]' />}>
+            <Tabs tabs={NAV_LINKS} />
+          </Suspense>
         </div>
         <Suspense>
           <UserProfile />

@@ -6,8 +6,10 @@ import { CanvasSkeleton } from './skeleton'
 
 const getPixelIds = async () => {
   const session = await getSession()
-  const pixelIds = session?.user ? await getLatestPixelIds(session.user.id) : []
-  return pixelIds
+  const result = session?.user
+    ? await getLatestPixelIds(session.user.id)
+    : { pixels: [] }
+  return result.pixels
 }
 
 async function PixelGroupItem({ promise }: { promise: Promise<string> }) {

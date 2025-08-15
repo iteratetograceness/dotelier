@@ -31,11 +31,16 @@ export function DownloadButton(props: DownloadButtonProps) {
           )}
         </Button>
       </Popover.Trigger>
-      <Popover.Portal>
+      <Popover.Portal
+        container={typeof document !== 'undefined' ? document.body : undefined}
+      >
         <Popover.Content
-          className='flex flex-col w-36 text-xs'
+          className='flex flex-col w-36 text-xs bg-background border border-border rounded-md shadow-lg p-1 z-50'
           align='start'
           side='bottom'
+          sideOffset={4}
+          avoidCollisions={true}
+          collisionPadding={8}
         >
           <Button
             className='w-full'

@@ -73,14 +73,16 @@ const _updatePostProcessingStatus = async ({
     .executeTakeFirst()
   return result?.id
 }
-async function _getExplorePagePixels(page = 1) {
-  const offset = (page - 1) * PAGE_SIZE
+async function _getExplorePagePixels(page = 1, limit = PAGE_SIZE) {
+  'use cache'
+  unstable_cacheTag('explore-pixels')
+  const offset = (page - 1) * limit
   return db
     .selectFrom('pixel')
     .select(['pixel.id', 'pixel.prompt'])
     .where('pixel.showExplore', '=', true)
     .orderBy('pixel.createdAt', 'desc')
-    .limit(PAGE_SIZE)
+    .limit(limit)
     .offset(offset)
     .execute()
 }
@@ -111,14 +113,35 @@ async function _getPixelsMetadataByOwner({
   const select: SelectExpression<DB, 'pixel'>[] = ['pixel.id']
   if (withPrompt) select.push('pixel.prompt')
 
-  return db
-    .selectFrom('pixel')
-    .select(select)
-    .where('pixel.userId', '=', ownerId)
-    .orderBy('pixel.createdAt', 'desc')
-    .limit(limit)
-    .offset(offset)
-    .execute()
+  const [pixels, totalCountResult] = await Promise.all([
+    db
+      .selectFrom('pixel')
+      .select(select)
+      .where('pixel.userId', '=', ownerId)
+      .orderBy('pixel.createdAt', 'desc')
+      .limit(limit)
+      .offset(offset)
+      .execute(),
+    db
+      .selectFrom('pixel')
+      .select(db.fn.count('pixel.id').as('count'))
+      .where('pixel.userId', '=', ownerId)
+      .executeTakeFirst(),
+  ])
+
+  const totalCount = Number(totalCountResult?.count ?? 0)
+  const totalPages = Math.ceil(totalCount / limit)
+
+  return {
+    pixels,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  }
 }
 async function _getLatestPixelIds(ownerId: string) {
   'use cache'
@@ -136,6 +159,7 @@ async function _getPixelById(pixelId: string) {
       'pixel.createdAt',
       'pixel.updatedAt',
       'pixel.showExplore',
+      'pixel.userId',
     ])
     .where('pixel.id', '=', pixelId)
     .executeTakeFirst()

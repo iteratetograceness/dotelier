@@ -9,15 +9,29 @@ export const fetcher = (url: string) =>
     },
   }).then((res) => res.json())
 
+type PaginationMeta = {
+  currentPage: number
+  totalPages: number
+  totalCount: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
+type PixelsResponse = {
+  pixels: Pick<Pixel, 'id' | 'prompt'>[]
+  pagination: PaginationMeta
+}
+
 export function usePixels(page: number = 1) {
   const { data: session } = useSession()
-  const { data, isLoading, error } = useSWR<Pick<Pixel, 'id' | 'prompt'>[]>(
+  const { data, isLoading, error } = useSWR<PixelsResponse>(
     session ? `/api/pixels?page=${page}` : null,
     fetcher
   )
 
   return {
-    data,
+    data: data?.pixels,
+    pagination: data?.pagination,
     isLoading,
     error,
   }

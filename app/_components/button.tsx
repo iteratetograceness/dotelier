@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ComponentProps } from 'react'
+import { ComponentProps, useState } from 'react'
 import { cn } from '../utils/classnames'
 
 const variants = {
@@ -117,10 +117,13 @@ export function ButtonLink({
   href,
   ...props
 }: ButtonLinkProps) {
+  const [active, setActive] = useState(false)
   const isDisabled = props.disabled
   return (
     <Link
       href={href}
+      prefetch={active ? null : false}
+      onMouseEnter={() => setActive(true)}
       className={cn(
         variants[variant],
         base,
