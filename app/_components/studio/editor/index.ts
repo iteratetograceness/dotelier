@@ -4,8 +4,8 @@ import { Color, PixelRenderer } from './renderer'
 import { ToolManager, ToolName } from './tool'
 import { analyzeGridCell, findDominantColor } from './utils'
 
-export const DEFAULT_SIZE = 36
-export const GRID_ITEM_SIZE = 10
+export const DEFAULT_SIZE = 32
+export const GRID_ITEM_SIZE = 12
 
 export class PixelEditor {
   private pixelData: Uint8ClampedArray
