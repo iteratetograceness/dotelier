@@ -86,6 +86,30 @@ async function _getExplorePagePixels(page = 1, limit = PAGE_SIZE) {
     .offset(offset)
     .execute()
 }
+async function _isExplorePagePixel(pixelId: string): Promise<boolean> {
+  'use cache'
+  unstable_cacheTag(`isExplorePagePixel:${pixelId}`)
+  const pixel = await db
+    .selectFrom('pixel')
+    .select(['pixel.showExplore'])
+    .where('pixel.id', '=', pixelId)
+    .executeTakeFirstOrThrow()
+  return pixel.showExplore
+}
+async function _isPixelOwner(
+  pixelId: string,
+  userId: string
+): Promise<boolean> {
+  'use cache'
+  unstable_cacheTag(`isPixelOwner:${pixelId}:${userId}`)
+  const pixel = await db
+    .selectFrom('pixel')
+    .select(['pixel.userId'])
+    .where('pixel.id', '=', pixelId)
+    .where('pixel.userId', '=', userId)
+    .executeTakeFirst()
+  return pixel?.userId === userId
+}
 async function _getLatestPixelVersion(
   pixelId: string
 ): Promise<LatestPixelVersion | undefined> {
@@ -209,10 +233,12 @@ async function _insertPixelVersion({
 
 // PIXELS
 export const getExplorePagePixels = cache(_getExplorePagePixels)
+export const isExplorePagePixel = cache(_isExplorePagePixel)
 export const getLatestPixelVersion = cache(_getLatestPixelVersion)
 export const getPixelsMetadataByOwner = cache(_getPixelsMetadataByOwner)
 export const getLatestPixelIds = cache(_getLatestPixelIds)
 export const getPixelById = cache(_getPixelById)
+export const isPixelOwner = cache(_isPixelOwner)
 export const createPixel = _createPixel
 export const startPostProcessing = _startPostProcessing
 export const updatePostProcessingStatus = _updatePostProcessingStatus
