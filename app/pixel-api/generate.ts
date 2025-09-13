@@ -7,7 +7,6 @@ import { revalidateTag } from 'next/cache'
 import { headers } from 'next/headers'
 import { after } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { credits } from '../utils/credits'
 import { postProcessPixelIcon } from './post-process'
 import { PixelApiResponse, PixelApiResponseSchema } from './types'
 
@@ -29,7 +28,7 @@ export async function generatePixelIcon({
       success: false
     }
 > {
-  let bypassCredits = false
+  // let bypassCredits = false
   let userId: string
   const pixelId = id ?? uuidv4()
 
@@ -56,14 +55,14 @@ export async function generatePixelIcon({
     }
 
     userId = authResult.user.id
-    bypassCredits = Boolean(authResult.user.role === 'admin')
+    // bypassCredits = Boolean(authResult.user.role === 'admin')
 
-    if (!bypassCredits) {
-      const hasCredits = await credits.decrement(userId)
-      if (!hasCredits) {
-        return { error: ERROR_CODES.NO_CREDITS, success: false }
-      }
-    }
+    // if (!bypassCredits) {
+    //   const hasCredits = await credits.decrement(userId)
+    //   if (!hasCredits) {
+    //     return { error: ERROR_CODES.NO_CREDITS, success: false }
+    //   }
+    // }
 
     const maybePixelId = await dbPromise
 
@@ -125,11 +124,11 @@ export async function generatePixelIcon({
     }
   } catch (error) {
     console.error('[generatePixelIcon]: ', error)
-    after(async () => {
-      if (!bypassCredits && userId) {
-        await credits.increment(userId)
-      }
-    })
+    // after(async () => {
+    //   if (!bypassCredits && userId) {
+    //     await credits.increment(userId)
+    //   }
+    // })
     return { error: ERROR_CODES.UNEXPECTED_ERROR, success: false }
   }
 }
