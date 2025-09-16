@@ -7,7 +7,7 @@ export enum PostProcessingStatus {
   COMPLETED = 'completed',
 }
 
-export const FREE_CREDITS = 1
+export const FREE_CREDITS = 3
 
 export const NAV_LINKS = [
   { href: '/', label: 'Home', isActive: true },

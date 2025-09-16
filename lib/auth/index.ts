@@ -1,4 +1,4 @@
-import { polar, portal, usage } from '@polar-sh/better-auth'
+import { polar, portal, usage, webhooks } from '@polar-sh/better-auth'
 import { Polar } from '@polar-sh/sdk'
 import { betterAuth } from 'better-auth'
 import { nextCookies } from 'better-auth/next-js'
@@ -7,7 +7,7 @@ import { getBaseUrl } from '../base-url'
 import { db } from '../db/pg'
 import { redis } from '../redis'
 
-const client = new Polar({
+export const client = new Polar({
   accessToken: process.env.POLAR_ACCESS_TOKEN,
   server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
 })
@@ -63,7 +63,24 @@ export const auth = betterAuth({
     polar({
       client,
       createCustomerOnSignUp: true,
-      use: [portal(), usage()],
+      use: [
+        portal(),
+        usage(),
+        webhooks({
+          secret: process.env.POLAR_WEBHOOK_SECRET!,
+          onCustomerCreated: async (payload) => {
+            try {
+              // await client.meters.update({
+              //   meterSlug: 'icon-generations',
+              //   customerId: payload.data.external_id,
+              //   result: 3,
+              // })
+            } catch (error) {
+              console.error('Error ingesting event', error)
+            }
+          },
+        }),
+      ],
     }),
   ],
   session: {
