@@ -31,6 +31,16 @@ const _createPixel = async ({
 
   return result?.id
 }
+
+const _deletePixel = async (pixelId: string) => {
+  const result = await db
+    .deleteFrom('pixel')
+    .where('id', '=', pixelId)
+    .returning('id')
+    .executeTakeFirst()
+
+  return result?.id
+}
 const _startPostProcessing = async ({
   pixelId,
   fileKey,
@@ -240,6 +250,7 @@ export const getLatestPixelIds = cache(_getLatestPixelIds)
 export const getPixelById = cache(_getPixelById)
 export const isPixelOwner = cache(_isPixelOwner)
 export const createPixel = _createPixel
+export const deletePixel = _deletePixel
 export const startPostProcessing = _startPostProcessing
 export const updatePostProcessingStatus = _updatePostProcessingStatus
 

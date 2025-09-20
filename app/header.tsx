@@ -13,6 +13,7 @@ export function Header() {
             <Tabs tabs={NAV_LINKS} />
           </Suspense>
         </div>
+
         <Suspense>
           <UserProfile />
         </Suspense>

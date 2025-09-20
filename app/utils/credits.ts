@@ -24,9 +24,23 @@ class Credits {
     return `welcome_credits:${userId}`
   }
 
-  private async getWelcomeCredits(userId: string) {
-    const used = (await this.redis.get<number>(this.getUserKey(userId))) || 0
-    return Math.max(this.welcomeCredits - used, 0)
+  private getRefundKey(userId: string) {
+    return `refund_credits:${userId}`
+  }
+
+  private async getNonPolarCredits(userId: string) {
+    const [welcomeUsed, refunds] = await this.redis.mget<
+      [number | null, number | null]
+    >(this.getUserKey(userId), this.getRefundKey(userId))
+
+    const welcomeCredits = Math.max(this.welcomeCredits - (welcomeUsed || 0), 0)
+    const refundCredits = refunds || 0
+
+    return {
+      welcome: welcomeCredits,
+      refund: refundCredits,
+      total: welcomeCredits + refundCredits,
+    }
   }
 
   private async getPolarCredits(userId: string) {
@@ -35,12 +49,10 @@ class Credits {
         externalId: userId,
       })
       const meters = result.activeMeters
-      const meter = result.activeMeters.find((m) => m.meterId === this.meterId)
+      console.log(meters)
+      const meter = meters.find((m) => m.meterId === this.meterId)
 
-      if (!meter) {
-        console.error('Failed to find credit meter in Polar!')
-        return 0
-      }
+      if (!meter) return 0
 
       return meter.balance || 0
     } catch (error) {
@@ -49,28 +61,33 @@ class Credits {
     }
   }
 
-  async get(userId: string, customerId?: string) {
-    const welcomeCredits = await this.getWelcomeCredits(userId)
+  async get(userId?: string) {
+    if (!userId) return 0
 
-    if (welcomeCredits > 0) {
-      return welcomeCredits
-    }
+    const [nonPolar, polar] = await Promise.all([
+      this.getNonPolarCredits(userId),
+      this.getPolarCredits(userId),
+    ])
 
-    if (customerId) {
-      return this.getPolarCredits(customerId)
-    }
-
-    return 0
+    return nonPolar.total + polar
   }
 
   async decrement(userId: string, amount: number = 1) {
-    const welcomeCredits = await this.getWelcomeCredits(userId)
+    const nonPolar = await this.getNonPolarCredits(userId)
 
-    if (welcomeCredits >= amount) {
+    // First try refund credits
+    if (nonPolar.refund >= amount) {
+      await this.redis.decrby(this.getRefundKey(userId), amount)
+      return true
+    }
+
+    // Then try welcome credits
+    if (nonPolar.welcome >= amount) {
       await this.redis.incrby(this.getUserKey(userId), amount)
       return true
     }
 
+    // Finally try Polar credits
     const polarCredits = await this.getPolarCredits(userId)
     if (polarCredits >= amount) {
       try {
@@ -90,6 +107,12 @@ class Credits {
     }
 
     return false
+  }
+
+  async increment(userId: string, amount: number = 1) {
+    // Add to refund credits when there's an error
+    await this.redis.incrby(this.getRefundKey(userId), amount)
+    return true
   }
 }
 

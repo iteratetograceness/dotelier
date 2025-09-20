@@ -1,12 +1,13 @@
 'use server'
 
 import { authorizeRequest } from '@/lib/auth/request'
-import { createPixel, startPostProcessing } from '@/lib/db/queries'
+import { createPixel, deletePixel, startPostProcessing } from '@/lib/db/queries'
 import { ERROR_CODES, ErrorCode } from '@/lib/error'
 import { revalidateTag } from 'next/cache'
 import { headers } from 'next/headers'
 import { after } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
+import { credits } from '../utils/credits'
 import { postProcessPixelIcon } from './post-process'
 import { PixelApiResponse, PixelApiResponseSchema } from './types'
 
@@ -28,8 +29,9 @@ export async function generatePixelIcon({
       success: false
     }
 > {
-  // let bypassCredits = false
+  let bypassCredits = false
   let userId: string
+  let pixelCreated = false
   const pixelId = id ?? uuidv4()
 
   try {
@@ -42,12 +44,6 @@ export async function generatePixelIcon({
       return { error: ERROR_CODES.UNAUTHORIZED, success: false }
     }
 
-    const dbPromise = createPixel({
-      userId: authResult.user.id,
-      prompt,
-      pixelId,
-    })
-
     const { jwt } = authResult
 
     if (!jwt) {
@@ -55,20 +51,26 @@ export async function generatePixelIcon({
     }
 
     userId = authResult.user.id
-    // bypassCredits = Boolean(authResult.user.role === 'admin')
+    bypassCredits = Boolean(authResult.user.role === 'admin')
 
-    // if (!bypassCredits) {
-    //   const hasCredits = await credits.decrement(userId)
-    //   if (!hasCredits) {
-    //     return { error: ERROR_CODES.NO_CREDITS, success: false }
-    //   }
-    // }
+    if (!bypassCredits) {
+      const hasCredits = await credits.decrement(userId)
+      if (!hasCredits) {
+        return { error: ERROR_CODES.NO_CREDITS, success: false }
+      }
+    }
 
-    const maybePixelId = await dbPromise
+    const maybePixelId = await createPixel({
+      userId: authResult.user.id,
+      prompt,
+      pixelId,
+    })
 
     if (!maybePixelId) {
       throw new Error('Failed to save pixel')
     }
+
+    pixelCreated = true
 
     const response = await fetch(process.env.PIXEL_API_ENDPOINT!, {
       method: 'POST',
@@ -124,11 +126,12 @@ export async function generatePixelIcon({
     }
   } catch (error) {
     console.error('[generatePixelIcon]: ', error)
-    // after(async () => {
-    //   if (!bypassCredits && userId) {
-    //     await credits.increment(userId)
-    //   }
-    // })
+    after(async () => {
+      await Promise.all([
+        !bypassCredits && userId ? credits.increment(userId) : null,
+        pixelCreated ? deletePixel(pixelId) : null,
+      ])
+    })
     return { error: ERROR_CODES.UNEXPECTED_ERROR, success: false }
   }
 }

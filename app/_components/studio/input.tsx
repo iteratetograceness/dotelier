@@ -2,21 +2,31 @@
 
 import { Cooper } from '@/app/icons/cooper'
 import { Louie } from '@/app/icons/louie'
+import { useCredits } from '@/app/swr/use-credits'
 import { cn } from '@/app/utils/classnames'
 import { useSession } from '@/lib/auth/client'
 import { LazyMotion, domAnimation } from 'motion/react'
 import * as m from 'motion/react-m'
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from 'react'
 import { SignInButton } from '../auth/sign-in-button'
 import { Button } from '../button'
+import { Credits } from '../user/credits'
 import { useNewCanvas } from './use-new-canvas'
 
-export function NewPixelInput({ className }: { className?: string }) {
+function NewPixelInput({ className }: { className?: string }) {
   const { data: session, isPending: isSessionPending } = useSession()
   const { startGeneration, reset } = useNewCanvas()
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
   const [mounted, setMounted] = useState(false)
+  const { credits, revalidateCredits } = useCredits()
 
   useEffect(() => {
     setMounted(true)
@@ -29,10 +39,13 @@ export function NewPixelInput({ className }: { className?: string }) {
         const formData = new FormData(e.target as HTMLFormElement)
         const prompt = formData.get('prompt') as string
         formRef.current?.reset()
+
+        const optimisticCredits = credits ? credits - 1 : 0
+        void revalidateCredits(optimisticCredits)
         await startGeneration(prompt)
       })
     },
-    [startGeneration]
+    [startGeneration, credits, revalidateCredits]
   )
 
   const disabled = isPending || !session
@@ -74,19 +87,27 @@ export function NewPixelInput({ className }: { className?: string }) {
           placeholder='a weeping computer'
           required
         />
-        <CTA
-          mounted={mounted}
-          session={!!session}
-          isSessionPending={isSessionPending}
-          disabled={disabled}
-          onReset={reset}
-        />
+        <div className='flex items-center'>
+          <Credits
+            credits={credits}
+            className='bg-transparent border-none text-background py-0'
+          />
+          <MemoizedCta
+            mounted={mounted}
+            session={!!session}
+            isSessionPending={isSessionPending}
+            disabled={disabled}
+            onReset={reset}
+          />
+        </div>
       </form>
     </div>
   )
 }
 
-function CTA({
+export const PixelInput = memo(NewPixelInput)
+
+function Cta({
   mounted,
   session,
   isSessionPending,
@@ -135,3 +156,5 @@ function CTA({
     />
   )
 }
+
+const MemoizedCta = memo(Cta)
