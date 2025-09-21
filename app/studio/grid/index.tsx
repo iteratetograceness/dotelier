@@ -2,13 +2,15 @@
 
 import { fetcher, usePixels } from '@/app/swr/use-pixels'
 import { useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
 import { preload } from 'swr'
 import { Grid } from './grid'
 import { Pagination } from './pagination'
 
-preload('/api/pixels?page=1', fetcher)
-
 export function PaginatedGrid() {
+  useEffect(() => {
+    preload('/api/pixels?page=1', fetcher)
+  }, [])
   const searchParams = useSearchParams()
   const page = searchParams.get('page')
   const currentPage = page ? Number(page) : 1

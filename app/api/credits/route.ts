@@ -3,8 +3,6 @@ import { authorizeRequest } from '@/lib/auth/request'
 import { ERROR_CODES } from '@/lib/error'
 import { NextResponse } from 'next/server'
 
-export const dynamic = 'force-dynamic'
-
 export async function GET() {
   const auth = await authorizeRequest()
 
