@@ -18,7 +18,14 @@ async function PixelGroupItem({ promise }: { promise: Promise<string> }) {
   return <PixelCanvas id={id} versionPromise={getLatestPixelVersion(id)} />
 }
 
-export function PixelGroup() {
+export async function PixelGroup() {
+  const session = await getSession()
+
+  // Don't render any slides if user is not logged in
+  if (!session?.user) {
+    return null
+  }
+
   const pixelIdsPromise = getPixelIds()
   const pixelPromises = Array.from({ length: 3 }, async (_, i) => {
     const ids = await pixelIdsPromise

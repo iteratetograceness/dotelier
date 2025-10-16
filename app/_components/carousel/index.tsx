@@ -35,7 +35,14 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   const { setCarousel } = useCarousel()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+  const [slideCount, setSlideCount] = useState(0)
   const { data: session } = useSession()
+
+  const childrenArray = Children.toArray(children).filter((child, index) => {
+    if (index === 0) return true
+    return Boolean(session?.user)
+  })
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
     {
@@ -56,13 +63,27 @@ export function Carousel({ children }: { children: React.ReactNode }) {
     ]
   )
 
+  const countNonEmptySlides = useCallback(() => {
+    if (!emblaRef.current) return 0
+    const slides = emblaRef.current.querySelectorAll('.embla__slide')
+    return Array.from(slides).filter(slide => {
+      const hasText = slide.textContent?.trim().length > 0
+      const hasElements = slide.querySelector('canvas, img:not([alt=""]), button:not([disabled]), input')
+      return hasText || hasElements
+    }).length
+  }, [emblaRef])
+
   const onSelect = useCallback(() => {
     if (!emblaApi) return
     setCurrentIndex(emblaApi.selectedScrollSnap())
+    const count = countNonEmptySlides()
+    setSlideCount(count)
     const next = emblaApi.canScrollNext()
+    const prev = emblaApi.canScrollPrev()
     const isLoggedIn = Boolean(session?.user)
-    setCanScrollLeft(next && isLoggedIn)
-  }, [emblaApi, session])
+    setCanScrollLeft(next && isLoggedIn && count > 1)
+    setCanScrollRight(prev && count > 1)
+  }, [emblaApi, session, countNonEmptySlides])
 
   const scrollToRight = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev()
@@ -88,23 +109,79 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   }, [emblaApi, onSelect])
 
   useEffect(() => {
-    if (emblaApi) setCarousel(emblaApi)
+    if (emblaApi) {
+      setCarousel(emblaApi)
+    }
   }, [emblaApi, setCarousel])
 
+  useEffect(() => {
+    if (!emblaApi) return
+    const isSingleSlide = childrenArray.length === 1
+    emblaApi.reInit({
+      direction: isSingleSlide ? 'ltr' : 'rtl',
+      containScroll: isSingleSlide ? 'trimSnaps' : false,
+      watchDrag: (_api, evt) => {
+        if (evt.target && (evt.target as Element).nodeName === 'CANVAS') {
+          return false
+        }
+        return true
+      },
+      skipSnaps: true,
+    })
+  }, [emblaApi, childrenArray.length])
+
+  useEffect(() => {
+    if (!emblaApi) return
+
+    const onScroll = () => {
+      const nonEmptyCount = countNonEmptySlides()
+      if (nonEmptyCount <= 1) return
+
+      const index = emblaApi.selectedScrollSnap()
+      const totalSlides = emblaApi.scrollSnapList().length
+      if (index < 0) {
+        emblaApi.scrollTo(0, false)
+      } else if (index >= totalSlides) {
+        emblaApi.scrollTo(totalSlides - 1, false)
+      }
+    }
+
+    const onSettle = () => {
+      const nonEmptyCount = countNonEmptySlides()
+      if (nonEmptyCount <= 1) return
+
+      const index = emblaApi.selectedScrollSnap()
+      const totalSlides = emblaApi.scrollSnapList().length
+      if (index < 0 || index >= totalSlides) {
+        emblaApi.scrollTo(Math.max(0, Math.min(index, totalSlides - 1)), false)
+      }
+    }
+
+    emblaApi.on('scroll', onScroll)
+    emblaApi.on('settle', onSettle)
+    return () => {
+      emblaApi.off('scroll', onScroll)
+      emblaApi.off('settle', onSettle)
+    }
+  }, [emblaApi, slideCount, countNonEmptySlides])
+
   return (
-    <section className='embla w-screen m-auto' dir='rtl'>
+    <section
+      className='embla w-screen m-auto'
+      dir={childrenArray.length === 1 ? 'ltr' : 'rtl'}
+    >
       <div className='flex w-full items-center justify-center pb-4' dir='ltr'>
-        <Button disabled={!canScrollLeft} onClick={scrollToLeft}>
+        <Button disabled={slideCount <= 1 || !canScrollLeft} onClick={scrollToLeft}>
           {'<'}
         </Button>
         <Button
           aria-label='Go to new canvas'
           onClick={scrollToNewCanvas}
-          disabled={currentIndex === 0}
+          disabled={slideCount <= 1 || currentIndex === 0}
         >
           +
         </Button>
-        <Button onClick={scrollToRight} disabled={currentIndex === 0}>
+        <Button onClick={scrollToRight} disabled={slideCount <= 1 || !canScrollRight}>
           {'>'}
         </Button>
       </div>
@@ -115,8 +192,9 @@ export function Carousel({ children }: { children: React.ReactNode }) {
             initial='hidden'
             animate='visible'
             className='embla__container flex max-w-full'
+            style={childrenArray.length === 1 ? { justifyContent: 'center' } : {}}
           >
-            {Children.map(children, (child, index) => (
+            {childrenArray.map((child, index) => (
               <m.div
                 className='embla__slide'
                 dir='ltr'
