@@ -1,7 +1,5 @@
 'use client'
 
-import { Cooper } from '@/app/icons/cooper'
-import { Louie } from '@/app/icons/louie'
 import { useCredits } from '@/app/swr/use-credits'
 import { cn } from '@/app/utils/classnames'
 import { useSession } from '@/lib/auth/client'
@@ -18,6 +16,7 @@ import {
 import { SignInButton } from '../auth/sign-in-button'
 import { Button } from '../button'
 import { Credits } from '../user/credits'
+import { Pups } from './pups'
 import { useNewCanvas } from './use-new-canvas'
 
 function NewPixelInput({ className }: { className?: string }) {
@@ -60,23 +59,12 @@ function NewPixelInput({ className }: { className?: string }) {
       {/* You have N credits left, component */}
 
       {/* Pups */}
-      <div className='absolute top-2 left-0'>
-        <Cooper
-          className='absolute -top-[60px] left-0 -z-10'
-          width={100}
-          height={100}
-        />
-        <Louie
-          className='absolute -top-[60px] left-[50px] -z-20'
-          width={100}
-          height={100}
-        />
-      </div>
+      <Pups />
 
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className='flex flex-col gap-2.5 pixel-corners p-2 bg-black pixel-border-black'
+        className='flex flex-col gap-2.5 pixel-corners p-2 bg-black pixel-border-black relative z-10'
         ref={formRef}
       >
         <textarea

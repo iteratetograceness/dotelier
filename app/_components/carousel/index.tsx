@@ -39,11 +39,9 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   const [slideCount, setSlideCount] = useState(0)
   const { data: session } = useSession()
 
-  // Filter children to prevent empty slides when logged out
-  // The Suspense wrapper around PixelGroup would create an empty slide if not filtered
   const childrenArray = Children.toArray(children).filter((child, index) => {
-    if (index === 0) return true // Always keep first child (canvas)
-    return Boolean(session?.user) // Only keep PixelGroup wrapper when logged in
+    if (index === 0) return true
+    return Boolean(session?.user)
   })
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -65,7 +63,6 @@ export function Carousel({ children }: { children: React.ReactNode }) {
     ]
   )
 
-  // Helper to count non-empty slides
   const countNonEmptySlides = useCallback(() => {
     if (!emblaRef.current) return 0
     const slides = emblaRef.current.querySelectorAll('.embla__slide')
@@ -117,40 +114,20 @@ export function Carousel({ children }: { children: React.ReactNode }) {
     }
   }, [emblaApi, setCarousel])
 
-  // Fix positioning when there's only 1 slide
   useEffect(() => {
     if (!emblaApi) return
-
-    const actualSlideCount = childrenArray.length
-
-    if (actualSlideCount === 1) {
-      // Reinitialize with LTR for single slide to center it properly
-      emblaApi.reInit({
-        direction: 'ltr', // Use LTR for single slide to center it
-        containScroll: 'trimSnaps',
-        watchDrag: (_api, evt) => {
-          if (evt.target && (evt.target as Element).nodeName === 'CANVAS') {
-            return false
-          }
-          // Allow drag for bouncy effect even with 1 slide
-          return true
-        },
-        skipSnaps: true,
-      })
-    } else {
-      // Multiple slides: use RTL
-      emblaApi.reInit({
-        direction: 'rtl',
-        containScroll: false,
-        watchDrag: (_api, evt) => {
-          if (evt.target && (evt.target as Element).nodeName === 'CANVAS') {
-            return false
-          }
-          return true
-        },
-        skipSnaps: true,
-      })
-    }
+    const isSingleSlide = childrenArray.length === 1
+    emblaApi.reInit({
+      direction: isSingleSlide ? 'ltr' : 'rtl',
+      containScroll: isSingleSlide ? 'trimSnaps' : false,
+      watchDrag: (_api, evt) => {
+        if (evt.target && (evt.target as Element).nodeName === 'CANVAS') {
+          return false
+        }
+        return true
+      },
+      skipSnaps: true,
+    })
   }, [emblaApi, childrenArray.length])
 
   useEffect(() => {
@@ -158,13 +135,8 @@ export function Carousel({ children }: { children: React.ReactNode }) {
 
     const onScroll = () => {
       const nonEmptyCount = countNonEmptySlides()
+      if (nonEmptyCount <= 1) return
 
-      // For single slide, let Embla handle centering naturally
-      if (nonEmptyCount <= 1) {
-        return
-      }
-
-      // Normal boundary checking for multiple slides
       const index = emblaApi.selectedScrollSnap()
       const totalSlides = emblaApi.scrollSnapList().length
       if (index < 0) {
@@ -176,13 +148,8 @@ export function Carousel({ children }: { children: React.ReactNode }) {
 
     const onSettle = () => {
       const nonEmptyCount = countNonEmptySlides()
+      if (nonEmptyCount <= 1) return
 
-      // For single slide, let Embla settle naturally to center
-      if (nonEmptyCount <= 1) {
-        return
-      }
-
-      // Normal boundary checking
       const index = emblaApi.selectedScrollSnap()
       const totalSlides = emblaApi.scrollSnapList().length
       if (index < 0 || index >= totalSlides) {
@@ -201,7 +168,7 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   return (
     <section
       className='embla w-screen m-auto'
-      dir={childrenArray.length === 1 ? 'ltr' : 'rtl'} // LTR centers single slide, RTL aligns multiple slides right
+      dir={childrenArray.length === 1 ? 'ltr' : 'rtl'}
     >
       <div className='flex w-full items-center justify-center pb-4' dir='ltr'>
         <Button disabled={slideCount <= 1 || !canScrollLeft} onClick={scrollToLeft}>
@@ -225,7 +192,7 @@ export function Carousel({ children }: { children: React.ReactNode }) {
             initial='hidden'
             animate='visible'
             className='embla__container flex max-w-full'
-            style={childrenArray.length === 1 ? { justifyContent: 'center' } : {}} // Center single slide horizontally
+            style={childrenArray.length === 1 ? { justifyContent: 'center' } : {}}
           >
             {childrenArray.map((child, index) => (
               <m.div
