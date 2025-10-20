@@ -177,6 +177,59 @@ async function _getPixelsMetadataByOwner({
     },
   }
 }
+
+async function _getPixelsWithVersionsByOwner({
+  page = 1,
+  ownerId,
+  limit = PAGE_SIZE,
+}: {
+  page?: number
+  ownerId: string
+  limit?: number
+}) {
+  const offset = (page - 1) * limit
+
+  const [pixels, totalCountResult] = await Promise.all([
+    db
+      .selectFrom('pixel')
+      .leftJoin('pixelVersion', (join) =>
+        join
+          .onRef('pixel.id', '=', 'pixelVersion.pixelId')
+          .on('pixelVersion.isCurrent', '=', true)
+      )
+      .select([
+        'pixel.id',
+        'pixel.prompt',
+        'pixelVersion.fileKey',
+        'pixelVersion.version',
+        'pixelVersion.id as versionId',
+      ])
+      .where('pixel.userId', '=', ownerId)
+      .orderBy('pixel.createdAt', 'desc')
+      .limit(limit)
+      .offset(offset)
+      .execute(),
+    db
+      .selectFrom('pixel')
+      .select(db.fn.count('pixel.id').as('count'))
+      .where('pixel.userId', '=', ownerId)
+      .executeTakeFirst(),
+  ])
+
+  const totalCount = Number(totalCountResult?.count ?? 0)
+  const totalPages = Math.ceil(totalCount / limit)
+
+  return {
+    pixels,
+    pagination: {
+      currentPage: page,
+      totalPages,
+      totalCount,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  }
+}
 async function _getLatestPixelIds(ownerId: string) {
   'use cache'
   unstable_cacheTag(`getLatestPixelIds:${ownerId}`)
@@ -246,6 +299,7 @@ export const getExplorePagePixels = cache(_getExplorePagePixels)
 export const isExplorePagePixel = cache(_isExplorePagePixel)
 export const getLatestPixelVersion = cache(_getLatestPixelVersion)
 export const getPixelsMetadataByOwner = cache(_getPixelsMetadataByOwner)
+export const getPixelsWithVersionsByOwner = cache(_getPixelsWithVersionsByOwner)
 export const getLatestPixelIds = cache(_getLatestPixelIds)
 export const getPixelById = cache(_getPixelById)
 export const isPixelOwner = cache(_isPixelOwner)
