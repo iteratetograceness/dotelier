@@ -4,13 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-- **Development**: `bun dev` (uses Turbopack for faster builds)
-- **Build**: `bun build` (runs `generate-types` automatically via prebuild)
-- **Type Check**: `bun type-check` (TypeScript check without emit)
-- **Lint**: `bun lint` (Next.js ESLint)
-- **Generate Types**: `bun generate-types` (Kysely database types from Postgres)
-- **Unused Code**: `bun knip` (finds unused exports and dependencies)
-- **Debug Memory**: `bun debug` (Next.js build with memory debugging)
+- **Development**: `npm run dev` or `bun dev` (uses Turbopack for faster builds)
+- **Build**: `npm run build` or `bun build` (production build)
+- **Type Check**: `npm run type-check` or `bun type-check` (TypeScript check without emit)
+- **Lint**: `npm run lint` or `bun lint` (Next.js ESLint)
+- **Generate Types**: `npm run generate-types` (Kysely database types from Postgres - requires DATABASE_URL)
+- **Unused Code**: `npm run knip` or `bun knip` (finds unused exports and dependencies)
+- **Debug Memory**: `npm run debug` or `bun debug` (Next.js build with memory debugging)
+
+### Type Generation
+
+The project uses `kysely-codegen` to generate TypeScript types from the PostgreSQL database schema. The generated types are defined in `kysely-codegen.d.ts` and should be committed to version control.
+
+**To regenerate types after schema changes:**
+```bash
+npm run generate-types  # Requires DATABASE_URL environment variable
+```
+
+**Note:** Type generation is NOT run automatically during builds to avoid requiring database access at build time. Types are pre-generated and committed to the repository.
 
 ## Architecture Overview
 

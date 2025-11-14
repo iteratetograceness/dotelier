@@ -46,6 +46,10 @@ export class PixelRenderer {
 
   public requestRedraw() {
     this.markDirty()
+    // Restart render loop if it stopped
+    if (!this.animationFrameId) {
+      this.animationFrameId = requestAnimationFrame(this.renderLoop)
+    }
   }
 
   public startRenderLoop() {
@@ -64,8 +68,12 @@ export class PixelRenderer {
     if (this.needsRedraw) {
       this.needsRedraw = false
       if (this.pixelData) this.redraw(this.pixelData)
+      // Continue loop only if there are more changes
+      this.animationFrameId = requestAnimationFrame(this.renderLoop)
+    } else {
+      // Stop loop when idle to save CPU
+      this.animationFrameId = undefined
     }
-    this.animationFrameId = requestAnimationFrame(this.renderLoop)
   }
 
   public destroy() {
