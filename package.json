@@ -27,12 +27,12 @@
     "embla-carousel-wheel-gestures": "^8.1.0",
     "kysely": "^0.28.7",
     "motion": "^12.23.16",
-    "next": "15.6.0-canary.58",
+    "next": "16.0.7",
     "postcss": "^8.5.6",
     "radix-ui": "1.4.2",
-    "react": "19.1.2",
+    "react": "19.2.1",
     "react-colorful": "^5.6.1",
-    "react-dom": "19.1.2",
+    "react-dom": "19.2.1",
     "react-hotkeys-hook": "5.1.0",
     "replicate": "^1.2.0",
     "rgbquant": "^1.1.2",
@@ -51,15 +51,19 @@
     "@testing-library/react": "^16.3.0",
     "@types/bun": "^1.2.22",
     "@types/node": "^24.5.2",
-    "@types/react": "^19.1.13",
-    "@types/react-dom": "^19.1.9",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
     "embla-carousel": "^8.6.0",
     "eslint": "^9.36.0",
-    "eslint-config-next": "15.5.7",
+    "eslint-config-next": "16.0.7",
     "knip": "^5.63.1",
     "kysely-codegen": "^0.18.5",
     "pg": "^8.16.3",
     "postcss-load-config": "^6.0.1",
     "typescript": "^5.9.2"
+  },
+  "overrides": {
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3"
   }
 }

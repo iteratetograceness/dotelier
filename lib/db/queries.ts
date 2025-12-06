@@ -3,7 +3,7 @@
 import { LatestPixelVersion } from '@/app/swr/use-pixel-version'
 import { SelectExpression } from 'kysely'
 import { DB, PostProcessingStatus } from 'kysely-codegen'
-import { unstable_cacheTag } from 'next/cache'
+import { cacheTag } from 'next/cache'
 import { cache } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { db } from './pg'
@@ -85,7 +85,7 @@ const _updatePostProcessingStatus = async ({
 }
 async function _getExplorePagePixels(page = 1, limit = PAGE_SIZE) {
   'use cache'
-  unstable_cacheTag('explore-pixels')
+  cacheTag('explore-pixels')
   const offset = (page - 1) * limit
   return db
     .selectFrom('pixel')
@@ -108,7 +108,7 @@ async function _getExplorePagePixels(page = 1, limit = PAGE_SIZE) {
 }
 async function _isExplorePagePixel(pixelId: string): Promise<boolean> {
   'use cache'
-  unstable_cacheTag(`isExplorePagePixel:${pixelId}`)
+  cacheTag(`isExplorePagePixel:${pixelId}`)
   const pixel = await db
     .selectFrom('pixel')
     .select(['pixel.showExplore'])
@@ -121,7 +121,7 @@ async function _isPixelOwner(
   userId: string
 ): Promise<boolean> {
   'use cache'
-  unstable_cacheTag(`isPixelOwner:${pixelId}:${userId}`)
+  cacheTag(`isPixelOwner:${pixelId}:${userId}`)
   const pixel = await db
     .selectFrom('pixel')
     .select(['pixel.userId'])
@@ -134,7 +134,7 @@ async function _getLatestPixelVersion(
   pixelId: string
 ): Promise<LatestPixelVersion | undefined> {
   'use cache'
-  unstable_cacheTag(`pixel:${pixelId}`)
+  cacheTag(`pixel:${pixelId}`)
   return db
     .selectFrom('pixelVersion')
     .select(['pixelVersion.id', 'pixelVersion.fileKey', 'pixelVersion.version'])
@@ -242,12 +242,12 @@ async function _getPixelsWithVersionsByOwner({
 }
 async function _getLatestPixelIds(ownerId: string) {
   'use cache'
-  unstable_cacheTag(`getLatestPixelIds:${ownerId}`)
+  cacheTag(`getLatestPixelIds:${ownerId}`)
   return _getPixelsMetadataByOwner({ ownerId, limit: 3 })
 }
 async function _getPixelById(pixelId: string) {
   'use cache'
-  unstable_cacheTag(`pixel:${pixelId}`)
+  cacheTag(`pixel:${pixelId}`)
   return db
     .selectFrom('pixel')
     .select([
