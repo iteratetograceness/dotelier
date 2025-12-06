@@ -68,7 +68,7 @@ export async function savePixel({
       `[savePixel] Pixel ${id} updated. From ${oldFileKey} to ${newFileKey}`
     )
 
-    revalidateTag(`pixel:${id}`)
+    revalidateTag(`pixel:${id}`, { expire: 0 })
 
     return { success: true, fileKey: newFileKey }
   } catch (error) {

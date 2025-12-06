@@ -184,7 +184,7 @@ export async function postProcessPixelIcon({
       ])
     })
 
-    revalidateTag(`pixel:${pixelId}`)
+    revalidateTag(`pixel:${pixelId}`, { expire: 0 })
     return { success: true }
   } catch (error) {
     console.error('[postProcessPixelIcon] Error: ', error)
