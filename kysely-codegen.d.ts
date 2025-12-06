@@ -7,10 +7,12 @@ declare module 'kysely-codegen' {
   export type PostProcessingStatus =
     | 'pending'
     | 'processing'
+    | 'background_removal'
+    | 'background_removal_failed'
+    | 'convert_to_svg'
+    | 'convert_to_svg_failed'
     | 'completed'
     | 'failed'
-    | 'background_removal_failed'
-    | 'convert_to_svg_failed'
 
   export interface PixelTable {
     id: string
