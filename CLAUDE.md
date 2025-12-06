@@ -2,15 +2,24 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Package Manager
+
+**This project uses [Bun](https://bun.sh) as the primary package manager.**
+- Lock file: `bun.lock` (committed to version control)
+- Config: `bunfig.toml`
+- Install: `bun install`
+
+npm commands are supported for compatibility, but `bun` is preferred.
+
 ## Development Commands
 
-- **Development**: `npm run dev` or `bun dev` (uses Turbopack for faster builds)
-- **Build**: `npm run build` or `bun build` (production build)
-- **Type Check**: `npm run type-check` or `bun type-check` (TypeScript check without emit)
-- **Lint**: `npm run lint` or `bun lint` (Next.js ESLint)
-- **Generate Types**: `npm run generate-types` (Kysely database types from Postgres - requires DATABASE_URL)
-- **Unused Code**: `npm run knip` or `bun knip` (finds unused exports and dependencies)
-- **Debug Memory**: `npm run debug` or `bun debug` (Next.js build with memory debugging)
+- **Development**: `bun dev` (uses Turbopack for faster builds)
+- **Build**: `bun build` (production build)
+- **Type Check**: `bun type-check` (TypeScript check without emit)
+- **Lint**: `bun lint` (Next.js ESLint)
+- **Generate Types**: `bun generate-types` (Kysely database types from Postgres - requires DATABASE_URL)
+- **Unused Code**: `bun knip` (finds unused exports and dependencies)
+- **Debug Memory**: `bun debug` (Next.js build with memory debugging)
 
 ### Type Generation
 
@@ -18,7 +27,7 @@ The project uses `kysely-codegen` to generate TypeScript types from the PostgreS
 
 **To regenerate types after schema changes:**
 ```bash
-npm run generate-types  # Requires DATABASE_URL environment variable
+bun generate-types  # Requires DATABASE_URL environment variable
 ```
 
 **Note:** Type generation is NOT run automatically during builds to avoid requiring database access at build time. Types are pre-generated and committed to the repository.
