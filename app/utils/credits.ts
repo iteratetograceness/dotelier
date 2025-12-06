@@ -49,7 +49,6 @@ class Credits {
         externalId: userId,
       })
       const meters = result.activeMeters
-      console.log(meters)
       const meter = meters.find((m) => m.meterId === this.meterId)
 
       if (!meter) return 0

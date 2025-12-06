@@ -51,8 +51,6 @@ export async function savePixel({
         version: newVersion,
       })
     } catch (error) {
-      console.log('[savePixel] Failed to insert pixel version: ', error)
-
       after(async () => {
         try {
           await maybeDeleteUpload
@@ -72,7 +70,6 @@ export async function savePixel({
 
     return { success: true, fileKey: newFileKey }
   } catch (error) {
-    console.log('[savePixel] Error: ', error)
     return { error: ERROR_CODES.UNEXPECTED_ERROR, success: false }
   }
 }

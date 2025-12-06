@@ -89,7 +89,17 @@ async function _getExplorePagePixels(page = 1, limit = PAGE_SIZE) {
   const offset = (page - 1) * limit
   return db
     .selectFrom('pixel')
-    .select(['pixel.id', 'pixel.prompt'])
+    .leftJoin('pixelVersion', (join) =>
+      join
+        .onRef('pixel.id', '=', 'pixelVersion.pixelId')
+        .on('pixelVersion.isCurrent', '=', true)
+    )
+    .select([
+      'pixel.id',
+      'pixel.prompt',
+      'pixelVersion.fileKey',
+      'pixelVersion.version',
+    ])
     .where('pixel.showExplore', '=', true)
     .orderBy('pixel.createdAt', 'desc')
     .limit(limit)
@@ -103,8 +113,8 @@ async function _isExplorePagePixel(pixelId: string): Promise<boolean> {
     .selectFrom('pixel')
     .select(['pixel.showExplore'])
     .where('pixel.id', '=', pixelId)
-    .executeTakeFirstOrThrow()
-  return pixel.showExplore
+    .executeTakeFirst()
+  return pixel?.showExplore ?? false
 }
 async function _isPixelOwner(
   pixelId: string,
