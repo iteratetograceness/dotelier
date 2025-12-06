@@ -20,10 +20,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  reactCompiler: true,
   experimental: {
-    ppr: true,
     cacheComponents: true,
-    reactCompiler: true,
   },
 }
 

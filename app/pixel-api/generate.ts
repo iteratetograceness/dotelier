@@ -116,8 +116,8 @@ export async function generatePixelIcon({
       })
     )
 
-    revalidateTag(`getLatestPixelIds:${userId}`)
-    revalidateTag(`pixel:${id}`)
+    revalidateTag(`getLatestPixelIds:${userId}`, { expire: 0 })
+    revalidateTag(`pixel:${id}`, { expire: 0 })
 
     return {
       result: parsedData.data,
