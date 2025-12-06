@@ -92,9 +92,13 @@ export function Carousel({ children }: { children: React.ReactNode }) {
   }, [emblaApi, setCarousel])
 
   return (
-    <section className='embla w-screen m-auto' dir='rtl'>
+    <section className='embla w-screen' dir='rtl'>
       <div className='flex w-full items-center justify-center pb-4' dir='ltr'>
-        <Button disabled={!canScrollLeft} onClick={scrollToLeft}>
+        <Button
+          aria-label='Go to previous canvas'
+          disabled={!canScrollLeft}
+          onClick={scrollToLeft}
+        >
           {'<'}
         </Button>
         <Button
@@ -104,7 +108,11 @@ export function Carousel({ children }: { children: React.ReactNode }) {
         >
           +
         </Button>
-        <Button onClick={scrollToRight} disabled={currentIndex === 0}>
+        <Button
+          aria-label='Go to next canvas'
+          onClick={scrollToRight}
+          disabled={currentIndex === 0}
+        >
           {'>'}
         </Button>
       </div>
