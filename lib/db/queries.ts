@@ -50,7 +50,7 @@ const _startPostProcessing = async ({
 }) => {
   const result = await db
     .insertInto('postProcessing')
-    .values({ pixelId, pngOriginalFileKey: fileKey })
+    .values({ id: uuidv4(), pixelId, pngOriginalFileKey: fileKey })
     .returning('id')
     .executeTakeFirst()
 
@@ -273,7 +273,7 @@ async function _insertPixelVersion({
 
     const newRow = await tx
       .insertInto('pixelVersion')
-      .values({ pixelId, fileKey, isCurrent: true, version })
+      .values({ id: uuidv4(), pixelId, fileKey, isCurrent: true, version })
       .returning('id')
       .executeTakeFirstOrThrow()
 
