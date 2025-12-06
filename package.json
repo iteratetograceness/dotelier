@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "prebuild": "bun generate-types",
     "start": "next start",
     "lint": "next lint",
     "generate-types": "kysely-codegen --dialect postgres",
@@ -17,7 +16,7 @@
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
     "@polar-sh/better-auth": "^1.1.4",
-    "@polar-sh/sdk": "^0.34.17",
+    "@polar-sh/sdk": "^0.40.2",
     "@tailwindcss/postcss": "^4.1.13",
     "@upstash/redis": "^1.35.4",
     "@vercel/analytics": "^1.5.0",

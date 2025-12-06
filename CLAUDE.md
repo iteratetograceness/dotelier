@@ -2,15 +2,35 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Package Manager
+
+**This project uses [Bun](https://bun.sh) as the primary package manager.**
+- Lock file: `bun.lock` (committed to version control)
+- Config: `bunfig.toml`
+- Install: `bun install`
+
+npm commands are supported for compatibility, but `bun` is preferred.
+
 ## Development Commands
 
 - **Development**: `bun dev` (uses Turbopack for faster builds)
-- **Build**: `bun build` (runs `generate-types` automatically via prebuild)
+- **Build**: `bun build` (production build)
 - **Type Check**: `bun type-check` (TypeScript check without emit)
 - **Lint**: `bun lint` (Next.js ESLint)
-- **Generate Types**: `bun generate-types` (Kysely database types from Postgres)
+- **Generate Types**: `bun generate-types` (Kysely database types from Postgres - requires DATABASE_URL)
 - **Unused Code**: `bun knip` (finds unused exports and dependencies)
 - **Debug Memory**: `bun debug` (Next.js build with memory debugging)
+
+### Type Generation
+
+The project uses `kysely-codegen` to generate TypeScript types from the PostgreSQL database schema. The generated types are defined in `kysely-codegen.d.ts` and should be committed to version control.
+
+**To regenerate types after schema changes:**
+```bash
+bun generate-types  # Requires DATABASE_URL environment variable
+```
+
+**Note:** Type generation is NOT run automatically during builds to avoid requiring database access at build time. Types are pre-generated and committed to the repository.
 
 ## Architecture Overview
 

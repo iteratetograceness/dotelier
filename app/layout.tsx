@@ -9,6 +9,8 @@ import { ErrorHandler } from './utils/error-handler'
 const tiny5 = Tiny5({
   subsets: ['latin'],
   weight: ['400'],
+  display: 'swap',
+  fallback: ['monospace'],
 })
 
 export const metadata: Metadata = {
