@@ -86,6 +86,12 @@ function NewPixelInput({ className }: { className?: string }) {
           name='prompt'
           placeholder='a weeping computer'
           required
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              formRef.current?.requestSubmit()
+            }
+          }}
         />
         <div className='flex items-center'>
           <Credits
