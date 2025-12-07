@@ -743,7 +743,8 @@ export async function processImage({
         const width = croppedMat.cols
         const height = croppedMat.rows
         const channels = croppedMat.channels()
-        const matStep = croppedMat.step1() // bytes per row in Mat
+        // step[0] is bytes per row in Mat (includes any padding)
+        const matStep = croppedMat.step[0]
         const imgDataStep = width * channels // bytes per row in ImageData
 
         const outData = new Uint8ClampedArray(width * height * channels)
