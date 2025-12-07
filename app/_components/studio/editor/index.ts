@@ -211,6 +211,128 @@ export class PixelEditor {
     this.renderer.toggleGrid()
   }
 
+  public getGridSize(): number {
+    return this.gridSize
+  }
+
+  /**
+   * Resize the editor grid to a new size.
+   * This recreates all internal data structures for the new size.
+   */
+  public resizeGrid(newSize: number): void {
+    if (newSize === this.gridSize) return
+
+    console.log(`[resizeGrid] Resizing from ${this.gridSize} to ${newSize}`)
+
+    this.gridSize = newSize
+
+    // Create new pixel data array
+    this.pixelData = new Uint8ClampedArray(newSize * newSize * 4)
+
+    // Update renderers
+    this.renderer.setGridSize(newSize)
+    this.previewRenderer.setGridSize(newSize)
+
+    // Update tool manager with new grid size and pixel data
+    this.toolManager.setGridSize(newSize, this.pixelData)
+
+    // Reset history with new pixel data
+    this.history = new HistoryManager(this.pixelData, this.onHistoryChange)
+
+    // Update renderer's pixel data reference
+    this.renderer.pixelData = this.pixelData
+
+    console.log(`[resizeGrid] Resize complete`)
+  }
+
+  /**
+   * Load an image using unfake's processImage for pixel grid conversion.
+   * This uses advanced scale detection and downscaling algorithms.
+   * Dynamically resizes the grid to match unfake's output.
+   */
+  public async loadImageWithUnfake(imageUrl: string): Promise<void> {
+    console.log('[loadImageWithUnfake] Starting for:', imageUrl)
+
+    // Fetch the image as a blob
+    const response = await fetch(imageUrl)
+    const blob = await response.blob()
+
+    // If SVG, use loadSVG2
+    if (blob.type === 'image/svg+xml') {
+      await this.loadSVG2(imageUrl)
+      return
+    }
+
+    const file = new File([blob], 'image.png', { type: blob.type })
+
+    console.log(
+      '[loadImageWithUnfake] Fetched image, size:',
+      file.size,
+      'bytes'
+    )
+
+    // Dynamic import to avoid bundling OpenCV at build time
+    const { processImage } = await import('@/lib/unfake')
+
+    console.log('[loadImageWithUnfake] Processing with unfake...')
+
+    const result = await processImage({
+      file,
+      maxColors: 32,
+      // autoColorCount: true,
+      downscaleMethod: 'dominant',
+      cleanup: { morph: false, jaggy: true },
+      alphaThreshold: 128,
+      snapGrid: true,
+    })
+
+    console.log('[loadImageWithUnfake] Processing complete!')
+    console.log(
+      '[loadImageWithUnfake] Result size:',
+      result.imageData.width,
+      'x',
+      result.imageData.height
+    )
+    console.log('[loadImageWithUnfake] Palette colors:', result.palette.length)
+
+    const { imageData } = result
+    const srcWidth = imageData.width
+    const srcHeight = imageData.height
+
+    // Resize the grid to match unfake's output size
+    const newGridSize = Math.max(srcWidth, srcHeight)
+    this.resizeGrid(newGridSize)
+
+    console.log('[loadImageWithUnfake] Grid resized to:', newGridSize)
+
+    // Copy pixels directly from unfake output to editor grid
+    // Center the image if it's not square
+    const offsetX = Math.floor((newGridSize - srcWidth) / 2)
+    const offsetY = Math.floor((newGridSize - srcHeight) / 2)
+
+    for (let y = 0; y < srcHeight; y++) {
+      for (let x = 0; x < srcWidth; x++) {
+        const srcIdx = (y * srcWidth + x) * 4
+        const r = imageData.data[srcIdx]
+        const g = imageData.data[srcIdx + 1]
+        const b = imageData.data[srcIdx + 2]
+        const a = imageData.data[srcIdx + 3]
+
+        // Only set pixels with visible alpha
+        if (a > 10) {
+          this.setPixel(x + offsetX, y + offsetY, [r, g, b, a])
+        }
+      }
+    }
+
+    this.renderer.pixelData = this.pixelData
+    this.renderer.startRenderLoop()
+    this.history.startAction()
+    this.history.endAction()
+
+    console.log('[loadImageWithUnfake] Grid mapping complete!')
+  }
+
   public async loadSVG2(svgUrl: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const svgImage = new Image()

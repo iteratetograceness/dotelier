@@ -1,5 +1,5 @@
-import cvModule, { type CV } from '@techstark/opencv-js'
-import SVD from 'svd-js'
+import type { CV, Mat } from '@techstark/opencv-js'
+import { SVD } from 'svd-js'
 import {
   alphaBinarization,
   countColors,
@@ -20,7 +20,7 @@ import {
   quantizeImage,
   TrackFn,
   withCv,
-} from './utils.js'
+} from './utils'
 
 /**
  * Detects pixel art scale by analyzing color run lengths. This method is very reliable for "clean" pixel art with uniform block sizes.
@@ -149,13 +149,9 @@ export async function edgeAwareDetect(imgData: ImageData): Promise<number> {
 
 /**
  * Helper to perform edge detection on a single region of a grayscale cv.Mat.
- * @param {cv.Mat} grayMat - The single-channel grayscale image matrix.
- * @param {cv} cv - The OpenCV instance.
- * @param {function} track - The memory tracker.
- * @returns {Promise<number>} Detected scale.
  */
 async function singleRegionEdgeDetect(
-  grayMat: cvModule.Mat,
+  grayMat: Mat,
   cv: CV,
   track: TrackFn
 ): Promise<number> {
@@ -192,7 +188,7 @@ async function singleRegionEdgeDetect(
  * Generates a gradient profile for a given matrix.
  */
 function getProfile(
-  mat: cvModule.Mat,
+  mat: Mat,
   direction: 'horizontal' | 'vertical',
   cv: CV,
   track: TrackFn
@@ -321,16 +317,19 @@ export function downscaleByDominantColor(
 
 /**
  * The core content-adaptive downscaling algorithm.
- * This function now processes an OpenCV Mat in Lab color space.
+ * This function processes an OpenCV Mat in Lab color space.
+ *
+ * Modified for pixel art: Uses dominant color selection instead of weighted
+ * averaging to preserve discrete color palettes.
  */
 function _contentAdaptiveCore(
-  srcLab: cvModule.Mat,
+  srcLab: Mat,
   targetW: number,
   targetH: number,
   cv: CV,
   track: TrackFn
-): cvModule.Mat {
-  const NUM_ITERATIONS = 5
+): Mat {
+  const NUM_ITERATIONS = 3 // Reduced iterations - we only need position refinement
 
   const { cols: wi, rows: hi } = srcLab
   const wo = targetW,
@@ -338,21 +337,27 @@ function _contentAdaptiveCore(
   const rx = wi / wo,
     ry = hi / ho
 
-  // According to the paper "Content-Adaptive Image Downscaling", the clamping
-  // of singular values should be adaptive to the scaling ratio `r`.
   const r_avg = (rx + ry) / 2.0
   const min_singular_value = 0.5
   const max_singular_value = Math.max(1.0, 0.5 * r_avg)
 
-  let labPlanes = track(new cv.MatVector())
+  const labPlanes = track(new cv.MatVector())
   cv.split(srcLab, labPlanes)
   const L_plane = track(labPlanes.get(0))
   const a_plane = track(labPlanes.get(1))
   const b_plane = track(labPlanes.get(2))
 
-  let mu_k = [],
-    Sigma_k = [],
-    nu_k = []
+  // Pre-extract all Lab values for faster access
+  const labValues: Array<[number, number, number]> = new Array(wi * hi)
+  for (let i = 0; i < wi * hi; i++) {
+    labValues[i] = [L_plane.data32F[i], a_plane.data32F[i], b_plane.data32F[i]]
+  }
+
+  // Typed arrays for better performance
+  const numKernels = wo * ho
+  const mu_k: Array<[number, number]> = new Array(numKernels)
+  const Sigma_k: Array<[number, number, number, number]> = new Array(numKernels)
+  const nu_k: Array<[number, number, number]> = new Array(numKernels)
 
   // Initialization
   for (let yk = 0; yk < ho; yk++) {
@@ -362,22 +367,24 @@ function _contentAdaptiveCore(
       const initial_sx = (rx / 3) * (rx / 3)
       const initial_sy = (ry / 3) * (ry / 3)
       Sigma_k[k_idx] = [initial_sx, 0, 0, initial_sy]
-      // Initialize with a neutral color (gray)
       nu_k[k_idx] = [50.0, 0.0, 0.0]
     }
   }
 
-  // EM-C Iterations
+  // EM-C Iterations (for position refinement only)
   for (let iter = 0; iter < NUM_ITERATIONS; iter++) {
     // E-Step
     const gamma_sum_per_pixel = new Float32Array(wi * hi).fill(1e-9)
-    let w_ki = new Array(wo * ho).fill(0).map(() => new Map())
+    const w_ki: Array<Map<number, number>> = new Array(numKernels)
+    for (let k = 0; k < numKernels; k++) {
+      w_ki[k] = new Map()
+    }
 
-    for (let k = 0; k < wo * ho; k++) {
+    for (let k = 0; k < numKernels; k++) {
       const [s0, s1, s2, s3] = Sigma_k[k]
       const det = s0 * s3 - s1 * s2
       const inv_det = 1.0 / (det + 1e-9)
-      const sigma_inv = [
+      const sigma_inv: [number, number, number, number] = [
         s3 * inv_det,
         -s1 * inv_det,
         -s2 * inv_det,
@@ -414,15 +421,18 @@ function _contentAdaptiveCore(
       }
     }
 
-    // M-Step
-    let next_mu_k = new Array(wo * ho)
-    let next_Sigma_k = new Array(wo * ho)
-    let next_nu_k = new Array(wo * ho)
+    // M-Step with dominant color selection for pixel art
+    const next_mu_k: Array<[number, number]> = new Array(numKernels)
+    const next_Sigma_k: Array<[number, number, number, number]> = new Array(numKernels)
+    const next_nu_k: Array<[number, number, number]> = new Array(numKernels)
 
-    for (let k = 0; k < wo * ho; k++) {
+    for (let k = 0; k < numKernels; k++) {
       let w_sum = 1e-9
-      let new_mu = [0, 0]
-      let new_nu = [0, 0, 0]
+      let new_mu: [number, number] = [0, 0]
+
+      // Collect weighted colors for this kernel
+      const colorWeights = new Map<string, { weight: number; lab: [number, number, number] }>()
+
       for (const [i, wk] of w_ki[k].entries()) {
         const gamma_k_i = wk / gamma_sum_per_pixel[i]
         w_sum += gamma_k_i
@@ -430,19 +440,39 @@ function _contentAdaptiveCore(
         const xi = i % wi
         new_mu[0] += gamma_k_i * xi
         new_mu[1] += gamma_k_i * yi
-        new_nu[0] += gamma_k_i * L_plane.data32F[i]
-        new_nu[1] += gamma_k_i * a_plane.data32F[i]
-        new_nu[2] += gamma_k_i * b_plane.data32F[i]
+
+        // Quantize Lab values to find distinct colors (bin by ~5 units in each channel)
+        const lab = labValues[i]
+        const binL = Math.round(lab[0] / 5) * 5
+        const binA = Math.round(lab[1] / 5) * 5
+        const binB = Math.round(lab[2] / 5) * 5
+        const colorKey = `${binL},${binA},${binB}`
+
+        const existing = colorWeights.get(colorKey)
+        if (existing) {
+          existing.weight += gamma_k_i
+        } else {
+          colorWeights.set(colorKey, { weight: gamma_k_i, lab: [...lab] })
+        }
       }
+
       new_mu[0] /= w_sum
       new_mu[1] /= w_sum
-      new_nu[0] /= w_sum
-      new_nu[1] /= w_sum
-      new_nu[2] /= w_sum
       next_mu_k[k] = new_mu
-      next_nu_k[k] = new_nu
 
-      let new_Sigma_arr = [0, 0, 0, 0]
+      // Select dominant color instead of averaging
+      let dominantColor: [number, number, number] = [50, 0, 0]
+      let maxWeight = 0
+      for (const { weight, lab } of colorWeights.values()) {
+        if (weight > maxWeight) {
+          maxWeight = weight
+          dominantColor = lab
+        }
+      }
+      next_nu_k[k] = dominantColor
+
+      // Compute covariance for position (unchanged)
+      let new_Sigma_arr: [number, number, number, number] = [0, 0, 0, 0]
       for (const [i, wk] of w_ki[k].entries()) {
         const gamma_k_i = wk / gamma_sum_per_pixel[i]
         const yi = Math.floor(i / wi)
@@ -461,7 +491,7 @@ function _contentAdaptiveCore(
     }
 
     // C-Step (Clamping)
-    for (let k = 0; k < wo * ho; k++) {
+    for (let k = 0; k < numKernels; k++) {
       const sigma_arr = next_Sigma_k[k]
       const sigma_mat2d = [
         [sigma_arr[0], sigma_arr[1]],
@@ -470,9 +500,6 @@ function _contentAdaptiveCore(
 
       const { u, q, v } = SVD(sigma_mat2d)
 
-      // Clamp singular values according to the paper's recommendation [0.5, max(1.0, 0.5*r)].
-      // This prevents excessive blurring by adapting kernel sizes to the scale factor,
-      // replacing the previous fixed small values.
       q[0] = Math.max(min_singular_value, Math.min(q[0], max_singular_value))
       q[1] = Math.max(min_singular_value, Math.min(q[1], max_singular_value))
 
@@ -488,7 +515,7 @@ function _contentAdaptiveCore(
       const temp = multiply2x2(u, s_diag)
       const new_sigma_mat2d = multiply2x2(temp, v_t)
 
-      const final_sigma = [
+      const final_sigma: [number, number, number, number] = [
         new_sigma_mat2d[0][0],
         new_sigma_mat2d[0][1],
         new_sigma_mat2d[1][0],
@@ -805,7 +832,7 @@ export async function processImage({
   }
 
   // 7. Encode to PNG
-  const png = await encodePng(current)
+  const png = encodePng(current)
   const palette = getPaletteFromImage(current)
 
   // Generate processing manifest
