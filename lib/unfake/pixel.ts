@@ -738,12 +738,33 @@ export async function processImage({
         const rect = new cv.Rect(crop.x, crop.y, newWidth, newHeight)
         const croppedMat = track(srcMat.roi(rect).clone())
 
-        // Convert Mat directly to ImageData (Web Worker compatible - no DOM needed)
-        current = new ImageData(
-          new Uint8ClampedArray(croppedMat.data),
-          croppedMat.cols,
-          croppedMat.rows
-        )
+        // Convert Mat to ImageData (Web Worker compatible)
+        // Mat data may have row padding, so we need to copy row-by-row
+        const width = croppedMat.cols
+        const height = croppedMat.rows
+        const channels = croppedMat.channels()
+        const matStep = croppedMat.step1() // bytes per row in Mat
+        const imgDataStep = width * channels // bytes per row in ImageData
+
+        const outData = new Uint8ClampedArray(width * height * channels)
+        const matData = croppedMat.data
+
+        if (matStep === imgDataStep) {
+          // No padding, direct copy
+          outData.set(matData.subarray(0, outData.length))
+        } else {
+          // Copy row by row to handle padding
+          for (let y = 0; y < height; y++) {
+            const matRowStart = y * matStep
+            const outRowStart = y * imgDataStep
+            outData.set(
+              matData.subarray(matRowStart, matRowStart + imgDataStep),
+              outRowStart
+            )
+          }
+        }
+
+        current = new ImageData(outData, width, height)
       }
     })
   }
