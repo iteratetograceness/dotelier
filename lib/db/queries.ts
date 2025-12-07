@@ -2,7 +2,8 @@
 
 import { LatestPixelVersion } from '@/app/swr/use-pixel-version'
 import { SelectExpression } from 'kysely'
-import { DB, PostProcessingStatus } from 'kysely-codegen'
+import { DB } from 'kysely-codegen'
+import { PostProcessingStatus } from '@/lib/constants'
 import { cacheTag } from 'next/cache'
 import { cache } from 'react'
 import { v4 as uuidv4 } from 'uuid'

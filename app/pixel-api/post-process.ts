@@ -4,6 +4,7 @@ import {
   insertPixelVersion,
   updatePostProcessingStatus,
 } from '@/lib/db/queries'
+import { PostProcessingStatus } from '@/lib/constants'
 import { replicate } from '@/lib/replicate'
 import { getPublicPixelAsset } from '@/lib/ut/client'
 import { uploadApi } from '@/lib/ut/server'
@@ -63,7 +64,7 @@ export async function postProcessPixelIcon({
       removeBackground(fileKey),
       updatePostProcessingStatus({
         pixelId,
-        status: 'background_removal',
+        status: PostProcessingStatus.BACKGROUND_REMOVAL,
       }),
     ])
 
@@ -71,7 +72,7 @@ export async function postProcessPixelIcon({
       after(async () => {
         await updatePostProcessingStatus({
           pixelId,
-          status: 'background_removal_failed',
+          status: PostProcessingStatus.BACKGROUND_REMOVAL_FAILED,
           completedAt: new Date(),
           errorMessage: removedBackground.error,
         })
@@ -101,7 +102,7 @@ export async function postProcessPixelIcon({
       after(async () => {
         await updatePostProcessingStatus({
           pixelId,
-          status: 'background_removal_failed',
+          status: PostProcessingStatus.BACKGROUND_REMOVAL_FAILED,
           completedAt: new Date(),
           errorMessage: String(error),
         })
@@ -120,7 +121,7 @@ export async function postProcessPixelIcon({
       }),
       updatePostProcessingStatus({
         pixelId,
-        status: 'completed',
+        status: PostProcessingStatus.COMPLETED,
         completedAt: new Date(),
       }),
     ])
