@@ -10,16 +10,6 @@ const nextConfig: NextConfig = {
       crypto: { browser: './lib/unfake/empty.ts' },
     },
   },
-  webpack: (config) => {
-    // Required for @techstark/opencv-js in browser
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      path: false,
-      crypto: false,
-    }
-    return config
-  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
