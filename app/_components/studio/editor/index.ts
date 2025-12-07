@@ -1,3 +1,4 @@
+import { toProcessImageParams, type UnfakeSettings } from '@/lib/unfake/types'
 import { HistoryManager } from './history'
 import { getQuantizer } from './quant'
 import { Color, PixelRenderer } from './renderer'
@@ -250,7 +251,10 @@ export class PixelEditor {
    * This uses advanced scale detection and downscaling algorithms.
    * Dynamically resizes the grid to match unfake's output.
    */
-  public async loadImageWithUnfake(imageUrl: string): Promise<void> {
+  public async loadImageWithUnfake(
+    imageUrl: string,
+    settings?: Partial<UnfakeSettings>
+  ): Promise<void> {
     console.log('[loadImageWithUnfake] Starting for:', imageUrl)
 
     // Fetch the image as a blob
@@ -272,18 +276,19 @@ export class PixelEditor {
     )
 
     // Dynamic import to avoid bundling OpenCV at build time
-    const { processImage } = await import('@/lib/unfake')
+    const { processImage, DEFAULT_UNFAKE_SETTINGS } = await import(
+      '@/lib/unfake'
+    )
 
     console.log('[loadImageWithUnfake] Processing with unfake...')
 
+    // Merge default settings with provided settings
+    const mergedSettings = { ...DEFAULT_UNFAKE_SETTINGS, ...settings }
+    const processParams = toProcessImageParams(mergedSettings)
+
     const result = await processImage({
       file,
-      maxColors: 32,
-      // autoColorCount: true,
-      downscaleMethod: 'dominant',
-      cleanup: { morph: false, jaggy: true },
-      alphaThreshold: 128,
-      snapGrid: true,
+      ...processParams,
     })
 
     console.log('[loadImageWithUnfake] Processing complete!')

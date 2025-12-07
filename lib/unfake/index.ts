@@ -2,6 +2,11 @@
 
 import { processImage } from './pixel'
 import {
+  DEFAULT_UNFAKE_SETTINGS,
+  toProcessImageParams,
+  type UnfakeSettings,
+} from './types'
+import {
   countColors,
   cvReady,
   detectScale,
@@ -23,6 +28,7 @@ import { vectorizeImage } from './vector'
 export {
   countColors,
   cvReady,
+  DEFAULT_UNFAKE_SETTINGS,
   detectScale,
   dominantOrMean,
   downscaleBlock,
@@ -36,8 +42,12 @@ export {
   mode,
   morphologicalCleanup,
   processImage,
+  toProcessImageParams,
   vectorizeImage,
 }
+
+// Re-export types
+export type { UnfakeSettings }
 
 // Default export with all functions
 export default {

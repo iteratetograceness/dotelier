@@ -6,6 +6,10 @@ import {
 } from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
 import { Pixel } from '@/lib/db/types'
+import {
+  DEFAULT_UNFAKE_SETTINGS,
+  type UnfakeSettings,
+} from '@/lib/unfake/types'
 import { track } from '@vercel/analytics/react'
 import Image from 'next/image'
 import { Tooltip } from 'radix-ui'
@@ -31,6 +35,7 @@ import { Color } from '../editor/renderer'
 import { ToolName } from '../editor/tool'
 import { HtmlCanvasRef, HtmlCanvasWithRef } from '../html-canvas'
 import { PenSize } from '../pen-size'
+import { UnfakeSettingsPanel } from '../unfake-settings'
 import { savePixel } from './save'
 
 export function Canvas({
@@ -48,6 +53,7 @@ export function Canvas({
   const editorRef = useRef<HtmlCanvasRef>(null)
   const [activeTool, setActiveTool] = useState<ToolName>('pen')
   const [isSaving, startTransition] = useTransition()
+  const [isProcessing, startProcessing] = useTransition()
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [rgbaColor, setRgbaColor] = useState<RgbaColor>({
     r: 0,
@@ -56,6 +62,9 @@ export function Canvas({
     a: 1,
   })
   const [isEyeDropperActive, startEyeDropper] = useTransition()
+  const [unfakeSettings, setUnfakeSettings] = useState<UnfakeSettings>(
+    DEFAULT_UNFAKE_SETTINGS
+  )
 
   const onColorChange = useCallback((color: RgbaColor) => {
     const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
@@ -92,14 +101,28 @@ export function Canvas({
   }, [])
 
   const disableActions = useMemo(
-    () => isSaving || !pixelVersion || isEyeDropperActive,
-    [isSaving, pixelVersion, isEyeDropperActive]
+    () => isSaving || !pixelVersion || isEyeDropperActive || isProcessing,
+    [isSaving, pixelVersion, isEyeDropperActive, isProcessing]
   )
 
   const onHistoryChange = useCallback(() => {
     const hasChanges = editorRef.current?.getEditor()?.hasUnsavedChanges()
     setHasUnsavedChanges(hasChanges || false)
   }, [])
+
+  const onReprocess = useCallback(() => {
+    startProcessing(async () => {
+      try {
+        await editorRef.current?.reprocessImage(unfakeSettings)
+        toast.success('Image reprocessed!')
+      } catch (error) {
+        toast.error('Failed to reprocess image')
+        track('reprocess-error', {
+          error: JSON.stringify(error),
+        })
+      }
+    })
+  }, [unfakeSettings])
 
   return (
     <div id={`canvas-${pixel.id}`} className={cn(sharedClasses, 'h-fit')}>
@@ -401,6 +424,14 @@ export function Canvas({
             </div>
           </Tooltip.Provider>
         </div>
+
+        <UnfakeSettingsPanel
+          settings={unfakeSettings}
+          onChange={setUnfakeSettings}
+          onReprocess={onReprocess}
+          disabled={disableActions}
+          isProcessing={isProcessing}
+        />
 
         {hasUnsavedChanges && (
           <p className='bg-background pixel-corners text-center text-xs py-0.5'>

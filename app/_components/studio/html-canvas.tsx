@@ -1,9 +1,11 @@
 'use client'
 
 import { getPublicPixelAsset } from '@/lib/ut/client'
+import { type UnfakeSettings } from '@/lib/unfake/types'
 import {
   memo,
   Ref,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -16,11 +18,13 @@ interface HtmlCanvasProps {
   fileKey: string
   gridSize: number
   onHistoryChange: () => void
+  unfakeSettings?: UnfakeSettings
 }
 
 export interface HtmlCanvasRef {
   getEditor: () => PixelEditor | null
   getCanvas: () => HTMLCanvasElement | null
+  reprocessImage: (settings: UnfakeSettings) => Promise<void>
 }
 
 export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
@@ -29,20 +33,42 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
   fileKey,
   gridSize,
   onHistoryChange,
+  unfakeSettings,
 }: HtmlCanvasProps & { ref: Ref<HtmlCanvasRef> }) {
   const url = getPublicPixelAsset(fileKey)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const editorRef = useRef<PixelEditor | null>(null)
+  const urlRef = useRef<string | null>(null)
   const [error, setError] = useState<string>()
+
+  // Store URL for reprocessing
+  urlRef.current = url
+
+  const reprocessImage = useCallback(
+    async (settings: UnfakeSettings) => {
+      const editor = editorRef.current
+      const currentUrl = urlRef.current
+      if (!editor || !currentUrl) return
+
+      setError(undefined)
+      try {
+        await editor.loadImageWithUnfake(currentUrl, settings)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Reprocessing failed')
+      }
+    },
+    []
+  )
 
   useImperativeHandle(
     ref,
     () => ({
       getEditor: () => editorRef.current,
       getCanvas: () => canvasRef.current,
+      reprocessImage,
     }),
-    []
+    [reprocessImage]
   )
 
   useEffect(() => {
@@ -68,7 +94,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
     editorRef.current = editor
 
     if (url) {
-      editor.loadImageWithUnfake(url).catch((error) => {
+      editor.loadImageWithUnfake(url, unfakeSettings).catch((error) => {
         setError(error.message)
       })
     }
@@ -77,7 +103,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
       editorRef.current?.destroy()
       editorRef.current = null
     }
-  }, [onHistoryChange, url, gridSize])
+  }, [onHistoryChange, url, gridSize, unfakeSettings])
 
   return error ? (
     <div className='size-full flex items-center justify-center'>
