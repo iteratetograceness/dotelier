@@ -64,6 +64,22 @@ export class ToolManager {
     }
   }
 
+  public setGridSize(size: number, pixelData: Uint8ClampedArray) {
+    this.gridSize = size
+    this.pixelData = pixelData
+    // Recreate current tool with new grid size
+    this.setTool(this.currentToolName)
+  }
+
+  private get currentToolName(): ToolName {
+    for (const [name, ToolClass] of Object.entries(ToolRegistry)) {
+      if (this.tool instanceof ToolClass) {
+        return name as ToolName
+      }
+    }
+    return 'pen'
+  }
+
   public setToolSize(size: number) {
     this.toolSize = Math.min(Math.max(size, 1), MAX_TOOL_SIZE)
     this.tool.updateToolSize(this.toolSize)

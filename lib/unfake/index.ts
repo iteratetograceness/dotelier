@@ -1,6 +1,6 @@
 // https://github.com/jenissimo/unfake.js
 
-import { processImage } from './pixel.js'
+import { processImage } from './pixel'
 import {
   countColors,
   cvReady,
@@ -16,8 +16,8 @@ import {
   median,
   mode,
   morphologicalCleanup,
-} from './utils.js'
-import { vectorizeImage } from './vector.js'
+} from './utils'
+import { vectorizeImage } from './vector'
 
 // Re-export all functions
 export {

@@ -116,6 +116,7 @@ export function Canvas({
           <HtmlCanvasWithRef
             id={pixel.id}
             fileKey={pixelVersion.fileKey}
+            gridSize={pixelVersion.gridSize}
             ref={editorRef}
             onHistoryChange={onHistoryChange}
           />
@@ -370,11 +371,15 @@ export function Canvas({
                         return
                       }
 
+                      const gridSize =
+                        editorRef.current?.getEditor()?.getGridSize() ?? 32
+
                       await savePixel({
                         id: pixel.id,
                         version: pixelVersion?.version,
                         oldFileKey: pixelVersion?.fileKey,
                         svgContent,
+                        gridSize,
                       })
 
                       editorRef.current?.getEditor()?.resetHistory()

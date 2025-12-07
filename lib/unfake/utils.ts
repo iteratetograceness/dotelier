@@ -8,35 +8,28 @@ const MAX_FILE_SIZE_MB = 50
  * image manipulation, color quantization, and mathematical calculations.
  */
 
-import cvModule, { type CV } from '@techstark/opencv-js'
+import cvModule, { type CV, type Mat } from '@techstark/opencv-js'
 import * as IQ from 'image-q'
-import UPNG from './UPNG.js'
+import UPNG from 'upng-js'
 
 // --- OpenCV Integration ------------------------------------------------------
 
-let cvInstance: CV | null = null
-let cvPromise: Promise<CV> | null = null
+async function getOpenCv() {
+  let cv: CV
 
-async function getOpenCv(): Promise<CV> {
-  if (cvInstance) return cvInstance
-
-  if (!cvPromise) {
-    cvPromise = (async () => {
-      if (cvModule instanceof Promise) {
-        cvInstance = await cvModule
-      } else if (cvModule.Mat) {
-        cvInstance = cvModule
-      } else {
-        await new Promise<void>((resolve) => {
-          cvModule.onRuntimeInitialized = resolve
-        })
-        cvInstance = cvModule
-      }
-      return cvInstance!
-    })()
+  if (cvModule instanceof Promise) {
+    cv = await cvModule
+  } else {
+    if (cvModule.Mat) {
+      cv = cvModule
+    } else {
+      await new Promise((resolve) => {
+        cvModule.onRuntimeInitialized = () => resolve(true)
+      })
+      cv = cvModule
+    }
   }
-
-  return cvPromise
+  return { cv }
 }
 
 export type TrackFn = <T extends { delete: () => void }>(mat: T) => T
@@ -48,7 +41,7 @@ export type TrackFn = <T extends { delete: () => void }>(mat: T) => T
 export async function withCv<T>(
   fn: (cv: CV, track: TrackFn) => Promise<T> | T
 ): Promise<T> {
-  const cv = await getOpenCv()
+  const { cv } = await getOpenCv()
   const mats = new Set<{ delete: () => void; isDeleted?: () => boolean }>()
 
   const track: TrackFn = (mat) => {
@@ -90,6 +83,7 @@ export async function fileToImageData(file: File | Blob): Promise<ImageData> {
       setTimeout(() => reject(new Error('Image loading timeout')), 30000)
     ),
   ])
+  console.log(bitmap)
 
   const isImageBitmap = bitmap instanceof ImageBitmap
 
@@ -510,7 +504,7 @@ export function detectScale(signal: number[]): number {
  * Finds the optimal crop offset to align an image with a pixel grid.
  */
 export function findOptimalCrop(
-  grayMat: cvModule.Mat,
+  grayMat: Mat,
   scale: number,
   cv: CV
 ): { x: number; y: number } {

@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
+    "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -44,6 +45,7 @@
     "swr": "^2.3.6",
     "tailwindcss": "^4.1.13",
     "uploadthing": "^7.7.4",
+    "upng-js": "^2.1.0",
     "uuid": "^11.1.0",
     "zod": "^4.1.11",
     "zustand": "^5.0.8"
@@ -57,6 +59,7 @@
     "@types/node": "^24.5.2",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
+    "@types/upng-js": "^2.1.5",
     "embla-carousel": "^8.6.0",
     "eslint": "^9.36.0",
     "eslint-config-next": "16.0.7",

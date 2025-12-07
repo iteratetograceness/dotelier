@@ -21,6 +21,8 @@ export async function generatePixelIcon({
   | {
       result: PixelApiResponse
       id: string
+      noBgPngUrl: string
+      noBgFileKey: string
       success: true
     }
   | {
@@ -100,21 +102,21 @@ export async function generatePixelIcon({
       throw new Error('Invalid response')
     }
 
-    const postProcessingPromise = postProcessPixelIcon({
+    // Start post-processing record in DB
+    await startPostProcessing({
       pixelId,
       fileKey: parsedData.data.images[0].fileKey,
     })
 
-    const startPostProcessingPromise = startPostProcessing({
+    // Run background removal and wait for result (need URL for client-side vectorization)
+    const postProcessResult = await postProcessPixelIcon({
       pixelId,
       fileKey: parsedData.data.images[0].fileKey,
     })
 
-    after(async () =>
-      startPostProcessingPromise.then(async () => {
-        await postProcessingPromise
-      })
-    )
+    if (!postProcessResult.success) {
+      throw new Error(postProcessResult.error)
+    }
 
     revalidateTag(`getLatestPixelIds:${userId}`, { expire: 0 })
     revalidateTag(`pixel:${id}`, { expire: 0 })
@@ -122,6 +124,8 @@ export async function generatePixelIcon({
     return {
       result: parsedData.data,
       id: pixelId,
+      noBgPngUrl: postProcessResult.noBgPngUrl,
+      noBgFileKey: postProcessResult.noBgFileKey,
       success: true,
     }
   } catch (error) {

@@ -40,6 +40,19 @@ export class PixelRenderer {
     return this._pixelData
   }
 
+  public setGridSize(newSize: number): void {
+    this.gridSize = newSize
+    this._gridSize = newSize
+    this.gridItemSize = this.canvas.height / newSize
+    this.offscreen.width = newSize
+    this.offscreen.height = newSize
+    this.markDirty()
+  }
+
+  public getGridSize(): number {
+    return this.gridSize
+  }
+
   private markDirty() {
     this.needsRedraw = true
   }

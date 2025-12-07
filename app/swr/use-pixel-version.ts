@@ -5,6 +5,7 @@ export interface LatestPixelVersion {
   id: string
   fileKey: string
   version: number
+  gridSize: number
 }
 
 export function usePixelVersion({
