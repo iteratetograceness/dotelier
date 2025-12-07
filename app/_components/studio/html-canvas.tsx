@@ -14,6 +14,7 @@ import { DEFAULT_SIZE, GRID_ITEM_SIZE, PixelEditor } from './editor'
 interface HtmlCanvasProps {
   id: string
   fileKey: string
+  gridSize: number
   onHistoryChange: () => void
 }
 
@@ -26,6 +27,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
   id,
   ref,
   fileKey,
+  gridSize,
   onHistoryChange,
 }: HtmlCanvasProps & { ref: Ref<HtmlCanvasRef> }) {
   const url = getPublicPixelAsset(fileKey)
@@ -48,7 +50,9 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
 
     const canvas = canvasRef.current
     const previewCanvas = previewCanvasRef.current
-    const size = DEFAULT_SIZE * GRID_ITEM_SIZE
+    // Use gridSize from DB, defaulting to DEFAULT_SIZE for backwards compatibility
+    const effectiveGridSize = gridSize || DEFAULT_SIZE
+    const size = effectiveGridSize * GRID_ITEM_SIZE
     canvas.width = size
     canvas.height = size
     previewCanvas.width = size
@@ -57,14 +61,14 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
     const editor = new PixelEditor(
       canvas,
       previewCanvas,
-      undefined,
+      effectiveGridSize,
       onHistoryChange
     )
 
     editorRef.current = editor
 
     if (url) {
-      editor.loadSVG2(url).catch((error) => {
+      editor.loadImageWithUnfake(url).catch((error) => {
         setError(error.message)
       })
     }
@@ -73,7 +77,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
       editorRef.current?.destroy()
       editorRef.current = null
     }
-  }, [onHistoryChange, url])
+  }, [onHistoryChange, url, gridSize])
 
   return error ? (
     <div className='size-full flex items-center justify-center'>

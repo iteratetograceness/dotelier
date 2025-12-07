@@ -9,6 +9,7 @@ interface NewCanvasState {
   result?: PixelApiResponse
   error?: string
   id: string
+  noBgPngUrl?: string
 }
 
 type NewCanvasActions = {
@@ -25,19 +26,42 @@ export const useNewCanvas = create<NewCanvasState & NewCanvasActions>(
     id: '',
     error: '',
     startGeneration: async (prompt: string) => {
-      set({ status: 'generating', prompt })
-      const result = await generatePixelIcon({ prompt })
+      try {
+        // Generate image + remove background + save pixel version (all server-side)
+        // The editor will use unfake's processImage client-side for scale detection & downscaling
+        set({ status: 'generating', prompt })
+        const generateResult = await generatePixelIcon({ prompt })
 
-      if (result.success) {
-        set({ status: 'post-processing', result: result.result, id: result.id })
-      } else {
-        const error = getError(result.error)
-        set({ status: 'error', error })
+        if (!generateResult.success) {
+          const error = getError(generateResult.error)
+          set({ status: 'error', error })
+          return
+        }
+
+        set({
+          status: 'completed',
+          result: generateResult.result,
+          id: generateResult.id,
+          noBgPngUrl: generateResult.noBgPngUrl,
+        })
+      } catch (error) {
+        console.error('[startGeneration] Error:', error)
+        set({
+          status: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
       }
     },
     setStatus: (status: NewCanvasState['status']) => set({ status }),
     setId: (id: string) => set({ id }),
     reset: () =>
-      set({ status: 'idle', prompt: '', result: undefined, id: '', error: '' }),
+      set({
+        status: 'idle',
+        prompt: '',
+        result: undefined,
+        id: '',
+        error: '',
+        noBgPngUrl: undefined,
+      }),
   })
 )

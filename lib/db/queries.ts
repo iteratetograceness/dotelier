@@ -2,7 +2,8 @@
 
 import { LatestPixelVersion } from '@/app/swr/use-pixel-version'
 import { SelectExpression } from 'kysely'
-import { DB, PostProcessingStatus } from 'kysely-codegen'
+import { DB } from 'kysely-codegen'
+import { PostProcessingStatus } from '@/lib/constants'
 import { cacheTag } from 'next/cache'
 import { cache } from 'react'
 import { v4 as uuidv4 } from 'uuid'
@@ -135,12 +136,24 @@ async function _getLatestPixelVersion(
 ): Promise<LatestPixelVersion | undefined> {
   'use cache'
   cacheTag(`pixel:${pixelId}`)
-  return db
+  const result = await db
     .selectFrom('pixelVersion')
-    .select(['pixelVersion.id', 'pixelVersion.fileKey', 'pixelVersion.version'])
+    .select([
+      'pixelVersion.id',
+      'pixelVersion.fileKey',
+      'pixelVersion.version',
+      'pixelVersion.gridSize',
+    ])
     .where('pixelVersion.pixelId', '=', pixelId)
     .where('pixelVersion.isCurrent', '=', true)
     .executeTakeFirst()
+
+  if (!result) return undefined
+
+  return {
+    ...result,
+    gridSize: result.gridSize ?? 32, // Default to 32 for backwards compatibility
+  }
 }
 async function _getPixelsMetadataByOwner({
   page = 1,
@@ -266,10 +279,12 @@ async function _insertPixelVersion({
   pixelId,
   fileKey,
   version = 0,
+  gridSize = 32,
 }: {
   pixelId: string
   fileKey: string
   version?: number
+  gridSize?: number
 }) {
   return db.transaction().execute(async (tx) => {
     const prevProw = version
@@ -283,7 +298,7 @@ async function _insertPixelVersion({
 
     const newRow = await tx
       .insertInto('pixelVersion')
-      .values({ id: uuidv4(), pixelId, fileKey, isCurrent: true, version })
+      .values({ id: uuidv4(), pixelId, fileKey, isCurrent: true, version, gridSize })
       .returning('id')
       .executeTakeFirstOrThrow()
 

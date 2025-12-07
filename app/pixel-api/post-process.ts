@@ -4,12 +4,11 @@ import {
   insertPixelVersion,
   updatePostProcessingStatus,
 } from '@/lib/db/queries'
+import { PostProcessingStatus } from '@/lib/constants'
 import { replicate } from '@/lib/replicate'
 import { getPublicPixelAsset } from '@/lib/ut/client'
 import { uploadApi } from '@/lib/ut/server'
-import { revalidateTag } from 'next/cache'
 import { after } from 'next/server'
-import { z } from 'zod'
 
 async function removeBackground(fileKey: string) {
   try {
@@ -46,66 +45,26 @@ async function removeBackground(fileKey: string) {
   }
 }
 
-const RecraftResponseSchema = z.object({
-  image: z.object({
-    b64_json: z.string(),
-  }),
-})
-
-async function convertToSvg(blob: Blob) {
-  const formData = new FormData()
-  formData.append('file', blob, 'image.png')
-  formData.append('response_format', 'b64_json')
-
-  const response = await fetch(
-    'https://external.api.recraft.ai/v1/images/vectorize',
-    {
-      method: 'POST',
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${process.env.RECRAFT_API_KEY}`,
-      },
-    }
-  )
-
-  if (!response.ok) {
-    const error = await response.text()
-    return {
-      blob: null,
-      error,
-    }
-  }
-
-  const data = await response.json()
-
-  const parsedData = RecraftResponseSchema.safeParse(data)
-
-  if (!parsedData.success) {
-    return {
-      blob: null,
-      error: parsedData.error.message,
-    }
-  }
-
-  const svgString = atob(parsedData.data.image.b64_json)
-  const svgBlob = new Blob([svgString], { type: 'image/svg+xml' })
-
-  return { blob: svgBlob }
-}
-
+/**
+ * Removes background from a pixel icon and uploads the result.
+ * Returns the URL of the no-background PNG for client-side vectorization.
+ */
 export async function postProcessPixelIcon({
   pixelId,
   fileKey,
 }: {
   pixelId: string
   fileKey: string
-}) {
+}): Promise<
+  | { success: true; noBgPngUrl: string; noBgFileKey: string }
+  | { success: false; error: string }
+> {
   try {
     const [removedBackground] = await Promise.all([
       removeBackground(fileKey),
       updatePostProcessingStatus({
         pixelId,
-        status: 'background_removal',
+        status: PostProcessingStatus.BACKGROUND_REMOVAL,
       }),
     ])
 
@@ -113,12 +72,15 @@ export async function postProcessPixelIcon({
       after(async () => {
         await updatePostProcessingStatus({
           pixelId,
-          status: 'background_removal_failed',
+          status: PostProcessingStatus.BACKGROUND_REMOVAL_FAILED,
           completedAt: new Date(),
           errorMessage: removedBackground.error,
         })
       })
-      throw new Error('Failed to remove background')
+      return {
+        success: false,
+        error: removedBackground.error ?? 'Failed to remove background',
+      }
     }
 
     const removedBackgroundFile = new File(
@@ -129,65 +91,47 @@ export async function postProcessPixelIcon({
       }
     )
 
-    const [vectorized, noBgUpload] = await Promise.all([
-      convertToSvg(removedBackground.blob),
-      uploadApi.uploadFiles([removedBackgroundFile]),
-      updatePostProcessingStatus({
-        pixelId,
-        status: 'convert_to_svg',
-      }),
-    ])
+    const noBgUpload = await uploadApi.uploadFiles([removedBackgroundFile])
 
     if (!noBgUpload.length || noBgUpload[0].error) {
+      const error = noBgUpload[0]?.error ?? 'Failed to upload no-background PNG'
       console.error(
-        '[postProcessPixelIcon] Failed to upload no-background PNG: ',
-        noBgUpload[0].error
+        '[postProcessPixelIcon] Failed to upload no-background PNG:',
+        error
       )
-    }
-
-    if (!vectorized.blob) {
       after(async () => {
         await updatePostProcessingStatus({
           pixelId,
-          status: 'convert_to_svg_failed',
+          status: PostProcessingStatus.BACKGROUND_REMOVAL_FAILED,
           completedAt: new Date(),
-          errorMessage: vectorized.error,
+          errorMessage: String(error),
         })
       })
-      throw new Error('Failed to convert to SVG')
+      return { success: false, error: String(error) }
     }
 
-    const svgFile = new File([vectorized.blob], `${pixelId}.svg`, {
-      type: 'image/svg+xml',
-    })
+    const noBgFileKey = noBgUpload[0].data.key
+    const noBgPngUrl = getPublicPixelAsset(noBgFileKey)
 
-    after(async () => {
-      await Promise.all([
-        updatePostProcessingStatus({
-          pixelId,
-          status: 'completed',
-          completedAt: new Date(),
-        }),
-        uploadApi.uploadFiles([svgFile]).then((files) => {
-          if (files[0].error) {
-            console.error(
-              '[postProcessPixelIcon] Failed to upload SVG: ',
-              files[0].error
-            )
-          } else {
-            return insertPixelVersion({
-              pixelId,
-              fileKey: files[0].data.key,
-            })
-          }
-        }),
-      ])
-    })
+    // Save as pixel version and mark post-processing complete
+    await Promise.all([
+      insertPixelVersion({
+        pixelId,
+        fileKey: noBgFileKey,
+      }),
+      updatePostProcessingStatus({
+        pixelId,
+        status: PostProcessingStatus.COMPLETED,
+        completedAt: new Date(),
+      }),
+    ])
 
-    revalidateTag(`pixel:${pixelId}`, { expire: 0 })
-    return { success: true }
+    return { success: true, noBgPngUrl, noBgFileKey }
   } catch (error) {
     console.error('[postProcessPixelIcon] Error: ', error)
-    return { success: false }
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
   }
 }

@@ -12,11 +12,13 @@ export async function savePixel({
   oldFileKey,
   version,
   svgContent,
+  gridSize,
 }: {
   id: string
   version: number
   oldFileKey: string
   svgContent: string
+  gridSize: number
 }) {
   try {
     const authorized = await authorizeRequest()
@@ -49,6 +51,7 @@ export async function savePixel({
         pixelId: id,
         fileKey: newFileKey,
         version: newVersion,
+        gridSize,
       })
     } catch (error) {
       after(async () => {

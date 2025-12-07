@@ -1,6 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['@techstark/opencv-js'],
+  turbopack: {
+    resolveAlias: {
+      // Required for @techstark/opencv-js in browser - provide empty stubs
+      fs: { browser: './lib/unfake/empty.ts' },
+      path: { browser: './lib/unfake/empty.ts' },
+      crypto: { browser: './lib/unfake/empty.ts' },
+    },
+  },
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
