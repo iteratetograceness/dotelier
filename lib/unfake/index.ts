@@ -19,6 +19,11 @@ import {
 } from './utils'
 import { vectorizeImage } from './vector'
 
+// Re-export worker manager (for Web Worker-based processing)
+export { unfakeWorker, UnfakeWorkerManager } from './worker-manager'
+export type { ProcessResult } from './worker-manager'
+export type { ProcessImageOptions } from './worker'
+
 // Re-export all functions
 export {
   countColors,

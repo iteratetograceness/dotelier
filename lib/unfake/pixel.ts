@@ -738,14 +738,12 @@ export async function processImage({
         const rect = new cv.Rect(crop.x, crop.y, newWidth, newHeight)
         const croppedMat = track(srcMat.roi(rect).clone())
 
-        // Convert back to ImageData
-        const canvas = document.createElement('canvas') // document.createElement is fine for this utility
-        canvas.width = croppedMat.cols
-        canvas.height = croppedMat.rows
-        cv.imshow(canvas, croppedMat)
-        current = canvas
-          ?.getContext('2d', { willReadFrequently: true })
-          ?.getImageData(0, 0, croppedMat.cols, croppedMat.rows)!
+        // Convert Mat directly to ImageData (Web Worker compatible - no DOM needed)
+        current = new ImageData(
+          new Uint8ClampedArray(croppedMat.data),
+          croppedMat.cols,
+          croppedMat.rows
+        )
       }
     })
   }

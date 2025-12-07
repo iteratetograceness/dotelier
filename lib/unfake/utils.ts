@@ -1,5 +1,3 @@
-'use client'
-
 const MAX_FILE_SIZE_MB = 50
 
 /**
@@ -93,18 +91,12 @@ export async function fileToImageData(
     throw new Error('Failed to load image')
   }
 
-  const canvas =
-    typeof OffscreenCanvas !== 'undefined'
-      ? new OffscreenCanvas(bitmap.width, bitmap.height)
-      : document.createElement('canvas')
-
-  const isOffscreenCanvas = canvas instanceof OffscreenCanvas
-
-  if (!isOffscreenCanvas) {
-    canvas.width = bitmap.width
-    canvas.height = bitmap.height
+  // OffscreenCanvas is required for Web Worker compatibility
+  if (typeof OffscreenCanvas === 'undefined') {
+    throw new Error('OffscreenCanvas required for image processing')
   }
 
+  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height)
   const ctx = canvas.getContext('2d', {
     willReadFrequently: true,
   }) as OffscreenCanvasRenderingContext2D | null

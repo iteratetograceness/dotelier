@@ -249,6 +249,8 @@ export class PixelEditor {
    * Load an image using unfake's processImage for pixel grid conversion.
    * This uses advanced scale detection and downscaling algorithms.
    * Dynamically resizes the grid to match unfake's output.
+   *
+   * Processing runs in a Web Worker to keep the UI responsive.
    */
   public async loadImageWithUnfake(imageUrl: string): Promise<void> {
     console.log('[loadImageWithUnfake] Starting for:', imageUrl)
@@ -263,23 +265,19 @@ export class PixelEditor {
       return
     }
 
-    const file = new File([blob], 'image.png', { type: blob.type })
-
     console.log(
       '[loadImageWithUnfake] Fetched image, size:',
-      file.size,
+      blob.size,
       'bytes'
     )
 
-    // Dynamic import to avoid bundling OpenCV at build time
-    const { processImage } = await import('@/lib/unfake')
+    // Use Web Worker for non-blocking image processing
+    const { unfakeWorker } = await import('@/lib/unfake/worker-manager')
 
-    console.log('[loadImageWithUnfake] Processing with unfake...')
+    console.log('[loadImageWithUnfake] Processing with unfake worker...')
 
-    const result = await processImage({
-      file,
+    const result = await unfakeWorker.process(blob, {
       maxColors: 32,
-      // autoColorCount: true,
       downscaleMethod: 'dominant',
       cleanup: { morph: false, jaggy: true },
       alphaThreshold: 128,
