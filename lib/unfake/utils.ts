@@ -68,7 +68,9 @@ export const cvReady = getOpenCv
 /**
  * Reads a user-supplied File/Blob into an ImageData object
  */
-export async function fileToImageData(file: File | Blob): Promise<ImageData> {
+export async function fileToImageData(
+  file: File | Blob
+): Promise<ImageData | undefined> {
   if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
     throw new Error(
       `File too large: ${(file.size / 1024 / 1024).toFixed(
@@ -103,12 +105,11 @@ export async function fileToImageData(file: File | Blob): Promise<ImageData> {
     canvas.height = bitmap.height
   }
 
-  const ctx: OffscreenCanvasRenderingContext2D | RenderingContext | null =
-    canvas.getContext('2d', { willReadFrequently: true })
+  const ctx = canvas.getContext('2d', {
+    willReadFrequently: true,
+  }) as OffscreenCanvasRenderingContext2D | null
 
-  // @ts-expect-error - drawImage is not available on ImageBitmapRenderingContext
   ctx?.drawImage(bitmap, 0, 0)
-  // @ts-expect-error - drawImage is not available on ImageBitmapRenderingContext
   return ctx?.getImageData(0, 0, canvas.width, canvas.height)
 }
 

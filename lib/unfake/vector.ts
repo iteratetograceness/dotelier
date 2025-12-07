@@ -245,6 +245,10 @@ export async function vectorizeImage({
   // 1. Get ImageData from file
   let imgData = await fileToImageData(file)
 
+  if (!imgData) {
+    throw new Error('No image data returned from fileToImageData')
+  }
+
   // NEW: If image has transparency, apply a temporary solid background *before* any processing.
   // This prevents all kinds of artifacts on the edges during filtering and quantization.
   if (hasTransparency(imgData)) {

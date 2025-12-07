@@ -662,7 +662,12 @@ export async function processImage({
   if (!file) throw new Error('No file provided.')
 
   const t0 = performance.now()
-  let current: ImageData = await fileToImageData(file)
+  const imgData = await fileToImageData(file)
+
+  if (!imgData) throw new Error('No image data return from fileToImageData')
+
+  let current = imgData
+
   const originalSize: [number, number] = [current.width, current.height]
 
   if (
