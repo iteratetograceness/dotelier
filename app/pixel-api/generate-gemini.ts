@@ -82,6 +82,9 @@ export async function generateWithGemini({
       contents: [{ role: 'user', parts }],
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
+        imageConfig: {
+          aspectRatio: '1:1',
+        },
       },
     }),
     GENERATION_TIMEOUT_MS
