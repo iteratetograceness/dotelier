@@ -1,8 +1,14 @@
+import {
+  DEFAULT_GRID_SETTINGS,
+  GridSettings,
+} from '@/app/swr/use-pixel-version'
 import { HistoryManager } from './history'
 import { getQuantizer } from './quant'
 import { Color, PixelRenderer } from './renderer'
 import { ToolManager, ToolName } from './tool'
 import { analyzeGridCell, findDominantColor } from './utils'
+
+export type { GridSettings }
 
 export const DEFAULT_SIZE = 32
 export const GRID_ITEM_SIZE = 12
@@ -16,6 +22,8 @@ export class PixelEditor {
   private color: Color = [0, 0, 0, 255]
   private history: HistoryManager
   private isDrawing = false
+  private currentImageUrl: string | null = null
+  private currentGridSettings: GridSettings = DEFAULT_GRID_SETTINGS
 
   private handlers = {
     mouseDown: (e: MouseEvent) => {
@@ -250,8 +258,16 @@ export class PixelEditor {
    * This uses advanced scale detection and downscaling algorithms.
    * Dynamically resizes the grid to match unfake's output.
    */
-  public async loadImageWithUnfake(imageUrl: string): Promise<void> {
+  public async loadImageWithUnfake(
+    imageUrl: string,
+    settings: GridSettings = DEFAULT_GRID_SETTINGS
+  ): Promise<void> {
     console.log('[loadImageWithUnfake] Starting for:', imageUrl)
+    console.log('[loadImageWithUnfake] Settings:', settings)
+
+    // Store current image URL and settings for reloading
+    this.currentImageUrl = imageUrl
+    this.currentGridSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
 
     // Fetch the image as a blob
     const response = await fetch(imageUrl)
@@ -259,7 +275,7 @@ export class PixelEditor {
 
     // If SVG, use loadSVG2
     if (blob.type === 'image/svg+xml') {
-      await this.loadSVG2(imageUrl)
+      await this.loadSVG2(imageUrl, settings)
       return
     }
 
@@ -276,14 +292,18 @@ export class PixelEditor {
 
     console.log('[loadImageWithUnfake] Processing with unfake...')
 
+    const mergedSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
     const result = await processImage({
       file,
-      maxColors: 32,
-      // autoColorCount: true,
-      downscaleMethod: 'dominant',
-      cleanup: { morph: false, jaggy: true },
-      alphaThreshold: 128,
-      snapGrid: true,
+      maxColors: mergedSettings.maxColors ?? 32,
+      downscaleMethod: mergedSettings.downscaleMethod ?? 'dominant',
+      cleanup: {
+        morph: mergedSettings.cleanup?.morph ?? false,
+        jaggy: mergedSettings.cleanup?.jaggy ?? true,
+      },
+      alphaThreshold: mergedSettings.alphaThreshold ?? 128,
+      snapGrid: mergedSettings.snapGrid ?? true,
+      maxGridSize: this.gridSize,
     })
 
     console.log('[loadImageWithUnfake] Processing complete!')
@@ -333,7 +353,16 @@ export class PixelEditor {
     console.log('[loadImageWithUnfake] Grid mapping complete!')
   }
 
-  public async loadSVG2(svgUrl: string): Promise<void> {
+  public async loadSVG2(
+    svgUrl: string,
+    settings: GridSettings = DEFAULT_GRID_SETTINGS
+  ): Promise<void> {
+    // Store current image URL and settings for reloading
+    this.currentImageUrl = svgUrl
+    this.currentGridSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
+
+    const mergedSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
+
     return new Promise((resolve, reject) => {
       const svgImage = new Image()
       svgImage.crossOrigin = 'anonymous'
@@ -374,6 +403,8 @@ export class PixelEditor {
         tempCtx.putImageData(quantizedImageData, 0, 0)
 
         const svgPixelSize = resizeResolution / this.gridSize
+        const alphaThreshold = mergedSettings.alphaThreshold ?? 200
+        const fillThreshold = mergedSettings.fillThreshold ?? 61
 
         for (let x = 0; x < this.gridSize; x++) {
           for (let y = 0; y < this.gridSize; y++) {
@@ -382,12 +413,12 @@ export class PixelEditor {
               startX: x * svgPixelSize,
               startY: y * svgPixelSize,
               regionSize: svgPixelSize,
-              alphaThreshold: 200,
+              alphaThreshold,
               quantizedData: quantized,
             })
 
             const filledPercentage = (filledPixels / totalPixels) * 100
-            if (filledPercentage < 61) continue
+            if (filledPercentage < fillThreshold) continue
 
             const dominantColor = findDominantColor(colorMap)
 
@@ -455,5 +486,78 @@ export class PixelEditor {
 
   public hasUnsavedChanges(): boolean {
     return this.canUndo()
+  }
+
+  /**
+   * Extract all unique colors currently used in the pixel grid.
+   * Returns an array of [r, g, b, a] color tuples sorted by frequency.
+   */
+  public getPalette(): Color[] {
+    const colorMap = new Map<string, { color: Color; count: number }>()
+
+    for (let y = 0; y < this.gridSize; y++) {
+      for (let x = 0; x < this.gridSize; x++) {
+        const idx = (y * this.gridSize + x) * 4
+        const r = this.pixelData[idx]
+        const g = this.pixelData[idx + 1]
+        const b = this.pixelData[idx + 2]
+        const a = this.pixelData[idx + 3]
+
+        // Skip transparent pixels
+        if (a < 10) continue
+
+        const key = `${r},${g},${b},${a}`
+        const existing = colorMap.get(key)
+        if (existing) {
+          existing.count++
+        } else {
+          colorMap.set(key, { color: [r, g, b, a], count: 1 })
+        }
+      }
+    }
+
+    // Sort by frequency (most used first) and return colors
+    return Array.from(colorMap.values())
+      .sort((a, b) => b.count - a.count)
+      .map((entry) => entry.color)
+  }
+
+  /**
+   * Get the current grid settings used for image processing.
+   */
+  public getGridSettings(): GridSettings {
+    return { ...this.currentGridSettings }
+  }
+
+  /**
+   * Reload the current image with new grid settings.
+   * This will re-process the image from scratch.
+   */
+  public async reloadWithSettings(settings: GridSettings): Promise<void> {
+    if (!this.currentImageUrl) {
+      console.warn('[reloadWithSettings] No image URL stored, cannot reload')
+      return
+    }
+
+    console.log('[reloadWithSettings] Reloading with settings:', settings)
+    await this.loadImageWithUnfake(this.currentImageUrl, settings)
+  }
+
+  /**
+   * Update the grid size and reload the image.
+   * This is a convenience method that combines resizing with reloading.
+   */
+  public async setGridSizeAndReload(newSize: number): Promise<void> {
+    if (newSize === this.gridSize && this.currentImageUrl) {
+      // Just reload with current settings
+      await this.reloadWithSettings(this.currentGridSettings)
+      return
+    }
+
+    this.resizeGrid(newSize)
+
+    if (this.currentImageUrl) {
+      await this.loadImageWithUnfake(this.currentImageUrl, this.currentGridSettings)
+    }
   }
 }

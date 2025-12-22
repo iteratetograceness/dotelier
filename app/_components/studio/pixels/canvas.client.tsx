@@ -1,6 +1,8 @@
 'use client'
 
 import {
+  DEFAULT_GRID_SETTINGS,
+  GridSettings,
   LatestPixelVersion,
   usePixelVersion,
 } from '@/app/swr/use-pixel-version'
@@ -31,7 +33,9 @@ import { GrooveDivider } from '../divider'
 import { DownloadButton } from '../download-button'
 import { Color } from '../editor/renderer'
 import { ToolName } from '../editor/tool'
+import { GridSettingsPanel } from '../grid-settings'
 import { HtmlCanvasRef, HtmlCanvasWithRef } from '../html-canvas'
+import { Palette } from '../palette'
 import { PenSize } from '../pen-size'
 import { savePixel } from './save'
 
@@ -58,8 +62,26 @@ export function Canvas({
     a: 1,
   })
   const [isEyeDropperActive, setIsEyeDropperActive] = useState(false)
+  const [isReprocessing, setIsReprocessing] = useState(false)
+  const [gridSettings, setGridSettings] = useState<GridSettings>(
+    pixelVersion?.gridSettings ?? DEFAULT_GRID_SETTINGS
+  )
+  const [currentGridSize, setCurrentGridSize] = useState(
+    pixelVersion?.gridSize ?? 32
+  )
+  const [palette, setPalette] = useState<Array<[number, number, number, number]>>([])
   const pathname = usePathname()
   const isOnPixelPage = pathname === `/p/${pixel.id}`
+
+  // Sync grid settings when pixel version changes
+  useEffect(() => {
+    if (pixelVersion?.gridSettings) {
+      setGridSettings(pixelVersion.gridSettings)
+    }
+    if (pixelVersion?.gridSize) {
+      setCurrentGridSize(pixelVersion.gridSize)
+    }
+  }, [pixelVersion?.gridSettings, pixelVersion?.gridSize])
 
   const onColorChange = useCallback((color: RgbaColor) => {
     const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
@@ -159,10 +181,55 @@ export function Canvas({
     [isSaving, pixelVersion, isEyeDropperActive]
   )
 
+  const refreshPalette = useCallback(() => {
+    const colors = editorRef.current?.getEditor()?.getPalette()
+    if (colors) {
+      setPalette(colors as Array<[number, number, number, number]>)
+    }
+  }, [])
+
   const onHistoryChange = useCallback(() => {
     const hasChanges = editorRef.current?.getEditor()?.hasUnsavedChanges()
     setHasUnsavedChanges(hasChanges || false)
-  }, [])
+    // Update palette when canvas changes
+    refreshPalette()
+  }, [refreshPalette])
+
+  const onGridSettingsChange = useCallback(
+    async (newSettings: GridSettings) => {
+      setGridSettings(newSettings)
+      setIsReprocessing(true)
+      try {
+        await editorRef.current?.getEditor()?.reloadWithSettings(newSettings)
+        setHasUnsavedChanges(true)
+        refreshPalette()
+      } catch (error) {
+        console.error('Failed to reprocess with new settings:', error)
+        toast.error('Failed to apply settings')
+      } finally {
+        setIsReprocessing(false)
+      }
+    },
+    [refreshPalette]
+  )
+
+  const onGridSizeChange = useCallback(
+    async (newSize: number) => {
+      setCurrentGridSize(newSize)
+      setIsReprocessing(true)
+      try {
+        await editorRef.current?.getEditor()?.setGridSizeAndReload(newSize)
+        setHasUnsavedChanges(true)
+        refreshPalette()
+      } catch (error) {
+        console.error('Failed to change grid size:', error)
+        toast.error('Failed to change grid size')
+      } finally {
+        setIsReprocessing(false)
+      }
+    },
+    [refreshPalette]
+  )
 
   return (
     <div id={`canvas-${pixel.id}`} className={cn(sharedClasses, 'h-fit')}>
@@ -172,7 +239,7 @@ export function Canvas({
           'flex items-center justify-center',
           'border-3 border-shadow border-r-background border-b-background',
           'aspect-square bg-white',
-          'w-full h-auto md:h-full md:w-auto '
+          'w-full h-auto md:w-auto md:self-start'
         )}
       >
         {pixelVersion?.fileKey ? (
@@ -180,6 +247,7 @@ export function Canvas({
             id={pixel.id}
             fileKey={pixelVersion.fileKey}
             gridSize={pixelVersion.gridSize}
+            gridSettings={pixelVersion.gridSettings}
             ref={editorRef}
             onHistoryChange={onHistoryChange}
           />
@@ -451,15 +519,18 @@ export function Canvas({
                         return
                       }
 
-                      const gridSize =
+                      const currentGridSize =
                         editorRef.current?.getEditor()?.getGridSize() ?? 32
+                      const currentSettings =
+                        editorRef.current?.getEditor()?.getGridSettings()
 
                       await savePixel({
                         id: pixel.id,
                         version: pixelVersion?.version,
                         oldFileKey: pixelVersion?.fileKey,
                         svgContent,
-                        gridSize,
+                        gridSize: currentGridSize,
+                        gridSettings: currentSettings,
                       })
 
                       editorRef.current?.getEditor()?.resetHistory()
@@ -482,7 +553,30 @@ export function Canvas({
           </Tooltip.Provider>
         </div>
 
-        {hasUnsavedChanges && (
+        {/* Palette */}
+        <Palette
+          colors={palette}
+          selectedColor={rgbaColor}
+          onColorSelect={onColorChange}
+          disabled={disableActions}
+        />
+
+        {/* Grid Settings Panel */}
+        <GridSettingsPanel
+          settings={gridSettings}
+          gridSize={currentGridSize}
+          onSettingsChange={onGridSettingsChange}
+          onGridSizeChange={onGridSizeChange}
+          disabled={disableActions || isReprocessing}
+        />
+
+        {isReprocessing && (
+          <p className='bg-background pixel-corners text-center text-xs py-0.5 animate-pulse'>
+            Reprocessing...
+          </p>
+        )}
+
+        {hasUnsavedChanges && !isReprocessing && (
           <p className='bg-background pixel-corners text-center text-xs py-0.5'>
             You have unsaved changes
           </p>

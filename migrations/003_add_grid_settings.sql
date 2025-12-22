@@ -1,0 +1,13 @@
+-- Add gridSettings column to pixelVersion table for storing processing options
+-- gridSize remains as a separate column for backwards compatibility and easy querying
+--
+-- gridSettings stores additional processing options as JSONB:
+-- {
+--   "downscaleMethod": "dominant" | "median" | "mode" | "mean" | "nearest" | "content-adaptive",
+--   "maxColors": 32,
+--   "alphaThreshold": 128,
+--   "fillThreshold": 61,
+--   "snapGrid": true,
+--   "cleanup": { "morph": false, "jaggy": true }
+-- }
+ALTER TABLE "pixelVersion" ADD COLUMN "gridSettings" JSONB DEFAULT NULL;
