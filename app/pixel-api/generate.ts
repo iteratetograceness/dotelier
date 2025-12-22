@@ -8,15 +8,18 @@ import { headers } from 'next/headers'
 import { after } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { credits } from '../utils/credits'
+import { generateWithGemini } from './generate-gemini'
 import { postProcessPixelIcon } from './post-process'
-import { PixelApiResponse, PixelApiResponseSchema } from './types'
+import { ModelType, PixelApiResponse, PixelApiResponseSchema } from './types'
 
 export async function generatePixelIcon({
   prompt,
   id,
+  model = 'flux',
 }: {
   prompt: string
   id?: string
+  model?: ModelType
 }): Promise<
   | {
       result: PixelApiResponse
@@ -74,44 +77,69 @@ export async function generatePixelIcon({
 
     pixelCreated = true
 
-    const response = await fetch(process.env.PIXEL_API_ENDPOINT!, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.MODAL_AUTH_TOKEN}`,
-        'Content-Type': 'application/json',
-        'X-Auth-JWT': jwt,
-        Origin: headersList.get('Origin') ?? 'https://dotelier.studio',
-      },
-      body: JSON.stringify({
-        prompt,
-        pixel_id: pixelId,
-      }),
-    })
+    let generatedData: PixelApiResponse
 
-    if (!response.ok) {
-      const error = await response.text()
-      throw new Error(error)
-    }
+    // 90 second timeout for image generation
+    const GENERATION_TIMEOUT_MS = 90_000
 
-    const data = await response.json()
+    if (model === 'gemini') {
+      // Generate with Gemini using reference images
+      generatedData = await generateWithGemini({ prompt, pixelId })
+    } else {
+      // Generate with FLUX via Modal
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS)
 
-    const parsedData = PixelApiResponseSchema.safeParse(data)
+      try {
+        const response = await fetch(process.env.PIXEL_API_ENDPOINT!, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.MODAL_AUTH_TOKEN}`,
+            'Content-Type': 'application/json',
+            'X-Auth-JWT': jwt,
+            Origin: headersList.get('Origin') ?? 'https://dotelier.studio',
+          },
+          body: JSON.stringify({
+            prompt,
+            pixel_id: pixelId,
+          }),
+          signal: controller.signal,
+        })
 
-    if (!parsedData.success) {
-      console.error('[generatePixelIcon] Invalid response: ', data)
-      throw new Error('Invalid response')
+        if (!response.ok) {
+          const error = await response.text()
+          throw new Error(error)
+        }
+
+        const data = await response.json()
+        const parsedData = PixelApiResponseSchema.safeParse(data)
+
+        if (!parsedData.success) {
+          console.error('[generatePixelIcon] Invalid response: ', data)
+          throw new Error('Invalid response')
+        }
+
+        generatedData = parsedData.data
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('Image generation timed out')
+        }
+        throw error
+      } finally {
+        clearTimeout(timeoutId)
+      }
     }
 
     // Start post-processing record in DB
     await startPostProcessing({
       pixelId,
-      fileKey: parsedData.data.images[0].fileKey,
+      fileKey: generatedData.images[0].fileKey,
     })
 
     // Run background removal and wait for result (need URL for client-side vectorization)
     const postProcessResult = await postProcessPixelIcon({
       pixelId,
-      fileKey: parsedData.data.images[0].fileKey,
+      fileKey: generatedData.images[0].fileKey,
     })
 
     if (!postProcessResult.success) {
@@ -122,7 +150,7 @@ export async function generatePixelIcon({
     revalidateTag(`pixel:${id}`, { expire: 0 })
 
     return {
-      result: parsedData.data,
+      result: generatedData,
       id: pixelId,
       noBgPngUrl: postProcessResult.noBgPngUrl,
       noBgFileKey: postProcessResult.noBgFileKey,

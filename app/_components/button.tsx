@@ -114,6 +114,7 @@ export function ButtonLink({
   className,
   variant = 'primary',
   isPressed = false,
+  iconOnly = false,
   href,
   ...props
 }: ButtonLinkProps) {
@@ -127,9 +128,10 @@ export function ButtonLink({
       className={cn(
         variants[variant],
         base,
-        !isDisabled && animation,
-        !isDisabled && isPressed && pressed,
-        isDisabled && disabled,
+        !isDisabled && animation[variant],
+        !isDisabled && isPressed && pressed[variant],
+        isDisabled && disabled[variant],
+        iconOnly && icon,
         className
       )}
       onClick={isDisabled ? (e) => e.preventDefault() : undefined}

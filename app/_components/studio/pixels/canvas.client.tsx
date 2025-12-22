@@ -4,10 +4,12 @@ import {
   LatestPixelVersion,
   usePixelVersion,
 } from '@/app/swr/use-pixel-version'
+import { ExpandIcon } from '@/app/icons/expand'
 import { cn } from '@/app/utils/classnames'
 import { Pixel } from '@/lib/db/types'
 import { track } from '@vercel/analytics/react'
 import Image from 'next/image'
+import { usePathname } from 'next/navigation'
 import { Tooltip } from 'radix-ui'
 import {
   use,
@@ -20,7 +22,7 @@ import {
 } from 'react'
 import { RgbaColor } from 'react-colorful'
 import { toast } from 'sonner'
-import { Button } from '../../button'
+import { Button, ButtonLink } from '../../button'
 import { openEyeDropper } from '../../eye-dropper'
 import { Pill } from '../../pill'
 import ColorPicker, { hexToRgba } from '../color-picker'
@@ -55,7 +57,9 @@ export function Canvas({
     b: 0,
     a: 1,
   })
-  const [isEyeDropperActive, startEyeDropper] = useTransition()
+  const [isEyeDropperActive, setIsEyeDropperActive] = useState(false)
+  const pathname = usePathname()
+  const isOnPixelPage = pathname === `/p/${pixel.id}`
 
   const onColorChange = useCallback((color: RgbaColor) => {
     const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
@@ -63,33 +67,92 @@ export function Canvas({
     editorRef.current?.getEditor()?.setColor(colorArray)
   }, [])
 
-  const onEyeDropperClick = useCallback(() => {
-    startEyeDropper(async () => {
-      const canvas = editorRef.current?.getCanvas()
-      if (!canvas) {
-        toast.error("We're having some trouble with the eyedropper tool!")
-        return
-      }
+  const onEyeDropperClick = useCallback(async () => {
+    const canvas = editorRef.current?.getCanvas()
+    if (!canvas) {
+      toast.error("We're having some trouble with the eyedropper tool!")
+      return
+    }
 
-      try {
-        const result = await openEyeDropper(canvas)
-        const hex = result?.sRGBHex
-        if (!hex) throw new Error('No HEX returned')
-        const rgba = hexToRgba(hex)
-        onColorChange(rgba)
-      } catch (error) {
-        toast.error("We're having some trouble with the eyedropper tool!")
-        track('eye-dropper-error', {
-          error: JSON.stringify(error),
-        })
-      }
-    })
+    setIsEyeDropperActive(true)
+    try {
+      const result = await openEyeDropper(canvas)
+      const hex = result?.sRGBHex
+      if (!hex) throw new Error('No HEX returned')
+      const rgba = hexToRgba(hex)
+      onColorChange(rgba)
+    } catch (error) {
+      toast.error("We're having some trouble with the eyedropper tool!")
+      track('eye-dropper-error', {
+        error: JSON.stringify(error),
+      })
+    } finally {
+      setIsEyeDropperActive(false)
+    }
   }, [onColorChange])
 
   useEffect(() => {
     const editor = editorRef.current?.getEditor()
     return () => editor?.destroy()
   }, [])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      const isMod = e.metaKey || e.ctrlKey
+      const key = e.key.toLowerCase()
+
+      // Tool shortcuts (no modifier)
+      if (!isMod) {
+        switch (key) {
+          case 'p':
+            e.preventDefault()
+            editorRef.current?.getEditor()?.setTool('pen')
+            setActiveTool('pen')
+            break
+          case 'b':
+            e.preventDefault()
+            editorRef.current?.getEditor()?.setTool('fill')
+            setActiveTool('fill')
+            break
+          case 'e':
+            e.preventDefault()
+            editorRef.current?.getEditor()?.setTool('eraser')
+            setActiveTool('eraser')
+            break
+          case 'l':
+            e.preventDefault()
+            editorRef.current?.getEditor()?.setTool('line')
+            setActiveTool('line')
+            break
+          case 'g':
+            e.preventDefault()
+            editorRef.current?.getEditor()?.toggleGrid()
+            break
+          case 'i':
+            e.preventDefault()
+            onEyeDropperClick()
+            break
+        }
+      }
+
+      // Undo/Redo (with modifier)
+      if (isMod && key === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          editorRef.current?.getEditor()?.redo()
+        } else {
+          editorRef.current?.getEditor()?.undo()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onEyeDropperClick])
 
   const disableActions = useMemo(
     () => isSaving || !pixelVersion || isEyeDropperActive,
@@ -148,7 +211,7 @@ export function Canvas({
                 rgbaColor={rgbaColor}
                 disabled={disableActions}
               />
-              <TooltipWrapper content='Tool Size'>
+              <TooltipWrapper content='Size'>
                 <PenSize
                   className='size-11! flex items-center justify-center'
                   onChange={(size: number) =>
@@ -156,7 +219,7 @@ export function Canvas({
                   }
                 />
               </TooltipWrapper>
-              <TooltipWrapper content='Pen'>
+              <TooltipWrapper content='Pen (P)'>
                 <Button
                   aria-label='Pen Tool'
                   className='size-11!'
@@ -177,7 +240,7 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
-              <TooltipWrapper content='Fill'>
+              <TooltipWrapper content='Fill (B)'>
                 <Button
                   aria-label='Fill Tool'
                   iconOnly
@@ -198,7 +261,7 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
-              <TooltipWrapper content='Eraser'>
+              <TooltipWrapper content='Eraser (E)'>
                 <Button
                   aria-label='Eraser Tool'
                   iconOnly
@@ -219,7 +282,7 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
-              <TooltipWrapper content='Line'>
+              <TooltipWrapper content='Line (L)'>
                 <Button
                   aria-label='Line Tool'
                   iconOnly
@@ -240,7 +303,7 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
-              <TooltipWrapper content='Eyedropper'>
+              <TooltipWrapper content='Eyedropper (I)'>
                 <Button
                   aria-label='Eyedropper Tool'
                   iconOnly
@@ -257,7 +320,7 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
-              <TooltipWrapper content='Grid'>
+              <TooltipWrapper content='Grid (G)'>
                 <Button
                   aria-label='Toggle Grid'
                   className='size-11!'
@@ -279,7 +342,7 @@ export function Canvas({
             </div>
             <GrooveDivider className='w-full' />
             <div className='flex flex-wrap'>
-              <TooltipWrapper content='Undo'>
+              <TooltipWrapper content='Undo (⌘Z)'>
                 <Button
                   aria-label='Undo'
                   iconOnly
@@ -300,7 +363,7 @@ export function Canvas({
                   />
                 </Button>
               </TooltipWrapper>
-              <TooltipWrapper content='Redo'>
+              <TooltipWrapper content='Redo (⇧⌘Z)'>
                 <Button
                   aria-label='Redo'
                   iconOnly
@@ -353,6 +416,23 @@ export function Canvas({
                   disabled={disableActions}
                 />
               </TooltipWrapper>
+              {!isOnPixelPage && (
+                <TooltipWrapper content='Open in Studio'>
+                  <ButtonLink
+                    aria-label='Open in Full Page'
+                    iconOnly
+                    className='size-11!'
+                    href={`/p/${pixel.id}`}
+                    disabled={disableActions}
+                  >
+                    <ExpandIcon
+                      width={20}
+                      height={20}
+                      className={cn(disableActions && 'opacity-50')}
+                    />
+                  </ButtonLink>
+                </TooltipWrapper>
+              )}
               <TooltipWrapper content='Save'>
                 <Button
                   aria-label='Save'
@@ -407,6 +487,11 @@ export function Canvas({
             You have unsaved changes
           </p>
         )}
+
+        <p className='text-center text-xs text-shadow leading-tight'>
+          Subtle imperfections are expected when mapping to the grid-based
+          editor
+        </p>
       </div>
     </div>
   )

@@ -18,11 +18,12 @@ import {
 import { SignInButton } from '../auth/sign-in-button'
 import { Button } from '../button'
 import { Credits } from '../user/credits'
+import { ModelSelector } from './model-selector'
 import { useNewCanvas } from './use-new-canvas'
 
 function NewPixelInput({ className }: { className?: string }) {
   const { data: session, isPending: isSessionPending } = useSession()
-  const { startGeneration, reset } = useNewCanvas()
+  const { startGeneration, reset, model, setModel } = useNewCanvas()
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
   const [mounted, setMounted] = useState(false)
@@ -94,10 +95,19 @@ function NewPixelInput({ className }: { className?: string }) {
           }}
         />
         <div className='flex items-center'>
-          <Credits
-            credits={credits}
-            className='bg-transparent border-none text-background py-0'
-          />
+          <div className='flex items-center gap-2 shrink-0'>
+            <Credits
+              credits={credits}
+              className='bg-transparent border-none text-background py-0 whitespace-nowrap'
+            />
+            {mounted && session && (
+              <ModelSelector
+                value={model}
+                onChange={setModel}
+                disabled={isPending}
+              />
+            )}
+          </div>
           <MemoizedCta
             mounted={mounted}
             session={!!session}

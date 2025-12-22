@@ -95,8 +95,14 @@ Requires:
 
 ## To-do's
 
-- [ ] Explore page
+- [x] Explore page
 - [ ] My collection page
-- [ ] Full page editor
-- [ ] Explain conversion to canvas is not 1:1
+- [x] Full page editor (`/p/[id]`)
+- [x] Keyboard shortcuts for editor (P, B, E, L, G, I, ⌘Z, ⇧⌘Z)
+- [x] Model switcher (FLUX/Gemini) for pixel generation
+- [x] API timeout handling for generation (90s)
+- [x] "Open in Studio" button in editor toolbar
+- [x] Simplify homepage (removed carousel, pixel group, bottom banner)
+- [x] Move "Subtle imperfections" note to editor component
 - [ ] Better pen size logic
+- [ ] Select + move tool for editor

@@ -7,7 +7,7 @@ import { usePostProcessingStatus } from '@/app/utils/use-post-processing-status'
 import Image from 'next/image'
 import { memo } from 'react'
 import { Button } from '../button'
-import { useCarousel } from '../carousel/use-carousel'
+import { useRouter } from 'next/navigation'
 import RetroLoader from '../loader'
 import { Pill } from '../pill'
 import { sharedClasses } from './constants'
@@ -40,7 +40,7 @@ export function NewCanvasInternal() {
 export const NewCanvas = memo(NewCanvasInternal)
 
 function NewCanvasControls() {
-  const { carousel } = useCarousel()
+  const router = useRouter()
   const { status, prompt, result, id, setStatus, reset } = useNewCanvas()
   usePostProcessingStatus({ id, onChange: setStatus })
 
@@ -98,7 +98,7 @@ function NewCanvasControls() {
           disabled={status !== 'completed'}
           onClick={() => {
             void revalidatePixelVersion(id)
-            carousel?.scrollTo(1)
+            router.push(`/p/${id}`)
             reset()
           }}
         >

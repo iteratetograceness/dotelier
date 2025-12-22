@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+export type ModelType = 'flux' | 'gemini'
+
 export const PixelApiResponseSchema = z.object({
   images: z.array(
     z.object({

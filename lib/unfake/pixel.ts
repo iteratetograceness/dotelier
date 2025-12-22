@@ -631,6 +631,7 @@ export async function processImage({
   fixedPalette = null,
   alphaThreshold = 128,
   snapGrid = true,
+  maxGridSize = 32, // Maximum grid dimension (width or height) - prevents huge grids from bad AI generations
 }: {
   file: File | Blob
   maxColors?: number
@@ -650,6 +651,7 @@ export async function processImage({
   fixedPalette?: string[] | null
   alphaThreshold?: number
   snapGrid?: boolean
+  maxGridSize?: number
 }): Promise<{
   png: Uint8Array
   imageData: ImageData
@@ -710,6 +712,24 @@ export async function processImage({
     }[detectMethod]
 
     scale = await detectionFn(originalForAdaptiveScale)
+  }
+
+  // Enforce max grid size - calculate minimum scale needed to fit within maxGridSize
+  if (maxGridSize && maxGridSize > 0) {
+    const projectedWidth = Math.floor(current.width / scale)
+    const projectedHeight = Math.floor(current.height / scale)
+    const maxDimension = Math.max(projectedWidth, projectedHeight)
+
+    if (maxDimension > maxGridSize) {
+      const minScaleForWidth = Math.ceil(current.width / maxGridSize)
+      const minScaleForHeight = Math.ceil(current.height / maxGridSize)
+      const minScale = Math.max(minScaleForWidth, minScaleForHeight)
+      console.log(
+        `[processImage] Projected size ${projectedWidth}x${projectedHeight} exceeds maxGridSize ${maxGridSize}. ` +
+        `Increasing scale from ${scale} to ${minScale}.`
+      )
+      scale = minScale
+    }
   }
 
   if (scale <= 1 && downscaleMethod !== 'content-adaptive') {
