@@ -114,6 +114,5 @@ Requires:
 
 ### Planned
 - [ ] Credit purchase flow/UX (currently no way to buy more credits!)
-- [ ] Better pen size logic
 - [ ] OG meta tags for pixel sharing (`/p/[id]`)
 - [ ] User profiles (`/u/[username]`)
