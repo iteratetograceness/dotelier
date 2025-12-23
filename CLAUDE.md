@@ -95,8 +95,9 @@ Requires:
 
 ## To-do's
 
+### Completed
 - [x] Explore page
-- [ ] My collection page
+- [x] My collection page (`/studio`)
 - [x] Full page editor (`/p/[id]`)
 - [x] Keyboard shortcuts for editor (P, B, E, L, G, I, ⌘Z, ⇧⌘Z)
 - [x] Model switcher (FLUX/Gemini) for pixel generation
@@ -104,5 +105,15 @@ Requires:
 - [x] "Open in Studio" button in editor toolbar
 - [x] Simplify homepage (removed carousel, pixel group, bottom banner)
 - [x] Move "Subtle imperfections" note to editor component
-- [ ] Better pen size logic
+- [x] Configurable grid settings and color palette
+- [x] Rate limiting (5 req/min per JA4 fingerprint/IP)
+
+### In Progress
 - [ ] Select + move tool for editor
+- [ ] Version history UI (view/rollback to previous versions)
+
+### Planned
+- [ ] Credit purchase flow/UX (currently no way to buy more credits!)
+- [ ] Better pen size logic
+- [ ] OG meta tags for pixel sharing (`/p/[id]`)
+- [ ] User profiles (`/u/[username]`)
