@@ -2,7 +2,7 @@
 
 import { GridSettings } from '@/app/swr/use-pixel-version'
 import { authorizeRequest } from '@/lib/auth/request'
-import { insertPixelVersion } from '@/lib/db/queries'
+import { insertPixelVersion, isPixelOwner } from '@/lib/db/queries'
 import { ERROR_CODES } from '@/lib/error'
 import { uploadApi } from '@/lib/ut/server'
 import { revalidateTag } from 'next/cache'
@@ -27,6 +27,12 @@ export async function savePixel({
     const authorized = await authorizeRequest()
 
     if (!authorized.success) {
+      return { error: ERROR_CODES.UNAUTHORIZED, success: false }
+    }
+
+    // Verify user owns this pixel
+    const ownsPixel = await isPixelOwner(id, authorized.user.id)
+    if (!ownsPixel) {
       return { error: ERROR_CODES.UNAUTHORIZED, success: false }
     }
 

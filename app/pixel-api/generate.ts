@@ -3,6 +3,7 @@
 import { authorizeRequest } from '@/lib/auth/request'
 import { createPixel, deletePixel, startPostProcessing } from '@/lib/db/queries'
 import { ERROR_CODES, ErrorCode } from '@/lib/error'
+import { generateRateLimit, getRateLimitIdentifier } from '@/lib/rate-limit'
 import { revalidateTag } from 'next/cache'
 import { headers } from 'next/headers'
 import { after } from 'next/server'
@@ -44,6 +45,13 @@ export async function generatePixelIcon({
       authorizeRequest({ withJwt: true }),
       headers(),
     ])
+
+    // Rate limit by fingerprint/IP before processing
+    const identifier = getRateLimitIdentifier(headersList)
+    const { success: rateLimitSuccess } = await generateRateLimit.limit(identifier)
+    if (!rateLimitSuccess) {
+      return { error: ERROR_CODES.RATE_LIMITED, success: false }
+    }
 
     if (!authResult.success) {
       return { error: ERROR_CODES.UNAUTHORIZED, success: false }
