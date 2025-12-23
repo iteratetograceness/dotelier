@@ -111,6 +111,8 @@ export function GridSettingsPanel({
       <div className='flex items-center justify-between'>
         <span className='text-xs font-bold text-shadow'>Grid Settings</span>
         <Button
+          aria-label={isOpen ? 'Hide grid settings' : 'Show grid settings'}
+          aria-expanded={isOpen}
           className='text-xs! px-2! py-0.5!'
           onClick={() => setIsOpen(!isOpen)}
           disabled={disabled}
@@ -152,7 +154,11 @@ export function GridSettingsPanel({
                 <label className='text-xs text-shadow'>Method</label>
                 <Popover.Root>
                   <Popover.Trigger asChild>
-                    <Button className='text-xs! w-full py-1!' disabled={disabled}>
+                    <Button
+                      aria-label='Select downscale method'
+                      className='text-xs! w-full py-1!'
+                      disabled={disabled}
+                    >
                       {DOWNSCALE_METHODS.find((m) => m.value === localSettings.downscaleMethod)?.label ||
                         'Dominant'}
                     </Button>

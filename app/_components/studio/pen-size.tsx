@@ -16,7 +16,9 @@ export function PenSize({ onChange, ...props }: PenSizeProps) {
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button {...props}>{size}</Button>
+        <Button aria-label={`Pen size: ${size}`} {...props}>
+          {size}
+        </Button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content

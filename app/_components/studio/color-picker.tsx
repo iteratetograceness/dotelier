@@ -32,6 +32,7 @@ export default function ColorPicker({
     <Popover.Root>
       <TooltipWrapper content='Tool Color'>
         <Popover.Trigger
+          aria-label='Select color'
           disabled={disabled}
           className='size-11 border-3 border-shadow border-r-background border-b-background'
           style={{
@@ -59,6 +60,7 @@ export default function ColorPicker({
             <div className='relative inline-flex items-center'>
               <span className='absolute left-2 text-foreground'>#</span>
               <HexColorInput
+                aria-label='Hex color value'
                 className={cn(
                   'px-1 border-3 border-shadow border-r-background border-b-background',
                   'active:outline-hidden focus:outline-hidden pl-6'

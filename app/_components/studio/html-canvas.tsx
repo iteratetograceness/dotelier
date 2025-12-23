@@ -108,6 +108,8 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
         style={{
           touchAction: 'none',
         }}
+        role='img'
+        aria-label='Pixel art editor canvas. Use drawing tools to create pixel art.'
       />
       <canvas
         id={`preview-canvas-${id}`}
@@ -116,6 +118,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
         style={{
           touchAction: 'none',
         }}
+        aria-hidden='true'
       />
     </div>
   )

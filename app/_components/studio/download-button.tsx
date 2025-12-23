@@ -17,7 +17,7 @@ export function DownloadButton(props: DownloadButtonProps) {
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <Button {...rest}>
+        <Button aria-label='Download' {...rest}>
           {props.iconOnly ? (
             <Image
               src='/editor/download.png'
