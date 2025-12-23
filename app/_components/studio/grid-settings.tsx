@@ -15,6 +15,8 @@ interface GridSettingsProps {
   onSettingsChange: (settings: GridSettingsType) => void
   onGridSizeChange: (size: number) => void
   disabled?: boolean
+  /** When true, hides settings that only apply to PNG processing (unfake) */
+  isSvgMode?: boolean
 }
 
 const DOWNSCALE_METHODS = [
@@ -31,6 +33,7 @@ export function GridSettingsPanel({
   onSettingsChange,
   onGridSizeChange,
   disabled = false,
+  isSvgMode = false,
 }: GridSettingsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [localSettings, setLocalSettings] = useState<GridSettingsType>(settings)
@@ -118,9 +121,15 @@ export function GridSettingsPanel({
 
       {isOpen && (
         <div className='flex flex-col gap-2 pt-2 border-t border-shadow'>
-          {/* Row 1: Grid Size + Downscale Method */}
+          {isSvgMode && (
+            <p className='text-xs text-shadow italic'>
+              Some settings only apply before saving. Re-generate to access all options.
+            </p>
+          )}
+
+          {/* Row 1: Grid Size + Downscale Method (Method hidden in SVG mode) */}
           <div className='flex gap-2'>
-            <div className='flex flex-col gap-0.5 flex-1'>
+            <div className={cn('flex flex-col gap-0.5', isSvgMode ? 'flex-1' : 'flex-1')}>
               <label className='text-xs text-shadow'>Size</label>
               <input
                 type='number'
@@ -138,38 +147,40 @@ export function GridSettingsPanel({
                 disabled={disabled}
               />
             </div>
-            <div className='flex flex-col gap-0.5 flex-[2]'>
-              <label className='text-xs text-shadow'>Method</label>
-              <Popover.Root>
-                <Popover.Trigger asChild>
-                  <Button className='text-xs! w-full py-1!' disabled={disabled}>
-                    {DOWNSCALE_METHODS.find((m) => m.value === localSettings.downscaleMethod)?.label ||
-                      'Dominant'}
-                  </Button>
-                </Popover.Trigger>
-                <Popover.Portal>
-                  <Popover.Content
-                    className='flex flex-col w-36 text-xs z-50'
-                    align='start'
-                    side='bottom'
-                  >
-                    {DOWNSCALE_METHODS.map((method) => (
-                      <Button
-                        key={method.value}
-                        onClick={() => handleSettingChange('downscaleMethod', method.value)}
-                        className='w-full'
-                        isPressed={localSettings.downscaleMethod === method.value}
-                      >
-                        {method.label}
-                      </Button>
-                    ))}
-                  </Popover.Content>
-                </Popover.Portal>
-              </Popover.Root>
-            </div>
+            {!isSvgMode && (
+              <div className='flex flex-col gap-0.5 flex-[2]'>
+                <label className='text-xs text-shadow'>Method</label>
+                <Popover.Root>
+                  <Popover.Trigger asChild>
+                    <Button className='text-xs! w-full py-1!' disabled={disabled}>
+                      {DOWNSCALE_METHODS.find((m) => m.value === localSettings.downscaleMethod)?.label ||
+                        'Dominant'}
+                    </Button>
+                  </Popover.Trigger>
+                  <Popover.Portal>
+                    <Popover.Content
+                      className='flex flex-col w-36 text-xs z-50'
+                      align='start'
+                      side='bottom'
+                    >
+                      {DOWNSCALE_METHODS.map((method) => (
+                        <Button
+                          key={method.value}
+                          onClick={() => handleSettingChange('downscaleMethod', method.value)}
+                          className='w-full'
+                          isPressed={localSettings.downscaleMethod === method.value}
+                        >
+                          {method.label}
+                        </Button>
+                      ))}
+                    </Popover.Content>
+                  </Popover.Portal>
+                </Popover.Root>
+              </div>
+            )}
           </div>
 
-          {/* Row 2: Sliders */}
+          {/* Row 2: Sliders (Colors hidden in SVG mode) */}
           <div className='flex flex-col gap-1'>
             <div className='flex items-center gap-2'>
               <label className='text-xs text-shadow w-16 shrink-0'>Alpha</label>
@@ -197,54 +208,58 @@ export function GridSettingsPanel({
               />
               <span className='text-xs w-8 text-right'>{localSettings.fillThreshold ?? 61}</span>
             </div>
-            <div className='flex items-center gap-2'>
-              <label className='text-xs text-shadow w-16 shrink-0'>Colors</label>
-              <input
-                type='range'
-                min='2'
-                max='64'
-                value={localSettings.maxColors ?? 32}
-                onChange={(e) => handleSettingChange('maxColors', parseInt(e.target.value))}
-                className='flex-1 accent-accent'
-                disabled={disabled}
-              />
-              <span className='text-xs w-8 text-right'>{localSettings.maxColors ?? 32}</span>
-            </div>
+            {!isSvgMode && (
+              <div className='flex items-center gap-2'>
+                <label className='text-xs text-shadow w-16 shrink-0'>Colors</label>
+                <input
+                  type='range'
+                  min='2'
+                  max='64'
+                  value={localSettings.maxColors ?? 32}
+                  onChange={(e) => handleSettingChange('maxColors', parseInt(e.target.value))}
+                  className='flex-1 accent-accent'
+                  disabled={disabled}
+                />
+                <span className='text-xs w-8 text-right'>{localSettings.maxColors ?? 32}</span>
+              </div>
+            )}
           </div>
 
-          {/* Row 3: Checkboxes - all on one row */}
-          <div className='flex flex-wrap gap-x-3 gap-y-1 text-xs'>
-            <label className='flex items-center gap-1'>
-              <input
-                type='checkbox'
-                checked={localSettings.cleanup?.jaggy ?? true}
-                onChange={(e) => handleCleanupChange('jaggy', e.target.checked)}
-                className='accent-accent'
-                disabled={disabled}
-              />
-              Jaggy
-            </label>
-            <label className='flex items-center gap-1'>
-              <input
-                type='checkbox'
-                checked={localSettings.cleanup?.morph ?? false}
-                onChange={(e) => handleCleanupChange('morph', e.target.checked)}
-                className='accent-accent'
-                disabled={disabled}
-              />
-              Morph
-            </label>
-            <label className='flex items-center gap-1'>
-              <input
-                type='checkbox'
-                checked={localSettings.snapGrid ?? true}
-                onChange={(e) => handleSettingChange('snapGrid', e.target.checked)}
-                className='accent-accent'
-                disabled={disabled}
-              />
-              Snap
-            </label>
-          </div>
+          {/* Row 3: Checkboxes - all unfake-only, hidden in SVG mode */}
+          {!isSvgMode && (
+            <div className='flex flex-wrap gap-x-3 gap-y-1 text-xs'>
+              <label className='flex items-center gap-1'>
+                <input
+                  type='checkbox'
+                  checked={localSettings.cleanup?.jaggy ?? true}
+                  onChange={(e) => handleCleanupChange('jaggy', e.target.checked)}
+                  className='accent-accent'
+                  disabled={disabled}
+                />
+                Jaggy
+              </label>
+              <label className='flex items-center gap-1'>
+                <input
+                  type='checkbox'
+                  checked={localSettings.cleanup?.morph ?? false}
+                  onChange={(e) => handleCleanupChange('morph', e.target.checked)}
+                  className='accent-accent'
+                  disabled={disabled}
+                />
+                Morph
+              </label>
+              <label className='flex items-center gap-1'>
+                <input
+                  type='checkbox'
+                  checked={localSettings.snapGrid ?? true}
+                  onChange={(e) => handleSettingChange('snapGrid', e.target.checked)}
+                  className='accent-accent'
+                  disabled={disabled}
+                />
+                Snap
+              </label>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -18,6 +18,7 @@ interface HtmlCanvasProps {
   gridSize: number
   gridSettings?: GridSettings | null
   onHistoryChange: () => void
+  onLoadingChange?: (isLoading: boolean) => void
 }
 
 export interface HtmlCanvasRef {
@@ -32,6 +33,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
   gridSize,
   gridSettings,
   onHistoryChange,
+  onLoadingChange,
 }: HtmlCanvasProps & { ref: Ref<HtmlCanvasRef> }) {
   const url = getPublicPixelAsset(fileKey)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -72,6 +74,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
 
     if (url) {
       const effectiveSettings = gridSettings ?? DEFAULT_GRID_SETTINGS
+      onLoadingChange?.(true)
       editor
         .loadImageWithUnfake(url, effectiveSettings)
         .then(() => {
@@ -81,13 +84,16 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
         .catch((error) => {
           setError(error.message)
         })
+        .finally(() => {
+          onLoadingChange?.(false)
+        })
     }
 
     return () => {
       editorRef.current?.destroy()
       editorRef.current = null
     }
-  }, [onHistoryChange, url, gridSize, gridSettings])
+  }, [onHistoryChange, onLoadingChange, url, gridSize, gridSettings])
 
   return error ? (
     <div className='size-full flex items-center justify-center'>

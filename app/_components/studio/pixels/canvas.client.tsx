@@ -63,6 +63,7 @@ export function Canvas({
   })
   const [isEyeDropperActive, setIsEyeDropperActive] = useState(false)
   const [isReprocessing, setIsReprocessing] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [gridSettings, setGridSettings] = useState<GridSettings>(
     pixelVersion?.gridSettings ?? DEFAULT_GRID_SETTINGS
   )
@@ -195,6 +196,10 @@ export function Canvas({
     refreshPalette()
   }, [refreshPalette])
 
+  const onInitialLoadingChange = useCallback((isLoading: boolean) => {
+    setIsInitialLoading(isLoading)
+  }, [])
+
   const onGridSettingsChange = useCallback(
     async (newSettings: GridSettings) => {
       setGridSettings(newSettings)
@@ -250,6 +255,7 @@ export function Canvas({
             gridSettings={pixelVersion.gridSettings}
             ref={editorRef}
             onHistoryChange={onHistoryChange}
+            onLoadingChange={onInitialLoadingChange}
           />
         ) : (
           <div className='text-center text-light-shadow text-sm w-full leading-4 flex flex-col items-center justify-center gap-1'>
@@ -567,16 +573,23 @@ export function Canvas({
           gridSize={currentGridSize}
           onSettingsChange={onGridSettingsChange}
           onGridSizeChange={onGridSizeChange}
-          disabled={disableActions || isReprocessing}
+          disabled={disableActions || isReprocessing || isInitialLoading}
+          isSvgMode={pixelVersion?.fileKey?.endsWith('.svg') ?? false}
         />
 
-        {isReprocessing && (
+        {isInitialLoading && (
+          <p className='bg-background pixel-corners text-center text-xs py-0.5 animate-pulse'>
+            Loading...
+          </p>
+        )}
+
+        {isReprocessing && !isInitialLoading && (
           <p className='bg-background pixel-corners text-center text-xs py-0.5 animate-pulse'>
             Reprocessing...
           </p>
         )}
 
-        {hasUnsavedChanges && !isReprocessing && (
+        {hasUnsavedChanges && !isReprocessing && !isInitialLoading && (
           <p className='bg-background pixel-corners text-center text-xs py-0.5'>
             You have unsaved changes
           </p>

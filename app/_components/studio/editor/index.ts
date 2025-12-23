@@ -256,11 +256,13 @@ export class PixelEditor {
   /**
    * Load an image using unfake's processImage for pixel grid conversion.
    * This uses advanced scale detection and downscaling algorithms.
-   * Dynamically resizes the grid to match unfake's output.
+   * By default, dynamically resizes the grid to match unfake's output.
+   * Set preserveGridSize to true to keep the current grid size (for user-initiated grid size changes).
    */
   public async loadImageWithUnfake(
     imageUrl: string,
-    settings: GridSettings = DEFAULT_GRID_SETTINGS
+    settings: GridSettings = DEFAULT_GRID_SETTINGS,
+    options?: { preserveGridSize?: boolean }
   ): Promise<void> {
     console.log('[loadImageWithUnfake] Starting for:', imageUrl)
     console.log('[loadImageWithUnfake] Settings:', settings)
@@ -319,16 +321,23 @@ export class PixelEditor {
     const srcWidth = imageData.width
     const srcHeight = imageData.height
 
-    // Resize the grid to match unfake's output size
-    const newGridSize = Math.max(srcWidth, srcHeight)
-    this.resizeGrid(newGridSize)
-
-    console.log('[loadImageWithUnfake] Grid resized to:', newGridSize)
+    // Determine the target grid size
+    let targetGridSize: number
+    if (options?.preserveGridSize) {
+      // User explicitly set grid size, keep it
+      targetGridSize = this.gridSize
+      console.log('[loadImageWithUnfake] Preserving grid size:', targetGridSize)
+    } else {
+      // Auto-size based on unfake output
+      targetGridSize = Math.max(srcWidth, srcHeight)
+      this.resizeGrid(targetGridSize)
+      console.log('[loadImageWithUnfake] Grid resized to:', targetGridSize)
+    }
 
     // Copy pixels directly from unfake output to editor grid
-    // Center the image if it's not square
-    const offsetX = Math.floor((newGridSize - srcWidth) / 2)
-    const offsetY = Math.floor((newGridSize - srcHeight) / 2)
+    // Center the image within the target grid
+    const offsetX = Math.floor((targetGridSize - srcWidth) / 2)
+    const offsetY = Math.floor((targetGridSize - srcHeight) / 2)
 
     for (let y = 0; y < srcHeight; y++) {
       for (let x = 0; x < srcWidth; x++) {
@@ -557,7 +566,10 @@ export class PixelEditor {
     this.resizeGrid(newSize)
 
     if (this.currentImageUrl) {
-      await this.loadImageWithUnfake(this.currentImageUrl, this.currentGridSettings)
+      // Preserve the user's grid size choice - don't let unfake override it
+      await this.loadImageWithUnfake(this.currentImageUrl, this.currentGridSettings, {
+        preserveGridSize: true,
+      })
     }
   }
 }
