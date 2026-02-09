@@ -4,7 +4,6 @@ import {
   insertPixelVersion,
   updatePostProcessingStatus,
 } from '@/lib/db/queries'
-import { DEFAULT_GRID_SETTINGS } from '@/lib/grid-settings'
 import { PostProcessingStatus } from '@/lib/constants'
 import { replicate } from '@/lib/replicate'
 import { getPublicPixelAsset } from '@/lib/ut/client'
@@ -119,7 +118,6 @@ export async function postProcessPixelIcon({
       insertPixelVersion({
         pixelId,
         fileKey: noBgFileKey,
-        gridSettings: DEFAULT_GRID_SETTINGS,
       }),
       updatePostProcessingStatus({
         pixelId,

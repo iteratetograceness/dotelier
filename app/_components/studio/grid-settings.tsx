@@ -2,42 +2,24 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Button } from '../button'
-import {
-  DEFAULT_GRID_SETTINGS,
-  GridSettings as GridSettingsType,
-} from '@/app/swr/use-pixel-version'
 import { cn } from '@/app/utils/classnames'
 
 interface GridSettingsProps {
-  settings: GridSettingsType
   gridSize: number
-  onSettingsChange: (settings: GridSettingsType) => void
   onGridSizeChange: (size: number) => void
   disabled?: boolean
-  /** When true, hides the colors slider (only applies to raster/PNG images) */
-  isSvgMode?: boolean
 }
 
 export function GridSettingsPanel({
-  settings,
   gridSize,
-  onSettingsChange,
   onGridSizeChange,
   disabled = false,
-  isSvgMode = false,
 }: GridSettingsProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [localSettings, setLocalSettings] = useState<GridSettingsType>(settings)
-  const [localGridSize, setLocalGridSize] = useState(gridSize)
   const [gridSizeInput, setGridSizeInput] = useState(String(gridSize))
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    setLocalSettings(settings)
-  }, [settings])
-
-  useEffect(() => {
-    setLocalGridSize(gridSize)
     setGridSizeInput(String(gridSize))
   }, [gridSize])
 
@@ -50,7 +32,6 @@ export function GridSettingsPanel({
           clearTimeout(debounceRef.current)
         }
         debounceRef.current = setTimeout(() => {
-          setLocalGridSize(parsed)
           onGridSizeChange(parsed)
         }, 500)
       }
@@ -64,12 +45,11 @@ export function GridSettingsPanel({
     }
     const parsed = parseInt(gridSizeInput)
     if (!isNaN(parsed) && parsed >= 8 && parsed <= 128) {
-      setLocalGridSize(parsed)
       onGridSizeChange(parsed)
     } else {
-      setGridSizeInput(String(localGridSize))
+      setGridSizeInput(String(gridSize))
     }
-  }, [gridSizeInput, localGridSize, onGridSizeChange])
+  }, [gridSizeInput, gridSize, onGridSizeChange])
 
   return (
     <div
@@ -93,7 +73,6 @@ export function GridSettingsPanel({
 
       {isOpen && (
         <div className='flex flex-col gap-2 pt-2 border-t border-shadow'>
-          {/* Grid Size */}
           <div className='flex flex-col gap-0.5'>
             <label className='text-xs text-shadow'>Size</label>
             <input
@@ -112,27 +91,6 @@ export function GridSettingsPanel({
               disabled={disabled}
             />
           </div>
-
-          {/* Colors slider — only relevant for raster (PNG) images */}
-          {!isSvgMode && (
-            <div className='flex items-center gap-2'>
-              <label className='text-xs text-shadow w-16 shrink-0'>Colors</label>
-              <input
-                type='range'
-                min='2'
-                max='64'
-                value={localSettings.maxColors ?? 16}
-                onChange={(e) => {
-                  const newSettings = { ...localSettings, maxColors: parseInt(e.target.value) }
-                  setLocalSettings(newSettings)
-                  onSettingsChange(newSettings)
-                }}
-                className='flex-1 accent-accent'
-                disabled={disabled}
-              />
-              <span className='text-xs w-8 text-right'>{localSettings.maxColors ?? 16}</span>
-            </div>
-          )}
         </div>
       )}
     </div>

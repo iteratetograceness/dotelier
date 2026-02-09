@@ -1,13 +1,5 @@
 /**
- * Grid settings for pixel art processing.
- * This file is shared between client and server code.
+ * Default max colors for spritefusion-pixel-snapper k-means quantization.
+ * Used when snapping raster images (PNGs) to a pixel grid.
  */
-
-export interface GridSettings {
-  /** Max palette colors for raster→pixel snapping (k-means). */
-  maxColors?: number
-}
-
-export const DEFAULT_GRID_SETTINGS: GridSettings = {
-  maxColors: 16,
-}
+export const DEFAULT_MAX_COLORS = 16

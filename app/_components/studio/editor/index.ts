@@ -1,12 +1,7 @@
-import {
-  DEFAULT_GRID_SETTINGS,
-  GridSettings,
-} from '@/app/swr/use-pixel-version'
+import { DEFAULT_MAX_COLORS } from '@/lib/grid-settings'
 import { HistoryManager } from './history'
 import { Color, PixelRenderer } from './renderer'
 import { ToolManager, ToolName } from './tool'
-
-export type { GridSettings }
 
 export const DEFAULT_SIZE = 32
 export const GRID_ITEM_SIZE = 12
@@ -21,7 +16,6 @@ export class PixelEditor {
   private history: HistoryManager
   private isDrawing = false
   private currentImageUrl: string | null = null
-  private currentGridSettings: GridSettings = DEFAULT_GRID_SETTINGS
 
   private handlers = {
     mouseDown: (e: MouseEvent) => {
@@ -252,19 +246,20 @@ export class PixelEditor {
   }
 
   /**
-   * Load a raster image and snap it to a clean pixel grid using
-   * spritefusion-pixel-snapper (WASM).
+   * Load an image into the editor.
    *
-   * By default the grid auto-sizes to the snapper's output dimensions.
-   * Pass `preserveGridSize: true` to keep the current grid size instead.
+   * - SVGs (saved pixel art) are loaded directly — 1:1 pixel read.
+   * - Raster images (PNGs from generation) are snapped to a pixel grid
+   *   via spritefusion-pixel-snapper (WASM).
+   *
+   * By default the grid auto-sizes to match the image dimensions.
+   * Pass `preserveGridSize: true` to keep the current grid size.
    */
   public async loadImage(
     imageUrl: string,
-    settings: GridSettings = DEFAULT_GRID_SETTINGS,
     options?: { preserveGridSize?: boolean }
   ): Promise<void> {
     this.currentImageUrl = imageUrl
-    this.currentGridSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
 
     const response = await fetch(imageUrl)
     const blob = await response.blob()
@@ -276,14 +271,10 @@ export class PixelEditor {
     }
 
     const imageBytes = new Uint8Array(await blob.arrayBuffer())
-    const mergedSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
 
     // Dynamic import keeps the WASM out of the initial bundle
     const { snapPixels } = await import('@/lib/pixel-snapper')
-    const { imageData } = await snapPixels(
-      imageBytes,
-      mergedSettings.maxColors ?? 16,
-    )
+    const { imageData } = await snapPixels(imageBytes, DEFAULT_MAX_COLORS)
 
     const srcWidth = imageData.width
     const srcHeight = imageData.height
@@ -450,40 +441,26 @@ export class PixelEditor {
   }
 
   /**
-   * Get the current grid settings used for image processing.
+   * Reload the current image. Used after grid size changes.
    */
-  public getGridSettings(): GridSettings {
-    return { ...this.currentGridSettings }
-  }
-
-  /**
-   * Reload the current image with new grid settings.
-   * This will re-process the image from scratch.
-   */
-  public async reloadWithSettings(settings: GridSettings): Promise<void> {
-    if (!this.currentImageUrl) {
-      console.warn('[reloadWithSettings] No image URL stored, cannot reload')
-      return
-    }
-
-    await this.loadImage(this.currentImageUrl, settings)
+  public async reloadImage(): Promise<void> {
+    if (!this.currentImageUrl) return
+    await this.loadImage(this.currentImageUrl)
   }
 
   /**
    * Update the grid size and reload the image.
-   * This is a convenience method that combines resizing with reloading.
    */
   public async setGridSizeAndReload(newSize: number): Promise<void> {
     if (newSize === this.gridSize && this.currentImageUrl) {
-      // Just reload with current settings
-      await this.reloadWithSettings(this.currentGridSettings)
+      await this.reloadImage()
       return
     }
 
     this.resizeGrid(newSize)
 
     if (this.currentImageUrl) {
-      await this.loadImage(this.currentImageUrl, this.currentGridSettings, {
+      await this.loadImage(this.currentImageUrl, {
         preserveGridSize: true,
       })
     }
