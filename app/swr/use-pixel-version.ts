@@ -1,17 +1,11 @@
 import useSWR, { mutate } from 'swr'
 import { fetcher } from './shared'
-import type { GridSettings } from '@/lib/grid-settings'
-
-// Re-export from shared file for backwards compatibility
-export { DEFAULT_GRID_SETTINGS } from '@/lib/grid-settings'
-export type { GridSettings } from '@/lib/grid-settings'
 
 export interface LatestPixelVersion {
   id: string
   fileKey: string
   version: number
   gridSize: number
-  gridSettings: GridSettings | null
 }
 
 export function usePixelVersion({

@@ -1,8 +1,6 @@
 'use client'
 
 import {
-  DEFAULT_GRID_SETTINGS,
-  GridSettings,
   LatestPixelVersion,
   usePixelVersion,
 } from '@/app/swr/use-pixel-version'
@@ -64,9 +62,6 @@ export function Canvas({
   const [isEyeDropperActive, setIsEyeDropperActive] = useState(false)
   const [isReprocessing, setIsReprocessing] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
-  const [gridSettings, setGridSettings] = useState<GridSettings>(
-    pixelVersion?.gridSettings ?? DEFAULT_GRID_SETTINGS
-  )
   const [currentGridSize, setCurrentGridSize] = useState(
     pixelVersion?.gridSize ?? 32
   )
@@ -74,15 +69,11 @@ export function Canvas({
   const pathname = usePathname()
   const isOnPixelPage = pathname === `/p/${pixel.id}`
 
-  // Sync grid settings when pixel version changes
   useEffect(() => {
-    if (pixelVersion?.gridSettings) {
-      setGridSettings(pixelVersion.gridSettings)
-    }
     if (pixelVersion?.gridSize) {
       setCurrentGridSize(pixelVersion.gridSize)
     }
-  }, [pixelVersion?.gridSettings, pixelVersion?.gridSize])
+  }, [pixelVersion?.gridSize])
 
   const onColorChange = useCallback((color: RgbaColor) => {
     const colorArray = [color.r, color.g, color.b, color.a * 255] as Color
@@ -200,24 +191,6 @@ export function Canvas({
     setIsInitialLoading(isLoading)
   }, [])
 
-  const onGridSettingsChange = useCallback(
-    async (newSettings: GridSettings) => {
-      setGridSettings(newSettings)
-      setIsReprocessing(true)
-      try {
-        await editorRef.current?.getEditor()?.reloadWithSettings(newSettings)
-        setHasUnsavedChanges(true)
-        refreshPalette()
-      } catch (error) {
-        console.error('Failed to reprocess with new settings:', error)
-        toast.error('Failed to apply settings')
-      } finally {
-        setIsReprocessing(false)
-      }
-    },
-    [refreshPalette]
-  )
-
   const onGridSizeChange = useCallback(
     async (newSize: number) => {
       setCurrentGridSize(newSize)
@@ -252,7 +225,6 @@ export function Canvas({
             id={pixel.id}
             fileKey={pixelVersion.fileKey}
             gridSize={pixelVersion.gridSize}
-            gridSettings={pixelVersion.gridSettings}
             ref={editorRef}
             onHistoryChange={onHistoryChange}
             onLoadingChange={onInitialLoadingChange}
@@ -527,8 +499,6 @@ export function Canvas({
 
                       const currentGridSize =
                         editorRef.current?.getEditor()?.getGridSize() ?? 32
-                      const currentSettings =
-                        editorRef.current?.getEditor()?.getGridSettings()
 
                       await savePixel({
                         id: pixel.id,
@@ -536,7 +506,6 @@ export function Canvas({
                         oldFileKey: pixelVersion?.fileKey,
                         svgContent,
                         gridSize: currentGridSize,
-                        gridSettings: currentSettings,
                       })
 
                       editorRef.current?.getEditor()?.resetHistory()
@@ -567,14 +536,11 @@ export function Canvas({
           disabled={disableActions}
         />
 
-        {/* Grid Settings Panel */}
+        {/* Grid Size */}
         <GridSettingsPanel
-          settings={gridSettings}
           gridSize={currentGridSize}
-          onSettingsChange={onGridSettingsChange}
           onGridSizeChange={onGridSizeChange}
           disabled={disableActions || isReprocessing || isInitialLoading}
-          isSvgMode={pixelVersion?.fileKey?.endsWith('.svg') ?? false}
         />
 
         {isInitialLoading && (

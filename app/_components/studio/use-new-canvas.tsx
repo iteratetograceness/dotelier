@@ -31,7 +31,7 @@ export const useNewCanvas = create<NewCanvasState & NewCanvasActions>(
     startGeneration: async (prompt: string) => {
       try {
         // Generate image + remove background + save pixel version (all server-side)
-        // The editor will use unfake's processImage client-side for scale detection & downscaling
+        // The editor will use pixel-snapper (WASM) client-side for grid detection & snapping
         const { model } = get()
         set({ status: 'generating', prompt })
         const generateResult = await generatePixelIcon({ prompt, model })

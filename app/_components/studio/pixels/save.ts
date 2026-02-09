@@ -1,6 +1,5 @@
 'use server'
 
-import { GridSettings } from '@/app/swr/use-pixel-version'
 import { authorizeRequest } from '@/lib/auth/request'
 import { insertPixelVersion, isPixelOwner } from '@/lib/db/queries'
 import { ERROR_CODES } from '@/lib/error'
@@ -14,14 +13,12 @@ export async function savePixel({
   version,
   svgContent,
   gridSize,
-  gridSettings,
 }: {
   id: string
   version: number
   oldFileKey: string
   svgContent: string
   gridSize: number
-  gridSettings?: GridSettings
 }) {
   try {
     const authorized = await authorizeRequest()
@@ -61,7 +58,6 @@ export async function savePixel({
         fileKey: newFileKey,
         version: newVersion,
         gridSize,
-        gridSettings,
       })
     } catch (error) {
       after(async () => {

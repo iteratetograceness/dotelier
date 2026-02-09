@@ -1,6 +1,5 @@
 'use client'
 
-import { DEFAULT_GRID_SETTINGS, GridSettings } from '@/app/swr/use-pixel-version'
 import { getPublicPixelAsset } from '@/lib/ut/client'
 import {
   memo,
@@ -16,7 +15,6 @@ interface HtmlCanvasProps {
   id: string
   fileKey: string
   gridSize: number
-  gridSettings?: GridSettings | null
   onHistoryChange: () => void
   onLoadingChange?: (isLoading: boolean) => void
 }
@@ -31,7 +29,6 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
   ref,
   fileKey,
   gridSize,
-  gridSettings,
   onHistoryChange,
   onLoadingChange,
 }: HtmlCanvasProps & { ref: Ref<HtmlCanvasRef> }) {
@@ -55,7 +52,6 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
 
     const canvas = canvasRef.current
     const previewCanvas = previewCanvasRef.current
-    // Use gridSize from DB, defaulting to DEFAULT_SIZE for backwards compatibility
     const effectiveGridSize = gridSize || DEFAULT_SIZE
     const size = effectiveGridSize * GRID_ITEM_SIZE
     canvas.width = size
@@ -73,12 +69,10 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
     editorRef.current = editor
 
     if (url) {
-      const effectiveSettings = gridSettings ?? DEFAULT_GRID_SETTINGS
       onLoadingChange?.(true)
       editor
-        .loadImageWithUnfake(url, effectiveSettings)
+        .loadImage(url)
         .then(() => {
-          // Trigger history change to refresh palette
           onHistoryChange()
         })
         .catch((error) => {
@@ -93,7 +87,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
       editorRef.current?.destroy()
       editorRef.current = null
     }
-  }, [onHistoryChange, onLoadingChange, url, gridSize, gridSettings])
+  }, [onHistoryChange, onLoadingChange, url, gridSize])
 
   return error ? (
     <div className='size-full flex items-center justify-center'>

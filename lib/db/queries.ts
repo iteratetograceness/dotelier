@@ -143,7 +143,6 @@ async function _getLatestPixelVersion(
       'pixelVersion.fileKey',
       'pixelVersion.version',
       'pixelVersion.gridSize',
-      'pixelVersion.gridSettings',
     ])
     .where('pixelVersion.pixelId', '=', pixelId)
     .where('pixelVersion.isCurrent', '=', true)
@@ -153,8 +152,7 @@ async function _getLatestPixelVersion(
 
   return {
     ...result,
-    gridSize: result.gridSize ?? 32, // Default to 32 for backwards compatibility
-    gridSettings: result.gridSettings as LatestPixelVersion['gridSettings'],
+    gridSize: result.gridSize ?? 32,
   }
 }
 async function _getPixelsMetadataByOwner({
@@ -282,13 +280,11 @@ async function _insertPixelVersion({
   fileKey,
   version = 0,
   gridSize = 32,
-  gridSettings = null,
 }: {
   pixelId: string
   fileKey: string
   version?: number
   gridSize?: number
-  gridSettings?: LatestPixelVersion['gridSettings']
 }) {
   return db.transaction().execute(async (tx) => {
     const prevProw = version
@@ -309,7 +305,6 @@ async function _insertPixelVersion({
         isCurrent: true,
         version,
         gridSize,
-        gridSettings: gridSettings ? JSON.stringify(gridSettings) : null,
       })
       .returning('id')
       .executeTakeFirstOrThrow()

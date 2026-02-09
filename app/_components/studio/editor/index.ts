@@ -1,14 +1,7 @@
-import {
-  DEFAULT_GRID_SETTINGS,
-  GridSettings,
-} from '@/app/swr/use-pixel-version'
+import { DEFAULT_MAX_COLORS } from '@/lib/grid-settings'
 import { HistoryManager } from './history'
-import { getQuantizer } from './quant'
 import { Color, PixelRenderer } from './renderer'
 import { ToolManager, ToolName } from './tool'
-import { analyzeGridCell, findDominantColor } from './utils'
-
-export type { GridSettings }
 
 export const DEFAULT_SIZE = 32
 export const GRID_ITEM_SIZE = 12
@@ -23,7 +16,6 @@ export class PixelEditor {
   private history: HistoryManager
   private isDrawing = false
   private currentImageUrl: string | null = null
-  private currentGridSettings: GridSettings = DEFAULT_GRID_SETTINGS
 
   private handlers = {
     mouseDown: (e: MouseEvent) => {
@@ -254,102 +246,64 @@ export class PixelEditor {
   }
 
   /**
-   * Load an image using unfake's processImage for pixel grid conversion.
-   * This uses advanced scale detection and downscaling algorithms.
-   * By default, dynamically resizes the grid to match unfake's output.
-   * Set preserveGridSize to true to keep the current grid size (for user-initiated grid size changes).
+   * Load an image into the editor.
+   *
+   * - SVGs (saved pixel art) are loaded directly — 1:1 pixel read.
+   * - Raster images (PNGs from generation) are snapped to a pixel grid
+   *   via spritefusion-pixel-snapper (WASM).
+   *
+   * By default the grid auto-sizes to match the image dimensions.
+   * Pass `preserveGridSize: true` to keep the current grid size.
    */
-  public async loadImageWithUnfake(
+  public async loadImage(
     imageUrl: string,
-    settings: GridSettings = DEFAULT_GRID_SETTINGS,
     options?: { preserveGridSize?: boolean }
   ): Promise<void> {
-    console.log('[loadImageWithUnfake] Starting for:', imageUrl)
-    console.log('[loadImageWithUnfake] Settings:', settings)
-
-    // Store current image URL and settings for reloading
     this.currentImageUrl = imageUrl
-    this.currentGridSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
 
-    // Fetch the image as a blob
     const response = await fetch(imageUrl)
     const blob = await response.blob()
 
-    // If SVG, use loadSVG2
+    // Saved SVGs are 1:1 with the grid — load directly
     if (blob.type === 'image/svg+xml') {
-      await this.loadSVG2(imageUrl, settings)
+      await this.loadSvg(imageUrl)
       return
     }
 
-    const file = new File([blob], 'image.png', { type: blob.type })
+    const imageBytes = new Uint8Array(await blob.arrayBuffer())
 
-    console.log(
-      '[loadImageWithUnfake] Fetched image, size:',
-      file.size,
-      'bytes'
-    )
+    // Dynamic import keeps the WASM out of the initial bundle
+    const { snapPixels } = await import('@/lib/pixel-snapper')
+    const { imageData } = await snapPixels(imageBytes, DEFAULT_MAX_COLORS)
 
-    // Dynamic import to avoid bundling OpenCV at build time
-    const { processImage } = await import('@/lib/unfake')
-
-    console.log('[loadImageWithUnfake] Processing with unfake...')
-
-    const mergedSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
-    const result = await processImage({
-      file,
-      maxColors: mergedSettings.maxColors ?? 32,
-      downscaleMethod: mergedSettings.downscaleMethod ?? 'dominant',
-      cleanup: {
-        morph: mergedSettings.cleanup?.morph ?? false,
-        jaggy: mergedSettings.cleanup?.jaggy ?? true,
-      },
-      alphaThreshold: mergedSettings.alphaThreshold ?? 128,
-      snapGrid: mergedSettings.snapGrid ?? true,
-      maxGridSize: this.gridSize,
-    })
-
-    console.log('[loadImageWithUnfake] Processing complete!')
-    console.log(
-      '[loadImageWithUnfake] Result size:',
-      result.imageData.width,
-      'x',
-      result.imageData.height
-    )
-    console.log('[loadImageWithUnfake] Palette colors:', result.palette.length)
-
-    const { imageData } = result
     const srcWidth = imageData.width
     const srcHeight = imageData.height
 
-    // Determine the target grid size
+    // Determine target grid size
     let targetGridSize: number
     if (options?.preserveGridSize) {
-      // User explicitly set grid size, keep it
       targetGridSize = this.gridSize
-      console.log('[loadImageWithUnfake] Preserving grid size:', targetGridSize)
     } else {
-      // Auto-size based on unfake output
       targetGridSize = Math.max(srcWidth, srcHeight)
       this.resizeGrid(targetGridSize)
-      console.log('[loadImageWithUnfake] Grid resized to:', targetGridSize)
     }
 
-    // Copy pixels directly from unfake output to editor grid
-    // Center the image within the target grid
+    // Clear and copy pixels, centering within the grid
+    this.pixelData.fill(0)
     const offsetX = Math.floor((targetGridSize - srcWidth) / 2)
     const offsetY = Math.floor((targetGridSize - srcHeight) / 2)
 
     for (let y = 0; y < srcHeight; y++) {
       for (let x = 0; x < srcWidth; x++) {
         const srcIdx = (y * srcWidth + x) * 4
-        const r = imageData.data[srcIdx]
-        const g = imageData.data[srcIdx + 1]
-        const b = imageData.data[srcIdx + 2]
         const a = imageData.data[srcIdx + 3]
-
-        // Only set pixels with visible alpha
         if (a > 10) {
-          this.setPixel(x + offsetX, y + offsetY, [r, g, b, a])
+          this.setPixel(x + offsetX, y + offsetY, [
+            imageData.data[srcIdx],
+            imageData.data[srcIdx + 1],
+            imageData.data[srcIdx + 2],
+            a,
+          ])
         }
       }
     }
@@ -358,83 +312,43 @@ export class PixelEditor {
     this.renderer.startRenderLoop()
     this.history.startAction()
     this.history.endAction()
-
-    console.log('[loadImageWithUnfake] Grid mapping complete!')
   }
 
-  public async loadSVG2(
-    svgUrl: string,
-    settings: GridSettings = DEFAULT_GRID_SETTINGS
-  ): Promise<void> {
-    // Store current image URL and settings for reloading
+  /**
+   * Load a saved SVG directly into the pixel grid.
+   *
+   * Our SVGs are 1:1 with the grid (width/height = gridSize, one <rect>
+   * per pixel cell), so we rasterize at native resolution and read pixels
+   * directly — no quantization or cell analysis needed.
+   */
+  private async loadSvg(svgUrl: string): Promise<void> {
     this.currentImageUrl = svgUrl
-    this.currentGridSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
-
-    const mergedSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
 
     return new Promise((resolve, reject) => {
-      const svgImage = new Image()
-      svgImage.crossOrigin = 'anonymous'
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
 
-      svgImage.onload = () => {
+      img.onload = () => {
         this.pixelData.fill(0)
         this.renderer.clear()
         this.previewRenderer.clear()
 
-        const resizeResolution = 792
-        svgImage.width = resizeResolution
-        svgImage.height = resizeResolution
+        // Render at native SVG dimensions (= grid size)
+        const w = img.naturalWidth || this.gridSize
+        const h = img.naturalHeight || this.gridSize
 
-        const tempCanvas = document.createElement('canvas')
-        tempCanvas.width = resizeResolution
-        tempCanvas.height = resizeResolution
+        const canvas = new OffscreenCanvas(w, h)
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, w, h)
 
-        const tempCtx = tempCanvas.getContext('2d', {
-          willReadFrequently: true,
-        })
+        const { data } = ctx.getImageData(0, 0, w, h)
 
-        if (!tempCtx) {
-          reject(new Error('Failed to get temporary canvas context'))
-          return
-        }
-
-        tempCtx.drawImage(svgImage, 0, 0, resizeResolution, resizeResolution)
-
-        const q = getQuantizer()
-        q.sample(tempCanvas)
-        const quantized = q.reduce(tempCanvas)
-
-        const quantizedImageData = tempCtx.createImageData(
-          resizeResolution,
-          resizeResolution
-        )
-        quantizedImageData.data.set(quantized)
-        tempCtx.putImageData(quantizedImageData, 0, 0)
-
-        const svgPixelSize = resizeResolution / this.gridSize
-        const alphaThreshold = mergedSettings.alphaThreshold ?? 200
-        const fillThreshold = mergedSettings.fillThreshold ?? 61
-
-        for (let x = 0; x < this.gridSize; x++) {
-          for (let y = 0; y < this.gridSize; y++) {
-            const { filledPixels, totalPixels, colorMap } = analyzeGridCell({
-              width: resizeResolution,
-              startX: x * svgPixelSize,
-              startY: y * svgPixelSize,
-              regionSize: svgPixelSize,
-              alphaThreshold,
-              quantizedData: quantized,
-            })
-
-            const filledPercentage = (filledPixels / totalPixels) * 100
-            if (filledPercentage < fillThreshold) continue
-
-            const dominantColor = findDominantColor(colorMap)
-
-            if (dominantColor) {
-              if (this.isWithinBounds(x, y)) {
-                this.setPixel(x, y, dominantColor)
-              }
+        for (let y = 0; y < h && y < this.gridSize; y++) {
+          for (let x = 0; x < w && x < this.gridSize; x++) {
+            const i = (y * w + x) * 4
+            const a = data[i + 3]
+            if (a > 0) {
+              this.setPixel(x, y, [data[i], data[i + 1], data[i + 2], a])
             }
           }
         }
@@ -444,17 +358,12 @@ export class PixelEditor {
         this.history.startAction()
         this.history.endAction()
 
+        img.src = ''
         resolve()
-
-        svgImage.src = ''
-        tempCanvas.remove()
       }
 
-      svgImage.onerror = () => {
-        reject(new Error('Failed to load image'))
-      }
-
-      svgImage.src = svgUrl
+      img.onerror = () => reject(new Error('Failed to load SVG'))
+      img.src = svgUrl
     })
   }
 
@@ -532,42 +441,26 @@ export class PixelEditor {
   }
 
   /**
-   * Get the current grid settings used for image processing.
+   * Reload the current image. Used after grid size changes.
    */
-  public getGridSettings(): GridSettings {
-    return { ...this.currentGridSettings }
-  }
-
-  /**
-   * Reload the current image with new grid settings.
-   * This will re-process the image from scratch.
-   */
-  public async reloadWithSettings(settings: GridSettings): Promise<void> {
-    if (!this.currentImageUrl) {
-      console.warn('[reloadWithSettings] No image URL stored, cannot reload')
-      return
-    }
-
-    console.log('[reloadWithSettings] Reloading with settings:', settings)
-    await this.loadImageWithUnfake(this.currentImageUrl, settings)
+  public async reloadImage(): Promise<void> {
+    if (!this.currentImageUrl) return
+    await this.loadImage(this.currentImageUrl)
   }
 
   /**
    * Update the grid size and reload the image.
-   * This is a convenience method that combines resizing with reloading.
    */
   public async setGridSizeAndReload(newSize: number): Promise<void> {
     if (newSize === this.gridSize && this.currentImageUrl) {
-      // Just reload with current settings
-      await this.reloadWithSettings(this.currentGridSettings)
+      await this.reloadImage()
       return
     }
 
     this.resizeGrid(newSize)
 
     if (this.currentImageUrl) {
-      // Preserve the user's grid size choice - don't let unfake override it
-      await this.loadImageWithUnfake(this.currentImageUrl, this.currentGridSettings, {
+      await this.loadImage(this.currentImageUrl, {
         preserveGridSize: true,
       })
     }
