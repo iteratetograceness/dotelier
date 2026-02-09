@@ -34,10 +34,10 @@ export function DeletePixelButton({
       <AlertDialog.Portal>
         <AlertDialog.Overlay className='fixed inset-0 bg-black/40 z-50' />
         <AlertDialog.Content className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background pixel-corners pixel-border-light-shadow p-6 z-50 w-80 flex flex-col gap-4'>
-          <AlertDialog.Title className='text-lg text-accent'>
+          <AlertDialog.Title className='text-lg text-foreground'>
             Delete pixel?
           </AlertDialog.Title>
-          <AlertDialog.Description className='text-sm text-medium'>
+          <AlertDialog.Description className='text-sm text-shadow'>
             This action cannot be undone. The pixel and all its versions will be
             permanently deleted.
           </AlertDialog.Description>
