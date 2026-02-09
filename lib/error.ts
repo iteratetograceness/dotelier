@@ -13,6 +13,7 @@ export const ERROR_CODES = {
   FAILED_TO_SAVE_ICON: 12,
   FAILED_TO_EDIT_ICON: 13,
   RATE_LIMITED: 14,
+  CREDITS_CHECK_FAILED: 15,
 }
 
 export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
@@ -47,5 +48,7 @@ export function getError(code: ErrorCode) {
       return 'Failed to edit icon.'
     case ERROR_CODES.RATE_LIMITED:
       return 'Too many requests. Please wait a moment.'
+    case ERROR_CODES.CREDITS_CHECK_FAILED:
+      return 'Failed to check credits. Please try again.'
   }
 }

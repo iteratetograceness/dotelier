@@ -18,10 +18,10 @@ export const generateRateLimit = new Ratelimit({
  * Get the best identifier for rate limiting.
  * Prefers JA4 fingerprint (catches bots rotating IPs), falls back to IP.
  */
-export function getRateLimitIdentifier(headers: Headers): string {
+export function getRateLimitIdentifier(headers: Headers): string | null {
   return (
     headers.get('x-vercel-ja4-digest') ??
     headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown'
+    null
   )
 }
