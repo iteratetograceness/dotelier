@@ -1,7 +1,9 @@
+import { Button } from '@/app/_components/button'
 import { Pill } from '@/app/_components/pill'
 import { Canvas } from '@/app/_components/studio/pixels/canvas.client'
 import { DeletePixelButton } from '@/app/_components/studio/pixels/delete-button'
 import { getLatestPixelVersion } from '@/lib/db/queries'
+import Image from 'next/image'
 import { UneditedImage } from './unedited-image'
 
 export function MyPixelView({
@@ -21,14 +23,26 @@ export function MyPixelView({
 
   return (
     <div className='flex flex-col gap-6 w-full p-6 items-center'>
-      <div className='align-left w-full bg-light-shadow p-2 pixel-corners pixel-border-light-shadow text-highlight flex flex-col gap-2'>
-        <div className='flex justify-between items-start'>
-          <h2 className='text-2xl'>{pixel.prompt}</h2>
-          <DeletePixelButton pixelId={pixel.id} />
-        </div>
-        <div className='flex gap-2'>
+      <div className='flex flex-col sm:flex-row sm:items-center gap-2 w-full'>
+        <h2 className='text-2xl text-highlight truncate'>{pixel.prompt}</h2>
+        <div className='flex gap-2 items-center sm:ml-auto shrink-0'>
           <Pill variant='dark'>{pixel.createdAt.toLocaleDateString()}</Pill>
           <Pill variant='dark'>{pixel.createdAt.toLocaleTimeString()}</Pill>
+          <DeletePixelButton pixelId={pixel.id}>
+            <Button
+              aria-label='Delete pixel'
+              iconOnly
+              variant='primary'
+              className='size-7!'
+            >
+              <Image
+                src='/editor/trash.png'
+                alt='Delete'
+                width={16}
+                height={16}
+              />
+            </Button>
+          </DeletePixelButton>
         </div>
       </div>
 

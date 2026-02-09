@@ -8,7 +8,13 @@ import { toast } from 'sonner'
 import { getError } from '@/lib/error'
 import type { ErrorCode } from '@/lib/error'
 
-export function DeletePixelButton({ pixelId }: { pixelId: string }) {
+export function DeletePixelButton({
+  pixelId,
+  children,
+}: {
+  pixelId: string
+  children: React.ReactNode
+}) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -24,11 +30,7 @@ export function DeletePixelButton({ pixelId }: { pixelId: string }) {
 
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
-      <AlertDialog.Trigger asChild>
-        <button className='text-xs text-medium hover:text-accent cursor-pointer transition-colors'>
-          Delete
-        </button>
-      </AlertDialog.Trigger>
+      <AlertDialog.Trigger asChild>{children}</AlertDialog.Trigger>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className='fixed inset-0 bg-black/40 z-50' />
         <AlertDialog.Content className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background pixel-corners pixel-border-light-shadow p-6 z-50 w-80 flex flex-col gap-4'>
