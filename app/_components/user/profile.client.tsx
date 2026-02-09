@@ -67,6 +67,11 @@ function UserProfileInternal({
             </DropdownMenu.Label>
           </div>
           <Credits credits={credits} />
+          <DropdownMenu.Item asChild textValue='Buy Credits'>
+            <ButtonLink className='w-full' href='/credits'>
+              Buy Credits
+            </ButtonLink>
+          </DropdownMenu.Item>
           <DropdownMenu.Separator />
           {NAV_LINKS.map(({ label, href }) => (
             <DropdownMenu.Item asChild textValue={label} key={href}>

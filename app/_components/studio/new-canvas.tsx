@@ -6,7 +6,7 @@ import { cn } from '@/app/utils/classnames'
 import { usePostProcessingStatus } from '@/app/utils/use-post-processing-status'
 import Image from 'next/image'
 import { memo } from 'react'
-import { Button } from '../button'
+import { Button, ButtonLink } from '../button'
 import { useRouter } from 'next/navigation'
 import RetroLoader from '../loader'
 import { Pill } from '../pill'
@@ -159,19 +159,26 @@ function Loading() {
 
 function Error() {
   const { error } = useNewCanvas()
+  const isNoCredits = error === 'You have no credits left.'
 
   return (
     <div className='flex flex-col items-center justify-center h-full'>
       <div className='flex items-center flex-col gap-3'>
         <p className='text-lg text-dark-hover leading-4'>
-          something went wrong:
+          {isNoCredits ? 'out of credits' : 'something went wrong:'}
         </p>
         <p className='text-sm bg-medium pixel-corners px-2 py-1 w-fit text-center mx-4'>
           {error || 'Unexpected error'}
         </p>
-        <p className='text-xs text-shadow w-fit'>
-          note: credits will not be deducted
-        </p>
+        {isNoCredits ? (
+          <ButtonLink href='/credits' className='text-xs'>
+            Get More Credits
+          </ButtonLink>
+        ) : (
+          <p className='text-xs text-shadow w-fit'>
+            note: credits will not be deducted
+          </p>
+        )}
       </div>
     </div>
   )

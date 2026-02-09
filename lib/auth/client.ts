@@ -28,3 +28,22 @@ export const signInWithGoogle = ({
 }
 
 export const { signOut, useSession } = authClient
+
+export async function checkout({ products }: { products: string[] }) {
+  const res = await fetch(`${getBaseUrl()}/api/auth/checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ products }),
+  })
+
+  if (!res.ok) {
+    throw new Error('Checkout failed')
+  }
+
+  const data = await res.json()
+
+  if (data.url) {
+    window.location.href = data.url
+  }
+}
