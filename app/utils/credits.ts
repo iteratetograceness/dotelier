@@ -9,6 +9,29 @@ const polar = new Polar({
   server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
 })
 
+// Atomically decrement key if current value >= amount
+const ATOMIC_DECRBY = `
+local current = tonumber(redis.call('GET', KEYS[1]) or '0')
+local amount = tonumber(ARGV[1])
+if current >= amount then
+  redis.call('DECRBY', KEYS[1], amount)
+  return 1
+end
+return 0
+`
+
+// Atomically increment usage counter if (max - used) >= amount
+const ATOMIC_INCR_USAGE = `
+local used = tonumber(redis.call('GET', KEYS[1]) or '0')
+local max_credits = tonumber(ARGV[1])
+local amount = tonumber(ARGV[2])
+if (max_credits - used) >= amount then
+  redis.call('INCRBY', KEYS[1], amount)
+  return 1
+end
+return 0
+`
+
 class Credits {
   private redis: Redis
   private polar: Polar
@@ -44,20 +67,15 @@ class Credits {
   }
 
   private async getPolarCredits(userId: string) {
-    try {
-      const result = await this.polar.customers.getStateExternal({
-        externalId: userId,
-      })
-      const meters = result.activeMeters
-      const meter = meters.find((m) => m.meterId === this.meterId)
+    const result = await this.polar.customers.getStateExternal({
+      externalId: userId,
+    })
+    const meters = result.activeMeters
+    const meter = meters.find((m) => m.meterId === this.meterId)
 
-      if (!meter) return 0
+    if (!meter) return 0
 
-      return meter.balance || 0
-    } catch (error) {
-      console.error('Failed to get Polar credits:', error)
-      return 0
-    }
+    return meter.balance || 0
   }
 
   async get(userId?: string) {
@@ -65,44 +83,44 @@ class Credits {
 
     const [nonPolar, polar] = await Promise.all([
       this.getNonPolarCredits(userId),
-      this.getPolarCredits(userId),
+      this.getPolarCredits(userId).catch((error) => {
+        console.error('Failed to get Polar credits:', error)
+        return 0
+      }),
     ])
 
     return nonPolar.total + polar
   }
 
   async decrement(userId: string, amount: number = 1) {
-    const nonPolar = await this.getNonPolarCredits(userId)
+    // Atomically try refund credits first
+    const refundResult = await this.redis.eval<[number], number>(
+      ATOMIC_DECRBY,
+      [this.getRefundKey(userId)],
+      [amount]
+    )
+    if (refundResult === 1) return true
 
-    // First try refund credits
-    if (nonPolar.refund >= amount) {
-      await this.redis.decrby(this.getRefundKey(userId), amount)
-      return true
-    }
+    // Atomically try welcome credits
+    const welcomeResult = await this.redis.eval<[number, number], number>(
+      ATOMIC_INCR_USAGE,
+      [this.getUserKey(userId)],
+      [this.welcomeCredits, amount]
+    )
+    if (welcomeResult === 1) return true
 
-    // Then try welcome credits
-    if (nonPolar.welcome >= amount) {
-      await this.redis.incrby(this.getUserKey(userId), amount)
-      return true
-    }
-
-    // Finally try Polar credits
+    // Try Polar credits — errors propagate to caller
     const polarCredits = await this.getPolarCredits(userId)
     if (polarCredits >= amount) {
-      try {
-        await this.polar.events.ingest({
-          events: [
-            {
-              name: 'icon-generation',
-              externalCustomerId: userId,
-            },
-          ],
-        })
-        return true
-      } catch (error) {
-        console.error('Failed to decrement Polar credits:', error)
-        return false
-      }
+      await this.polar.events.ingest({
+        events: [
+          {
+            name: 'icon-generation',
+            externalCustomerId: userId,
+          },
+        ],
+      })
+      return true
     }
 
     return false

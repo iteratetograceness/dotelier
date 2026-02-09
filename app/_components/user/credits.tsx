@@ -19,7 +19,7 @@ export const Credits = ({
     >
       <Image src='/coin.svg' width={24} height={24} alt='Golden coin' />
       <p>
-        {credits} Credit{credits === 0 ? '' : 's'}
+        {credits} Credit{credits === 1 ? '' : 's'}
       </p>
     </div>
   )

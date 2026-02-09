@@ -36,6 +36,7 @@ export async function generatePixelIcon({
     }
 > {
   let bypassCredits = false
+  let creditsDeducted = false
   let userId: string
   let pixelCreated = false
   const pixelId = id ?? uuidv4()
@@ -48,6 +49,9 @@ export async function generatePixelIcon({
 
     // Rate limit by fingerprint/IP before processing
     const identifier = getRateLimitIdentifier(headersList)
+    if (!identifier) {
+      return { error: ERROR_CODES.RATE_LIMITED, success: false }
+    }
     const { success: rateLimitSuccess } = await generateRateLimit.limit(identifier)
     if (!rateLimitSuccess) {
       return { error: ERROR_CODES.RATE_LIMITED, success: false }
@@ -67,9 +71,15 @@ export async function generatePixelIcon({
     bypassCredits = Boolean(authResult.user.role === 'admin')
 
     if (!bypassCredits) {
-      const hasCredits = await credits.decrement(userId)
-      if (!hasCredits) {
-        return { error: ERROR_CODES.NO_CREDITS, success: false }
+      try {
+        const hasCredits = await credits.decrement(userId)
+        if (!hasCredits) {
+          return { error: ERROR_CODES.NO_CREDITS, success: false }
+        }
+        creditsDeducted = true
+      } catch (error) {
+        console.error('[generatePixelIcon] Credit check failed:', error)
+        return { error: ERROR_CODES.CREDITS_CHECK_FAILED, success: false }
       }
     }
 
@@ -168,7 +178,7 @@ export async function generatePixelIcon({
     console.error('[generatePixelIcon]: ', error)
     after(async () => {
       await Promise.all([
-        !bypassCredits && userId ? credits.increment(userId) : null,
+        creditsDeducted && userId ? credits.increment(userId) : null,
         pixelCreated ? deletePixel(pixelId) : null,
       ])
     })
