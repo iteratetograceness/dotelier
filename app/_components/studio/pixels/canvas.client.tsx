@@ -565,6 +565,7 @@ export function Canvas({
           Subtle imperfections are expected when mapping to the grid-based
           editor
         </p>
+
       </div>
     </div>
   )
