@@ -1,5 +1,6 @@
 import { Pill } from '@/app/_components/pill'
 import { Canvas } from '@/app/_components/studio/pixels/canvas.client'
+import { DeletePixelButton } from '@/app/_components/studio/pixels/delete-button'
 import { getLatestPixelVersion } from '@/lib/db/queries'
 import { UneditedImage } from './unedited-image'
 
@@ -22,9 +23,10 @@ export function MyPixelView({
     <div className='flex flex-col gap-6 w-full p-6 items-center'>
       <div className='align-left w-full bg-light-shadow p-2 pixel-corners pixel-border-light-shadow text-highlight flex flex-col gap-2'>
         <h2 className='text-2xl'>{pixel.prompt}</h2>
-        <div className='flex gap-2'>
+        <div className='flex gap-2 items-center'>
           <Pill variant='dark'>{pixel.createdAt.toLocaleDateString()}</Pill>
           <Pill variant='dark'>{pixel.createdAt.toLocaleTimeString()}</Pill>
+          <DeletePixelButton pixelId={pixel.id} />
         </div>
       </div>
 
