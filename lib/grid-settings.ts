@@ -4,25 +4,16 @@
  */
 
 export interface GridSettings {
-  downscaleMethod?:
-    | 'dominant'
-    | 'median'
-    | 'mode'
-    | 'mean'
-    | 'nearest'
-    | 'content-adaptive'
+  /** Max palette colors for raster→pixel snapping (k-means). */
   maxColors?: number
+  /** Alpha threshold for SVG rasterization (0–255). */
   alphaThreshold?: number
+  /** Minimum fill percentage for SVG grid cells (0–100). */
   fillThreshold?: number
-  snapGrid?: boolean
-  cleanup?: { morph?: boolean; jaggy?: boolean }
 }
 
 export const DEFAULT_GRID_SETTINGS: GridSettings = {
-  downscaleMethod: 'dominant',
-  maxColors: 32,
+  maxColors: 16,
   alphaThreshold: 128,
   fillThreshold: 61,
-  snapGrid: true,
-  cleanup: { morph: false, jaggy: true },
 }

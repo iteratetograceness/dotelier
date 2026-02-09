@@ -1,6 +1,5 @@
 'use client'
 
-import { Popover } from 'radix-ui'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Button } from '../button'
 import {
@@ -15,17 +14,9 @@ interface GridSettingsProps {
   onSettingsChange: (settings: GridSettingsType) => void
   onGridSizeChange: (size: number) => void
   disabled?: boolean
-  /** When true, hides settings that only apply to PNG processing (unfake) */
+  /** When true, hides settings that only apply to raster processing */
   isSvgMode?: boolean
 }
-
-const DOWNSCALE_METHODS = [
-  { value: 'dominant', label: 'Dominant Color' },
-  { value: 'median', label: 'Median' },
-  { value: 'mode', label: 'Mode' },
-  { value: 'mean', label: 'Mean' },
-  { value: 'nearest', label: 'Nearest' },
-] as const
 
 export function GridSettingsPanel({
   settings,
@@ -41,7 +32,6 @@ export function GridSettingsPanel({
   const [gridSizeInput, setGridSizeInput] = useState(String(gridSize))
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Sync local state when props change
   useEffect(() => {
     setLocalSettings(settings)
   }, [settings])
@@ -65,7 +55,6 @@ export function GridSettingsPanel({
       setGridSizeInput(value)
       const parsed = parseInt(value)
       if (!isNaN(parsed) && parsed >= 8 && parsed <= 128) {
-        // Debounce the actual change to avoid too many re-renders
         if (debounceRef.current) {
           clearTimeout(debounceRef.current)
         }
@@ -79,7 +68,6 @@ export function GridSettingsPanel({
   )
 
   const handleGridSizeBlur = useCallback(() => {
-    // Clear any pending debounce and apply immediately
     if (debounceRef.current) {
       clearTimeout(debounceRef.current)
     }
@@ -88,18 +76,9 @@ export function GridSettingsPanel({
       setLocalGridSize(parsed)
       onGridSizeChange(parsed)
     } else {
-      // Reset to current value if invalid
       setGridSizeInput(String(localGridSize))
     }
   }, [gridSizeInput, localGridSize, onGridSizeChange])
-
-  const handleCleanupChange = useCallback(
-    (key: 'morph' | 'jaggy', value: boolean) => {
-      const newCleanup = { ...localSettings.cleanup, [key]: value }
-      handleSettingChange('cleanup', newCleanup)
-    },
-    [localSettings.cleanup, handleSettingChange]
-  )
 
   return (
     <div
@@ -129,9 +108,9 @@ export function GridSettingsPanel({
             </p>
           )}
 
-          {/* Row 1: Grid Size + Downscale Method (Method hidden in SVG mode) */}
+          {/* Grid Size */}
           <div className='flex gap-2'>
-            <div className={cn('flex flex-col gap-0.5', isSvgMode ? 'flex-1' : 'flex-1')}>
+            <div className='flex flex-col gap-0.5 flex-1'>
               <label className='text-xs text-shadow'>Size</label>
               <input
                 type='number'
@@ -149,44 +128,9 @@ export function GridSettingsPanel({
                 disabled={disabled}
               />
             </div>
-            {!isSvgMode && (
-              <div className='flex flex-col gap-0.5 flex-[2]'>
-                <label className='text-xs text-shadow'>Method</label>
-                <Popover.Root>
-                  <Popover.Trigger asChild>
-                    <Button
-                      aria-label='Select downscale method'
-                      className='text-xs! w-full py-1!'
-                      disabled={disabled}
-                    >
-                      {DOWNSCALE_METHODS.find((m) => m.value === localSettings.downscaleMethod)?.label ||
-                        'Dominant'}
-                    </Button>
-                  </Popover.Trigger>
-                  <Popover.Portal>
-                    <Popover.Content
-                      className='flex flex-col w-36 text-xs z-50'
-                      align='start'
-                      side='bottom'
-                    >
-                      {DOWNSCALE_METHODS.map((method) => (
-                        <Button
-                          key={method.value}
-                          onClick={() => handleSettingChange('downscaleMethod', method.value)}
-                          className='w-full'
-                          isPressed={localSettings.downscaleMethod === method.value}
-                        >
-                          {method.label}
-                        </Button>
-                      ))}
-                    </Popover.Content>
-                  </Popover.Portal>
-                </Popover.Root>
-              </div>
-            )}
           </div>
 
-          {/* Row 2: Sliders (Colors hidden in SVG mode) */}
+          {/* Sliders */}
           <div className='flex flex-col gap-1'>
             <div className='flex items-center gap-2'>
               <label className='text-xs text-shadow w-16 shrink-0'>Alpha</label>
@@ -221,51 +165,15 @@ export function GridSettingsPanel({
                   type='range'
                   min='2'
                   max='64'
-                  value={localSettings.maxColors ?? 32}
+                  value={localSettings.maxColors ?? 16}
                   onChange={(e) => handleSettingChange('maxColors', parseInt(e.target.value))}
                   className='flex-1 accent-accent'
                   disabled={disabled}
                 />
-                <span className='text-xs w-8 text-right'>{localSettings.maxColors ?? 32}</span>
+                <span className='text-xs w-8 text-right'>{localSettings.maxColors ?? 16}</span>
               </div>
             )}
           </div>
-
-          {/* Row 3: Checkboxes - all unfake-only, hidden in SVG mode */}
-          {!isSvgMode && (
-            <div className='flex flex-wrap gap-x-3 gap-y-1 text-xs'>
-              <label className='flex items-center gap-1'>
-                <input
-                  type='checkbox'
-                  checked={localSettings.cleanup?.jaggy ?? true}
-                  onChange={(e) => handleCleanupChange('jaggy', e.target.checked)}
-                  className='accent-accent'
-                  disabled={disabled}
-                />
-                Jaggy
-              </label>
-              <label className='flex items-center gap-1'>
-                <input
-                  type='checkbox'
-                  checked={localSettings.cleanup?.morph ?? false}
-                  onChange={(e) => handleCleanupChange('morph', e.target.checked)}
-                  className='accent-accent'
-                  disabled={disabled}
-                />
-                Morph
-              </label>
-              <label className='flex items-center gap-1'>
-                <input
-                  type='checkbox'
-                  checked={localSettings.snapGrid ?? true}
-                  onChange={(e) => handleSettingChange('snapGrid', e.target.checked)}
-                  className='accent-accent'
-                  disabled={disabled}
-                />
-                Snap
-              </label>
-            </div>
-          )}
         </div>
       )}
     </div>

@@ -254,102 +254,67 @@ export class PixelEditor {
   }
 
   /**
-   * Load an image using unfake's processImage for pixel grid conversion.
-   * This uses advanced scale detection and downscaling algorithms.
-   * By default, dynamically resizes the grid to match unfake's output.
-   * Set preserveGridSize to true to keep the current grid size (for user-initiated grid size changes).
+   * Load a raster image and snap it to a clean pixel grid using
+   * spritefusion-pixel-snapper (WASM).
+   *
+   * By default the grid auto-sizes to the snapper's output dimensions.
+   * Pass `preserveGridSize: true` to keep the current grid size instead.
    */
-  public async loadImageWithUnfake(
+  public async loadImage(
     imageUrl: string,
     settings: GridSettings = DEFAULT_GRID_SETTINGS,
     options?: { preserveGridSize?: boolean }
   ): Promise<void> {
-    console.log('[loadImageWithUnfake] Starting for:', imageUrl)
-    console.log('[loadImageWithUnfake] Settings:', settings)
-
-    // Store current image URL and settings for reloading
     this.currentImageUrl = imageUrl
     this.currentGridSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
 
-    // Fetch the image as a blob
     const response = await fetch(imageUrl)
     const blob = await response.blob()
 
-    // If SVG, use loadSVG2
+    // SVGs use a separate rasterization path
     if (blob.type === 'image/svg+xml') {
       await this.loadSVG2(imageUrl, settings)
       return
     }
 
-    const file = new File([blob], 'image.png', { type: blob.type })
-
-    console.log(
-      '[loadImageWithUnfake] Fetched image, size:',
-      file.size,
-      'bytes'
-    )
-
-    // Dynamic import to avoid bundling OpenCV at build time
-    const { processImage } = await import('@/lib/unfake')
-
-    console.log('[loadImageWithUnfake] Processing with unfake...')
-
+    const imageBytes = new Uint8Array(await blob.arrayBuffer())
     const mergedSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
-    const result = await processImage({
-      file,
-      maxColors: mergedSettings.maxColors ?? 32,
-      downscaleMethod: mergedSettings.downscaleMethod ?? 'dominant',
-      cleanup: {
-        morph: mergedSettings.cleanup?.morph ?? false,
-        jaggy: mergedSettings.cleanup?.jaggy ?? true,
-      },
-      alphaThreshold: mergedSettings.alphaThreshold ?? 128,
-      snapGrid: mergedSettings.snapGrid ?? true,
-      maxGridSize: this.gridSize,
-    })
 
-    console.log('[loadImageWithUnfake] Processing complete!')
-    console.log(
-      '[loadImageWithUnfake] Result size:',
-      result.imageData.width,
-      'x',
-      result.imageData.height
+    // Dynamic import keeps the WASM out of the initial bundle
+    const { snapPixels } = await import('@/lib/pixel-snapper')
+    const { imageData } = await snapPixels(
+      imageBytes,
+      mergedSettings.maxColors ?? 16,
     )
-    console.log('[loadImageWithUnfake] Palette colors:', result.palette.length)
 
-    const { imageData } = result
     const srcWidth = imageData.width
     const srcHeight = imageData.height
 
-    // Determine the target grid size
+    // Determine target grid size
     let targetGridSize: number
     if (options?.preserveGridSize) {
-      // User explicitly set grid size, keep it
       targetGridSize = this.gridSize
-      console.log('[loadImageWithUnfake] Preserving grid size:', targetGridSize)
     } else {
-      // Auto-size based on unfake output
       targetGridSize = Math.max(srcWidth, srcHeight)
       this.resizeGrid(targetGridSize)
-      console.log('[loadImageWithUnfake] Grid resized to:', targetGridSize)
     }
 
-    // Copy pixels directly from unfake output to editor grid
-    // Center the image within the target grid
+    // Clear and copy pixels, centering within the grid
+    this.pixelData.fill(0)
     const offsetX = Math.floor((targetGridSize - srcWidth) / 2)
     const offsetY = Math.floor((targetGridSize - srcHeight) / 2)
 
     for (let y = 0; y < srcHeight; y++) {
       for (let x = 0; x < srcWidth; x++) {
         const srcIdx = (y * srcWidth + x) * 4
-        const r = imageData.data[srcIdx]
-        const g = imageData.data[srcIdx + 1]
-        const b = imageData.data[srcIdx + 2]
         const a = imageData.data[srcIdx + 3]
-
-        // Only set pixels with visible alpha
         if (a > 10) {
-          this.setPixel(x + offsetX, y + offsetY, [r, g, b, a])
+          this.setPixel(x + offsetX, y + offsetY, [
+            imageData.data[srcIdx],
+            imageData.data[srcIdx + 1],
+            imageData.data[srcIdx + 2],
+            a,
+          ])
         }
       }
     }
@@ -358,8 +323,6 @@ export class PixelEditor {
     this.renderer.startRenderLoop()
     this.history.startAction()
     this.history.endAction()
-
-    console.log('[loadImageWithUnfake] Grid mapping complete!')
   }
 
   public async loadSVG2(
@@ -548,8 +511,7 @@ export class PixelEditor {
       return
     }
 
-    console.log('[reloadWithSettings] Reloading with settings:', settings)
-    await this.loadImageWithUnfake(this.currentImageUrl, settings)
+    await this.loadImage(this.currentImageUrl, settings)
   }
 
   /**
@@ -566,8 +528,7 @@ export class PixelEditor {
     this.resizeGrid(newSize)
 
     if (this.currentImageUrl) {
-      // Preserve the user's grid size choice - don't let unfake override it
-      await this.loadImageWithUnfake(this.currentImageUrl, this.currentGridSettings, {
+      await this.loadImage(this.currentImageUrl, this.currentGridSettings, {
         preserveGridSize: true,
       })
     }

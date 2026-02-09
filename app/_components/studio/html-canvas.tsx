@@ -76,7 +76,7 @@ export const HtmlCanvasWithRef = memo(function HtmlCanvasWithRef({
       const effectiveSettings = gridSettings ?? DEFAULT_GRID_SETTINGS
       onLoadingChange?.(true)
       editor
-        .loadImageWithUnfake(url, effectiveSettings)
+        .loadImage(url, effectiveSettings)
         .then(() => {
           // Trigger history change to refresh palette
           onHistoryChange()
