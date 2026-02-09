@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { ComponentProps, useState } from 'react'
 import { cn } from '../utils/classnames'
