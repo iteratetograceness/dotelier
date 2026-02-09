@@ -14,7 +14,7 @@ interface GridSettingsProps {
   onSettingsChange: (settings: GridSettingsType) => void
   onGridSizeChange: (size: number) => void
   disabled?: boolean
-  /** When true, hides settings that only apply to raster processing */
+  /** When true, hides the colors slider (only applies to raster/PNG images) */
   isSvgMode?: boolean
 }
 
@@ -40,15 +40,6 @@ export function GridSettingsPanel({
     setLocalGridSize(gridSize)
     setGridSizeInput(String(gridSize))
   }, [gridSize])
-
-  const handleSettingChange = useCallback(
-    <K extends keyof GridSettingsType>(key: K, value: GridSettingsType[K]) => {
-      const newSettings = { ...localSettings, [key]: value }
-      setLocalSettings(newSettings)
-      onSettingsChange(newSettings)
-    },
-    [localSettings, onSettingsChange]
-  )
 
   const handleGridSizeInputChange = useCallback(
     (value: string) => {
@@ -102,78 +93,46 @@ export function GridSettingsPanel({
 
       {isOpen && (
         <div className='flex flex-col gap-2 pt-2 border-t border-shadow'>
-          {isSvgMode && (
-            <p className='text-xs text-shadow italic'>
-              Some settings only apply before saving. Re-generate to access all options.
-            </p>
-          )}
-
           {/* Grid Size */}
-          <div className='flex gap-2'>
-            <div className='flex flex-col gap-0.5 flex-1'>
-              <label className='text-xs text-shadow'>Size</label>
-              <input
-                type='number'
-                min='8'
-                max='128'
-                value={gridSizeInput}
-                onChange={(e) => handleGridSizeInputChange(e.target.value)}
-                onBlur={handleGridSizeBlur}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleGridSizeBlur()
-                  }
-                }}
-                className='w-full px-2 py-1 text-xs bg-white border-3 border-shadow border-r-highlight border-b-highlight'
-                disabled={disabled}
-              />
-            </div>
+          <div className='flex flex-col gap-0.5'>
+            <label className='text-xs text-shadow'>Size</label>
+            <input
+              type='number'
+              min='8'
+              max='128'
+              value={gridSizeInput}
+              onChange={(e) => handleGridSizeInputChange(e.target.value)}
+              onBlur={handleGridSizeBlur}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleGridSizeBlur()
+                }
+              }}
+              className='w-full px-2 py-1 text-xs bg-white border-3 border-shadow border-r-highlight border-b-highlight'
+              disabled={disabled}
+            />
           </div>
 
-          {/* Sliders */}
-          <div className='flex flex-col gap-1'>
+          {/* Colors slider — only relevant for raster (PNG) images */}
+          {!isSvgMode && (
             <div className='flex items-center gap-2'>
-              <label className='text-xs text-shadow w-16 shrink-0'>Alpha</label>
+              <label className='text-xs text-shadow w-16 shrink-0'>Colors</label>
               <input
                 type='range'
-                min='0'
-                max='255'
-                value={localSettings.alphaThreshold ?? 128}
-                onChange={(e) => handleSettingChange('alphaThreshold', parseInt(e.target.value))}
+                min='2'
+                max='64'
+                value={localSettings.maxColors ?? 16}
+                onChange={(e) => {
+                  const newSettings = { ...localSettings, maxColors: parseInt(e.target.value) }
+                  setLocalSettings(newSettings)
+                  onSettingsChange(newSettings)
+                }}
                 className='flex-1 accent-accent'
                 disabled={disabled}
               />
-              <span className='text-xs w-8 text-right'>{localSettings.alphaThreshold ?? 128}</span>
+              <span className='text-xs w-8 text-right'>{localSettings.maxColors ?? 16}</span>
             </div>
-            <div className='flex items-center gap-2'>
-              <label className='text-xs text-shadow w-16 shrink-0'>Fill %</label>
-              <input
-                type='range'
-                min='0'
-                max='100'
-                value={localSettings.fillThreshold ?? 61}
-                onChange={(e) => handleSettingChange('fillThreshold', parseInt(e.target.value))}
-                className='flex-1 accent-accent'
-                disabled={disabled}
-              />
-              <span className='text-xs w-8 text-right'>{localSettings.fillThreshold ?? 61}</span>
-            </div>
-            {!isSvgMode && (
-              <div className='flex items-center gap-2'>
-                <label className='text-xs text-shadow w-16 shrink-0'>Colors</label>
-                <input
-                  type='range'
-                  min='2'
-                  max='64'
-                  value={localSettings.maxColors ?? 16}
-                  onChange={(e) => handleSettingChange('maxColors', parseInt(e.target.value))}
-                  className='flex-1 accent-accent'
-                  disabled={disabled}
-                />
-                <span className='text-xs w-8 text-right'>{localSettings.maxColors ?? 16}</span>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>

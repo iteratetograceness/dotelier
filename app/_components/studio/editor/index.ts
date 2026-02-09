@@ -3,10 +3,8 @@ import {
   GridSettings,
 } from '@/app/swr/use-pixel-version'
 import { HistoryManager } from './history'
-import { getQuantizer } from './quant'
 import { Color, PixelRenderer } from './renderer'
 import { ToolManager, ToolName } from './tool'
-import { analyzeGridCell, findDominantColor } from './utils'
 
 export type { GridSettings }
 
@@ -271,9 +269,9 @@ export class PixelEditor {
     const response = await fetch(imageUrl)
     const blob = await response.blob()
 
-    // SVGs use a separate rasterization path
+    // Saved SVGs are 1:1 with the grid — load directly
     if (blob.type === 'image/svg+xml') {
-      await this.loadSVG2(imageUrl, settings)
+      await this.loadSvg(imageUrl)
       return
     }
 
@@ -325,79 +323,41 @@ export class PixelEditor {
     this.history.endAction()
   }
 
-  public async loadSVG2(
-    svgUrl: string,
-    settings: GridSettings = DEFAULT_GRID_SETTINGS
-  ): Promise<void> {
-    // Store current image URL and settings for reloading
+  /**
+   * Load a saved SVG directly into the pixel grid.
+   *
+   * Our SVGs are 1:1 with the grid (width/height = gridSize, one <rect>
+   * per pixel cell), so we rasterize at native resolution and read pixels
+   * directly — no quantization or cell analysis needed.
+   */
+  private async loadSvg(svgUrl: string): Promise<void> {
     this.currentImageUrl = svgUrl
-    this.currentGridSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
-
-    const mergedSettings = { ...DEFAULT_GRID_SETTINGS, ...settings }
 
     return new Promise((resolve, reject) => {
-      const svgImage = new Image()
-      svgImage.crossOrigin = 'anonymous'
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
 
-      svgImage.onload = () => {
+      img.onload = () => {
         this.pixelData.fill(0)
         this.renderer.clear()
         this.previewRenderer.clear()
 
-        const resizeResolution = 792
-        svgImage.width = resizeResolution
-        svgImage.height = resizeResolution
+        // Render at native SVG dimensions (= grid size)
+        const w = img.naturalWidth || this.gridSize
+        const h = img.naturalHeight || this.gridSize
 
-        const tempCanvas = document.createElement('canvas')
-        tempCanvas.width = resizeResolution
-        tempCanvas.height = resizeResolution
+        const canvas = new OffscreenCanvas(w, h)
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, w, h)
 
-        const tempCtx = tempCanvas.getContext('2d', {
-          willReadFrequently: true,
-        })
+        const { data } = ctx.getImageData(0, 0, w, h)
 
-        if (!tempCtx) {
-          reject(new Error('Failed to get temporary canvas context'))
-          return
-        }
-
-        tempCtx.drawImage(svgImage, 0, 0, resizeResolution, resizeResolution)
-
-        const q = getQuantizer()
-        q.sample(tempCanvas)
-        const quantized = q.reduce(tempCanvas)
-
-        const quantizedImageData = tempCtx.createImageData(
-          resizeResolution,
-          resizeResolution
-        )
-        quantizedImageData.data.set(quantized)
-        tempCtx.putImageData(quantizedImageData, 0, 0)
-
-        const svgPixelSize = resizeResolution / this.gridSize
-        const alphaThreshold = mergedSettings.alphaThreshold ?? 200
-        const fillThreshold = mergedSettings.fillThreshold ?? 61
-
-        for (let x = 0; x < this.gridSize; x++) {
-          for (let y = 0; y < this.gridSize; y++) {
-            const { filledPixels, totalPixels, colorMap } = analyzeGridCell({
-              width: resizeResolution,
-              startX: x * svgPixelSize,
-              startY: y * svgPixelSize,
-              regionSize: svgPixelSize,
-              alphaThreshold,
-              quantizedData: quantized,
-            })
-
-            const filledPercentage = (filledPixels / totalPixels) * 100
-            if (filledPercentage < fillThreshold) continue
-
-            const dominantColor = findDominantColor(colorMap)
-
-            if (dominantColor) {
-              if (this.isWithinBounds(x, y)) {
-                this.setPixel(x, y, dominantColor)
-              }
+        for (let y = 0; y < h && y < this.gridSize; y++) {
+          for (let x = 0; x < w && x < this.gridSize; x++) {
+            const i = (y * w + x) * 4
+            const a = data[i + 3]
+            if (a > 0) {
+              this.setPixel(x, y, [data[i], data[i + 1], data[i + 2], a])
             }
           }
         }
@@ -407,17 +367,12 @@ export class PixelEditor {
         this.history.startAction()
         this.history.endAction()
 
+        img.src = ''
         resolve()
-
-        svgImage.src = ''
-        tempCanvas.remove()
       }
 
-      svgImage.onerror = () => {
-        reject(new Error('Failed to load image'))
-      }
-
-      svgImage.src = svgUrl
+      img.onerror = () => reject(new Error('Failed to load SVG'))
+      img.src = svgUrl
     })
   }
 
