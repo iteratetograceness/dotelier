@@ -25,7 +25,9 @@ export function DeletePixelButton({ pixelId }: { pixelId: string }) {
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
       <AlertDialog.Trigger asChild>
-        <Button variant='dark'>Delete</Button>
+        <button className='text-xs text-medium hover:text-accent cursor-pointer transition-colors'>
+          Delete
+        </button>
       </AlertDialog.Trigger>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className='fixed inset-0 bg-black/40 z-50' />
