@@ -7,14 +7,7 @@ import { cn } from '@/app/utils/classnames'
 import { useSession } from '@/lib/auth/client'
 import { LazyMotion, domAnimation } from 'motion/react'
 import * as m from 'motion/react-m'
-import {
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { SignInButton } from '../auth/sign-in-button'
 import { Button } from '../button'
 import { Credits } from '../user/credits'
@@ -25,7 +18,6 @@ function NewPixelInput({ className }: { className?: string }) {
   const { data: session, isPending: isSessionPending } = useSession()
   const { startGeneration, reset, model, setModel, status } = useNewCanvas()
   const isGenerating = status === 'generating' || status === 'post-processing'
-  const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
   const [mounted, setMounted] = useState(false)
   const { credits, revalidateCredits } = useCredits()
@@ -37,20 +29,18 @@ function NewPixelInput({ className }: { className?: string }) {
   const handleSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault()
-      startTransition(async () => {
-        const formData = new FormData(e.target as HTMLFormElement)
-        const prompt = formData.get('prompt') as string
-        formRef.current?.reset()
+      const formData = new FormData(e.target as HTMLFormElement)
+      const prompt = formData.get('prompt') as string
+      formRef.current?.reset()
 
-        const optimisticCredits = credits ? credits - 1 : 0
-        void revalidateCredits(optimisticCredits)
-        await startGeneration(prompt)
-      })
+      const optimisticCredits = credits ? credits - 1 : 0
+      void revalidateCredits(optimisticCredits)
+      void startGeneration(prompt)
     },
     [startGeneration, credits, revalidateCredits]
   )
 
-  const disabled = isPending || !session || isGenerating
+  const disabled = !session || isGenerating
 
   return (
     <div
@@ -105,7 +95,7 @@ function NewPixelInput({ className }: { className?: string }) {
               <ModelSelector
                 value={model}
                 onChange={setModel}
-                disabled={isPending}
+                disabled={isGenerating}
               />
             )}
           </div>
