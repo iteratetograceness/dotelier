@@ -38,7 +38,7 @@ export async function GET(
       'pixel.userId',
       'pixelVersion.fileKey',
       'postProcessing.status as postProcessingStatus',
-      'postProcessing.pngNobgFileKey',
+      'postProcessing.pngNoBgFileKey',
     ])
     .where('pixel.id', '=', id)
     .executeTakeFirst()
@@ -58,6 +58,6 @@ export async function GET(
     exists: true,
     hasVersion: Boolean(pixel.fileKey),
     postProcessingStatus: pixel.postProcessingStatus ?? null,
-    noBgFileKey: pixel.pngNobgFileKey ?? null,
+    noBgFileKey: pixel.pngNoBgFileKey ?? null,
   })
 }
