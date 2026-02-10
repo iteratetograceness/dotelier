@@ -23,7 +23,8 @@ import { useNewCanvas } from './use-new-canvas'
 
 function NewPixelInput({ className }: { className?: string }) {
   const { data: session, isPending: isSessionPending } = useSession()
-  const { startGeneration, reset, model, setModel } = useNewCanvas()
+  const { startGeneration, reset, model, setModel, status } = useNewCanvas()
+  const isGenerating = status === 'generating' || status === 'post-processing'
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
   const [mounted, setMounted] = useState(false)
@@ -49,7 +50,7 @@ function NewPixelInput({ className }: { className?: string }) {
     [startGeneration, credits, revalidateCredits]
   )
 
-  const disabled = isPending || !session
+  const disabled = isPending || !session || isGenerating
 
   return (
     <div
