@@ -1,8 +1,10 @@
 import { Analytics } from '@vercel/analytics/react'
 import type { Metadata } from 'next'
 import { Tiny5 } from 'next/font/google'
+import { Suspense } from 'react'
 import { Toaster } from 'sonner'
 import './globals.css'
+import { GenerationMonitor } from './_components/generation-monitor'
 import { Header } from './header'
 import { ErrorHandler } from './utils/error-handler'
 
@@ -28,6 +30,9 @@ export default function RootLayout({
       <body className='flex flex-col relative w-screen h-screen overflow-x-hidden'>
         <Header />
         <main className='flex-1 flex flex-col md:items-center'>{children}</main>
+        <Suspense>
+          <GenerationMonitor />
+        </Suspense>
         <Toaster />
         <Analytics />
         <ErrorHandler />

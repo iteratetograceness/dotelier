@@ -29,6 +29,9 @@ export const useNewCanvas = create<NewCanvasState & NewCanvasActions>(
     id: '',
     error: '',
     startGeneration: async (prompt: string) => {
+      const { status } = get()
+      if (status === 'generating' || status === 'post-processing') return
+
       try {
         // Generate image + remove background + save pixel version (all server-side)
         // The editor will use pixel-snapper (WASM) client-side for grid detection & snapping
