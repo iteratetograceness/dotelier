@@ -3,7 +3,7 @@
 import { useNewCanvas } from '@/app/_components/studio/use-new-canvas'
 import { cn } from '@/app/utils/classnames'
 import { usePathname, useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback } from 'react'
 import { revalidatePixelVersion } from '../swr/use-pixel-version'
 import RetroLoader from './loader'
 
@@ -11,79 +11,13 @@ import RetroLoader from './loader'
  * Global floating indicator shown when a generation is in progress (or just finished).
  * Mounted in the root layout so it persists across all page navigations.
  *
- * Also handles recovery: if the page was refreshed mid-generation, the Zustand store
- * hydrates with status='generating' but _isGenerationActive=false. We detect this and
- * poll the server to check if the generation actually completed.
+ * On the home page, NewCanvas already shows full status — this only renders on other pages.
+ * On refresh, Zustand resets to idle so this naturally disappears.
  */
 export function GenerationMonitor() {
-  const { status, prompt, id, _isGenerationActive, setStatus, reset } =
-    useNewCanvas()
+  const { status, prompt, id, reset } = useNewCanvas()
   const router = useRouter()
   const pathname = usePathname()
-  const recoveryAttempted = useRef(false)
-
-  // Recovery: store says "generating" but there's no active promise (page was refreshed)
-  useEffect(() => {
-    if (status !== 'generating' || _isGenerationActive || !id) return
-    if (recoveryAttempted.current) return
-    recoveryAttempted.current = true
-
-    let cancelled = false
-    let attempts = 0
-    const maxAttempts = 10
-    const pollInterval = 3000
-
-    async function checkStatus() {
-      try {
-        const res = await fetch(`/api/pixels/${id}/status`)
-        if (!res.ok) {
-          // Auth issue or server error — reset so user isn't stuck
-          if (!cancelled) reset()
-          return
-        }
-
-        const data = await res.json()
-
-        if (cancelled) return
-
-        if (!data.exists) {
-          // Pixel was cleaned up (generation failed server-side)
-          reset()
-          return
-        }
-
-        if (data.hasVersion) {
-          // Generation completed while we were away
-          setStatus('completed')
-          return
-        }
-
-        // Still processing — poll again if we haven't hit the limit
-        attempts++
-        if (attempts < maxAttempts) {
-          setTimeout(checkStatus, pollInterval)
-        } else {
-          // Give up — the generation likely failed silently
-          reset()
-        }
-      } catch {
-        if (!cancelled) reset()
-      }
-    }
-
-    checkStatus()
-
-    return () => {
-      cancelled = true
-    }
-  }, [status, _isGenerationActive, id, setStatus, reset])
-
-  // Reset recovery flag when a new generation starts
-  useEffect(() => {
-    if (_isGenerationActive) {
-      recoveryAttempted.current = false
-    }
-  }, [_isGenerationActive])
 
   const handleEdit = useCallback(() => {
     void revalidatePixelVersion(id)
@@ -91,10 +25,8 @@ export function GenerationMonitor() {
     reset()
   }, [id, router, reset])
 
-  const isHome = pathname === '/'
-
-  // Don't show the monitor on the home page — NewCanvas already handles it there
-  if (isHome) return null
+  // Don't show on the home page — NewCanvas already handles it there
+  if (pathname === '/') return null
   // Only show when there's something to show
   if (status === 'idle') return null
 
