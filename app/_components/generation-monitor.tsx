@@ -2,6 +2,7 @@
 
 import { useNewCanvas } from '@/app/_components/studio/use-new-canvas'
 import { cn } from '@/app/utils/classnames'
+import { usePostProcessingStatus } from '@/app/utils/use-post-processing-status'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback } from 'react'
 import { revalidatePixelVersion } from '../swr/use-pixel-version'
@@ -13,11 +14,18 @@ import RetroLoader from './loader'
  *
  * On the home page, NewCanvas already shows full status — this only renders on other pages.
  * On refresh, Zustand resets to idle so this naturally disappears.
+ *
+ * Subscribes to post-processing SSE so status updates are live even off the home page.
  */
 export function GenerationMonitor() {
-  const { status, prompt, id, reset } = useNewCanvas()
+  const { status, prompt, id, setStatus, reset } = useNewCanvas()
   const router = useRouter()
   const pathname = usePathname()
+
+  // Subscribe to SSE for live post-processing updates when not on home page
+  // (home page's NewCanvasControls already has its own subscription)
+  const sseId = pathname === '/' ? undefined : id
+  usePostProcessingStatus({ id: sseId, onChange: setStatus })
 
   const handleEdit = useCallback(() => {
     void revalidatePixelVersion(id)
