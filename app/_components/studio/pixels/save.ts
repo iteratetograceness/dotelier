@@ -34,12 +34,13 @@ function isValidSvg(svgContent: unknown): svgContent is string {
 
 export async function savePixel({
   id,
-  version,
   svgContent,
   gridSize,
 }: {
   id: string
-  version: number
+  // Accepted for backward compatibility but ignored: the next version number
+  // is derived server-side from the current version, not trusted from input.
+  version?: number
   oldFileKey?: string
   svgContent: string
   gridSize: number
@@ -61,21 +62,20 @@ export async function savePixel({
       return { error: ERROR_CODES.INVALID_BODY, success: false }
     }
 
-    if (!Number.isInteger(version) || version < 0) {
-      return { error: ERROR_CODES.INVALID_BODY, success: false }
-    }
-
     if (!Number.isInteger(gridSize) || gridSize < 1 || gridSize > 256) {
       return { error: ERROR_CODES.INVALID_BODY, success: false }
     }
 
-    // Derive the file to replace from the DB rather than trusting the client,
-    // so a caller can't delete an arbitrary (e.g. another user's) asset by
-    // passing its file key.
+    // Derive both the file to replace and the next version number from the DB
+    // rather than trusting the client. A client-supplied version could be
+    // negative (breaking the single isCurrent-row invariant in
+    // insertPixelVersion) or arbitrary; deriving it server-side avoids that,
+    // and using the current file key stops a caller from deleting an
+    // arbitrary (e.g. another user's) asset by passing its file key.
     const currentVersion = await getLatestPixelVersion(id)
     const oldFileKey = currentVersion?.fileKey
 
-    const newVersion = version + 1
+    const newVersion = (currentVersion?.version ?? 0) + 1
     const blob = new Blob([svgContent], { type: 'image/svg+xml' })
     const svgFile = new File([blob], `${id}-${newVersion}.svg`, {
       type: 'image/svg+xml',
