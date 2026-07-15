@@ -1,8 +1,27 @@
+import { authorizeRequest } from '@/lib/auth/request'
+import { notFound } from 'next/navigation'
+import { Suspense } from 'react'
 import { HomeButton } from '../_components/admin/home-button'
 import { Preview } from '../_components/admin/preview'
 import { SVGDebugViewWrapper } from '../_components/studio/editor/debug'
 
 export default function AdminPage() {
+  // The admin check reads the session (uncached/dynamic), so it lives inside a
+  // Suspense boundary to stay compatible with cacheComponents/PPR prerender.
+  return (
+    <Suspense>
+      <AdminContent />
+    </Suspense>
+  )
+}
+
+async function AdminContent() {
+  const auth = await authorizeRequest()
+
+  if (!auth.success || auth.user.role !== 'admin') {
+    notFound()
+  }
+
   return (
     <main className='flex flex-col items-center justify-center gap-4 p-4'>
       <h1 className='text-2xl'>super secret admin page</h1>

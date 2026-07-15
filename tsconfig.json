@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "kysely-codegen": [
+        "./kysely-codegen.d.ts"
       ]
     }
   },

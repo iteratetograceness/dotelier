@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-types": "kysely-codegen --dialect postgres",
+    "generate-types": "kysely-codegen --dialect postgres --out-file ./kysely-codegen.d.ts",
     "knip": "knip",
     "type-check": "tsc --noEmit",
     "debug": "next build --experimental-debug-memory-usage"

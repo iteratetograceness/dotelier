@@ -1,22 +1,47 @@
 'use server'
 
 import { authorizeRequest } from '@/lib/auth/request'
-import { insertPixelVersion, isPixelOwner } from '@/lib/db/queries'
+import {
+  getLatestPixelVersion,
+  insertPixelVersion,
+  isPixelOwner,
+} from '@/lib/db/queries'
 import { ERROR_CODES } from '@/lib/error'
 import { uploadApi } from '@/lib/ut/server'
 import { revalidateTag } from 'next/cache'
 import { after } from 'next/server'
 
+const MAX_SVG_BYTES = 512 * 1024
+
+// Reject SVG payloads containing active content. Generated icons never include
+// these, so blocking them here stops a malicious client from storing an SVG
+// that executes script when opened directly from the asset host.
+const ACTIVE_CONTENT = [
+  /<script[\s/>]/i,
+  /<foreignObject[\s/>]/i,
+  /\son\w+\s*=/i,
+  /javascript:/i,
+  /<!ENTITY/i,
+]
+
+function isValidSvg(svgContent: unknown): svgContent is string {
+  if (typeof svgContent !== 'string' || svgContent.length === 0) return false
+  if (Buffer.byteLength(svgContent, 'utf8') > MAX_SVG_BYTES) return false
+  const trimmed = svgContent.trimStart()
+  if (!trimmed.startsWith('<svg') && !trimmed.startsWith('<?xml')) return false
+  return !ACTIVE_CONTENT.some((pattern) => pattern.test(svgContent))
+}
+
 export async function savePixel({
   id,
-  oldFileKey,
-  version,
   svgContent,
   gridSize,
 }: {
   id: string
-  version: number
-  oldFileKey: string
+  // Accepted for backward compatibility but ignored: the next version number
+  // is derived server-side from the current version, not trusted from input.
+  version?: number
+  oldFileKey?: string
   svgContent: string
   gridSize: number
 }) {
@@ -33,7 +58,24 @@ export async function savePixel({
       return { error: ERROR_CODES.UNAUTHORIZED, success: false }
     }
 
-    const newVersion = version + 1
+    if (!isValidSvg(svgContent)) {
+      return { error: ERROR_CODES.INVALID_BODY, success: false }
+    }
+
+    if (!Number.isInteger(gridSize) || gridSize < 1 || gridSize > 256) {
+      return { error: ERROR_CODES.INVALID_BODY, success: false }
+    }
+
+    // Derive both the file to replace and the next version number from the DB
+    // rather than trusting the client. A client-supplied version could be
+    // negative (breaking the single isCurrent-row invariant in
+    // insertPixelVersion) or arbitrary; deriving it server-side avoids that,
+    // and using the current file key stops a caller from deleting an
+    // arbitrary (e.g. another user's) asset by passing its file key.
+    const currentVersion = await getLatestPixelVersion(id)
+    const oldFileKey = currentVersion?.fileKey
+
+    const newVersion = (currentVersion?.version ?? 0) + 1
     const blob = new Blob([svgContent], { type: 'image/svg+xml' })
     const svgFile = new File([blob], `${id}-${newVersion}.svg`, {
       type: 'image/svg+xml',
@@ -50,7 +92,10 @@ export async function savePixel({
     }
 
     const newFileKey = uploadedResult[0].data.key
-    const maybeDeleteUpload = uploadApi.deleteFiles([oldFileKey])
+    const maybeDeleteUpload =
+      oldFileKey && oldFileKey !== newFileKey
+        ? uploadApi.deleteFiles([oldFileKey])
+        : Promise.resolve()
 
     try {
       await insertPixelVersion({

@@ -32,6 +32,14 @@ end
 return 0
 `
 
+// How long (seconds) to remember a Polar spend that the meter — which is
+// eventually consistent — may not reflect yet.
+const POLAR_PENDING_TTL_SECONDS = 90
+// Max wall-clock (ms) to wait for the per-user spend lock before giving up.
+const LOCK_TTL_MS = 5000
+const LOCK_RETRIES = 5
+const LOCK_RETRY_DELAY_MS = 100
+
 class Credits {
   private redis: Redis
   private polar: Polar
@@ -49,6 +57,31 @@ class Credits {
 
   private getRefundKey(userId: string) {
     return `refund_credits:${userId}`
+  }
+
+  private getPolarPendingKey(userId: string) {
+    return `polar_pending:${userId}`
+  }
+
+  private getLockKey(userId: string) {
+    return `credits_lock:${userId}`
+  }
+
+  private async acquireLock(userId: string): Promise<boolean> {
+    const lockKey = this.getLockKey(userId)
+    for (let attempt = 0; attempt < LOCK_RETRIES; attempt++) {
+      const acquired = await this.redis.set(lockKey, '1', {
+        nx: true,
+        px: LOCK_TTL_MS,
+      })
+      if (acquired === 'OK') return true
+      await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_DELAY_MS))
+    }
+    return false
+  }
+
+  private async releaseLock(userId: string) {
+    await this.redis.del(this.getLockKey(userId))
   }
 
   private async getNonPolarCredits(userId: string) {
@@ -78,12 +111,23 @@ class Credits {
     return meter.balance || 0
   }
 
+  // Polar's meter balance is eventually consistent, so a recent spend may not
+  // be reflected yet. Subtract any pending (recorded-but-maybe-unreflected)
+  // spends so we never authorize more than the customer actually has.
+  private async getAvailablePolarCredits(userId: string) {
+    const [balance, pending] = await Promise.all([
+      this.getPolarCredits(userId),
+      this.redis.get<number>(this.getPolarPendingKey(userId)),
+    ])
+    return Math.max(balance - (pending || 0), 0)
+  }
+
   async get(userId?: string) {
     if (!userId) return 0
 
     const [nonPolar, polar] = await Promise.all([
       this.getNonPolarCredits(userId),
-      this.getPolarCredits(userId).catch((error) => {
+      this.getAvailablePolarCredits(userId).catch((error) => {
         console.error('Failed to get Polar credits:', error)
         return 0
       }),
@@ -109,9 +153,17 @@ class Credits {
     )
     if (welcomeResult === 1) return true
 
-    // Try Polar credits — errors propagate to caller
-    const polarCredits = await this.getPolarCredits(userId)
-    if (polarCredits >= amount) {
+    // Paid (Polar) credits: check-then-spend is not atomic against Polar's
+    // eventually consistent meter, so serialize per user with a short lock and
+    // account for in-flight spends. This prevents concurrent requests from all
+    // reading the same balance and overspending a single paid credit.
+    const locked = await this.acquireLock(userId)
+    if (!locked) return false
+
+    try {
+      const available = await this.getAvailablePolarCredits(userId)
+      if (available < amount) return false
+
       await this.polar.events.ingest({
         events: [
           {
@@ -120,10 +172,17 @@ class Credits {
           },
         ],
       })
-      return true
-    }
 
-    return false
+      // Record the spend so a rapid follow-up sees the reduced balance until
+      // Polar's meter catches up.
+      const pendingKey = this.getPolarPendingKey(userId)
+      await this.redis.incrby(pendingKey, amount)
+      await this.redis.expire(pendingKey, POLAR_PENDING_TTL_SECONDS)
+
+      return true
+    } finally {
+      await this.releaseLock(userId)
+    }
   }
 
   async increment(userId: string, amount: number = 1) {

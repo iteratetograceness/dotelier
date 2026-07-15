@@ -15,7 +15,13 @@ export async function GET(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams
   const pageParam = searchParams.get('page')
-  const page = pageParam ? Number(pageParam) : 1
+  const parsedPage = pageParam ? Number(pageParam) : 1
+  // Guard against NaN / negative / non-integer values, which would otherwise
+  // produce an invalid SQL OFFSET.
+  const page =
+    Number.isFinite(parsedPage) && parsedPage >= 1
+      ? Math.floor(parsedPage)
+      : 1
 
   const result = await getPixelsWithVersionsByOwner({
     ownerId: authorization.user.id,

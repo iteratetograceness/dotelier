@@ -1,7 +1,9 @@
 import { authorizeRequest } from '@/lib/auth/request'
+import { isExplorePagePixel, isPixelOwner } from '@/lib/db/queries'
 import { ERROR_CODES } from '@/lib/error'
 import { Client } from '@neondatabase/serverless'
 import { NextRequest, NextResponse } from 'next/server'
+import { validate as isUuid } from 'uuid'
 
 export const maxDuration = 300
 
@@ -18,8 +20,24 @@ export async function GET(
     )
   }
 
-  if (!id || Array.isArray(id)) {
+  // The id is interpolated into a Postgres LISTEN/UNLISTEN channel name below.
+  // Enforcing a strict UUID shape prevents SQL/identifier injection.
+  if (!id || Array.isArray(id) || !isUuid(id)) {
     return NextResponse.json({ error: 'Invalid pixel ID' }, { status: 400 })
+  }
+
+  // Only the pixel owner (or anyone, for pixels published to Explore) may
+  // subscribe to a pixel's post-processing channel.
+  const [isOwner, isExplore] = await Promise.all([
+    isPixelOwner(id, authorized.user.id),
+    isExplorePagePixel(id),
+  ])
+
+  if (!isOwner && !isExplore) {
+    return NextResponse.json(
+      { error: ERROR_CODES.UNAUTHORIZED },
+      { status: 401 }
+    )
   }
 
   const encoder = new TextEncoder()

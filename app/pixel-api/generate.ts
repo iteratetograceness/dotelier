@@ -41,6 +41,17 @@ export async function generatePixelIcon({
   let pixelCreated = false
   const pixelId = id ?? uuidv4()
 
+  // Bound the prompt: it is persisted and forwarded to external generation
+  // APIs, so reject empty or oversized input up front.
+  const MAX_PROMPT_LENGTH = 1000
+  if (
+    typeof prompt !== 'string' ||
+    prompt.trim().length === 0 ||
+    prompt.length > MAX_PROMPT_LENGTH
+  ) {
+    return { error: ERROR_CODES.MISSING_PROMPT, success: false }
+  }
+
   try {
     const [authResult, headersList] = await Promise.all([
       authorizeRequest({ withJwt: true }),
@@ -165,7 +176,7 @@ export async function generatePixelIcon({
     }
 
     revalidateTag(`getLatestPixelIds:${userId}`, { expire: 0 })
-    revalidateTag(`pixel:${id}`, { expire: 0 })
+    revalidateTag(`pixel:${pixelId}`, { expire: 0 })
 
     return {
       result: generatedData,
