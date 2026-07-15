@@ -16,11 +16,19 @@ export const generateRateLimit = new Ratelimit({
 
 /**
  * Get the best identifier for rate limiting.
- * Prefers JA4 fingerprint (catches bots rotating IPs), falls back to IP.
+ *
+ * Preference order, most-trusted first:
+ *  1. JA4 fingerprint — set by Vercel's edge, catches bots rotating IPs.
+ *  2. `x-real-ip` — set by Vercel's proxy to the true client IP; unlike the
+ *     leftmost `x-forwarded-for` token, a client cannot spoof it to mint a
+ *     fresh identifier per request and bypass the limit.
+ *  3. Leftmost `x-forwarded-for` — last-resort fallback for non-Vercel
+ *     environments; spoofable, so only used when nothing better is present.
  */
 export function getRateLimitIdentifier(headers: Headers): string | null {
   return (
     headers.get('x-vercel-ja4-digest') ??
+    headers.get('x-real-ip')?.trim() ??
     headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     null
   )
