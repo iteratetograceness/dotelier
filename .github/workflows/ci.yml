@@ -31,3 +31,81 @@ jobs:
       # tsconfig "kysely-codegen" path), so no database access is required.
       - name: Type check
         run: bun run type-check
+
+  # Gate the full build on whether the build secrets are configured. Until they
+  # are, the build job is skipped (this job succeeds), so the check never blocks
+  # a PR red. Once DATABASE_URL is added as a repository secret, the build runs.
+  check-secrets:
+    name: Check build secrets
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        env:
+          SENTINEL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -n "$SENTINEL" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Full build check skipped::Add the repository secrets listed in .github/workflows/ci.yml to enable the full 'next build' check."
+          fi
+
+  # Full production build — catches prerender / cacheComponents errors that
+  # type-check alone cannot (e.g. accessing uncached data outside <Suspense>).
+  #
+  # Required repository secrets (Settings -> Secrets and variables -> Actions).
+  # Use the same values as your Vercel Preview/Production environment. A
+  # dedicated dev/preview database is strongly recommended over production:
+  #   DATABASE_URL              (Postgres; must be reachable from CI)
+  #   DATABASE_URL_UNPOOLED     (optional; falls back to DATABASE_URL)
+  #   KV_REST_API_URL           (Upstash Redis REST URL)
+  #   KV_REST_API_TOKEN         (Upstash Redis REST token)
+  #   UPSTASH_REDIS_REST_URL    (optional; falls back to KV_REST_API_URL)
+  #   UPSTASH_REDIS_REST_TOKEN  (optional; falls back to KV_REST_API_TOKEN)
+  #   GEMINI_API_KEY            (Google GenAI; client throws on import if unset)
+  #   POLAR_ACCESS_TOKEN, POLAR_CREDIT_METER
+  #   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+  #   REPLICATE_API_TOKEN, BG_REMOVER_MODEL
+  #   PIXEL_API_ENDPOINT, MODAL_AUTH_TOKEN
+  #   UPLOADTHING_TOKEN, NEXT_PUBLIC_UT_APP_ID
+  build:
+    name: Build
+    needs: check-secrets
+    if: needs.check-secrets.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED || secrets.DATABASE_URL }}
+      KV_REST_API_URL: ${{ secrets.KV_REST_API_URL || secrets.UPSTASH_REDIS_REST_URL }}
+      KV_REST_API_TOKEN: ${{ secrets.KV_REST_API_TOKEN || secrets.UPSTASH_REDIS_REST_TOKEN }}
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL || secrets.KV_REST_API_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN || secrets.KV_REST_API_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      POLAR_ACCESS_TOKEN: ${{ secrets.POLAR_ACCESS_TOKEN }}
+      POLAR_CREDIT_METER: ${{ secrets.POLAR_CREDIT_METER }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+      BG_REMOVER_MODEL: ${{ secrets.BG_REMOVER_MODEL }}
+      PIXEL_API_ENDPOINT: ${{ secrets.PIXEL_API_ENDPOINT }}
+      MODAL_AUTH_TOKEN: ${{ secrets.MODAL_AUTH_TOKEN }}
+      UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
+      NEXT_PUBLIC_UT_APP_ID: ${{ secrets.NEXT_PUBLIC_UT_APP_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Uses the committed DB types (via the tsconfig path); the production
+      # deploy still regenerates them from the live schema.
+      - name: Build
+        run: bun run build
